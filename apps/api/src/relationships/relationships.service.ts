@@ -528,4 +528,59 @@ export class RelationshipsService {
       },
     };
   }
+  async updateStartDate(
+  currentUserId: string,
+  startedAtString: string,
+) {
+  const relationship =
+    await this.findActiveRelationship(currentUserId);
+
+  if (!relationship) {
+    throw new NotFoundException(
+      'Вы не состоите в отношениях',
+    );
+  }
+
+  const startedAt = new Date(startedAtString);
+
+  if (startedAt > new Date()) {
+    throw new BadRequestException(
+      'Дата начала отношений не может быть в будущем',
+    );
+  }
+
+  return this.prisma.relationship.update({
+    where: {
+      id: relationship.id,
+    },
+
+    data: {
+      startedAt,
+    },
+  });
+}
+
+async endRelationship(
+  currentUserId: string,
+) {
+  const relationship =
+    await this.findActiveRelationship(currentUserId);
+
+  if (!relationship) {
+    throw new NotFoundException(
+      'Вы не состоите в отношениях',
+    );
+  }
+
+  return this.prisma.relationship.update({
+    where: {
+      id: relationship.id,
+    },
+
+    data: {
+      status: RelationshipStatus.ENDED,
+      endedAt: new Date(),
+    },
+  });
+ }
 }

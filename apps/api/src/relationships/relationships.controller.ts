@@ -4,6 +4,7 @@ import {
   Delete,
   Get,
   Param,
+  Patch,
   Post,
   Req,
   UseGuards,
@@ -12,14 +13,14 @@ import {
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard.js';
 
 import { AcceptInvitationDto } from './dto/accept-invitation.dto.js';
+import { UpdateRelationshipDateDto } from './dto/update-relationship-date.dto.js';
 import { RelationshipsService } from './relationships.service.js';
 
 @Controller('relationships')
 @UseGuards(JwtAuthGuard)
 export class RelationshipsController {
   constructor(
-    private readonly relationshipsService:
-      RelationshipsService,
+    private readonly relationshipsService: RelationshipsService,
   ) {}
 
   @Post('invitations/:nickname')
@@ -82,6 +83,26 @@ export class RelationshipsController {
     @Req() request: any,
   ) {
     return this.relationshipsService.getCurrentRelationship(
+      request.user.sub,
+    );
+  }
+
+  @Patch('me/start-date')
+  async updateStartDate(
+    @Body() data: UpdateRelationshipDateDto,
+    @Req() request: any,
+  ) {
+    return this.relationshipsService.updateStartDate(
+      request.user.sub,
+      data.startedAt,
+    );
+  }
+
+  @Delete('me')
+  async endRelationship(
+    @Req() request: any,
+  ) {
+    return this.relationshipsService.endRelationship(
       request.user.sub,
     );
   }

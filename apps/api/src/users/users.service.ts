@@ -83,33 +83,94 @@ export class UsersService {
     });
   }
 
-  async findByNickname(
+    async findByNickname(
     nickname: string,
-  ) {
+    ) {
     const normalizedNickname = nickname
-      .trim()
-      .toLowerCase();
+        .trim()
+        .toLowerCase();
 
     const user = await this.prisma.user.findUnique({
-      where: {
+        where: {
         nickname: normalizedNickname,
-      },
+        },
 
-      select: {
+        select: {
         id: true,
         nickname: true,
         displayName: true,
         avatarUrl: true,
         createdAt: true,
-      },
+        },
     });
 
     if (!user) {
-      throw new NotFoundException(
+        throw new NotFoundException(
         'Пользователь не найден',
-      );
+        );
     }
 
-    return user;
-  }
+    const relationship =
+        await this.prisma.relationship.findFirst({
+        where: {
+            status: 'ACTIVE',
+
+            OR: [
+            {
+                user1Id: user.id,
+            },
+            {
+                user2Id: user.id,
+            },
+            ],
+        },
+
+        include: {
+            user1: {
+            select: {
+                id: true,
+                nickname: true,
+                displayName: true,
+                avatarUrl: true,
+            },
+            },
+
+            user2: {
+            select: {
+                id: true,
+                nickname: true,
+                displayName: true,
+                avatarUrl: true,
+            },
+            },
+        },
+        });
+
+    if (!relationship) {
+        return {
+        ...user,
+
+        relationship: {
+            status: 'SINGLE',
+            partner: null,
+            startedAt: null,
+        },
+        };
+    }
+
+    const partner =
+        relationship.user1Id === user.id
+        ? relationship.user2
+        : relationship.user1;
+
+    return {
+        ...user,
+
+        relationship: {
+        status: 'ACTIVE',
+        partner,
+        startedAt: relationship.startedAt,
+        },
+    };
+    }
 }
