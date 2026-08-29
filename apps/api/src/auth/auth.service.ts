@@ -13,9 +13,12 @@ export class AuthService {
   constructor(private readonly prisma: PrismaService) {}
 
   async register(data: RegisterDto) {
+    const email = data.email.trim().toLowerCase();
+    const nickname = data.nickname.trim().toLowerCase();
+
     const existingEmail = await this.prisma.user.findUnique({
       where: {
-        email: data.email,
+        email,
       },
     });
 
@@ -27,7 +30,7 @@ export class AuthService {
 
     const existingNickname = await this.prisma.user.findUnique({
       where: {
-        nickname: data.nickname,
+        nickname,
       },
     });
 
@@ -41,9 +44,9 @@ export class AuthService {
 
     const user = await this.prisma.user.create({
       data: {
-        email: data.email,
-        nickname: data.nickname,
-        displayName: data.displayName,
+        email,
+        nickname,
+        displayName: data.displayName?.trim(),
         passwordHash,
       },
     });
