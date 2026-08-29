@@ -1,0 +1,20 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: vdvoem-postgres
+
+    restart: unless-stopped
+
+    environment:
+      POSTGRES_USER: vdvoem
+      POSTGRES_PASSWORD: vdvoem_dev_password
+      POSTGRES_DB: vdvoem
+
+    ports:
+      - "5432:5432"
+
+    volumes:
+      - vdvoem_postgres_data:/var/lib/postgresql/data
+
+volumes:
+  vdvoem_postgres_data:
