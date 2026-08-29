@@ -120,4 +120,27 @@ export class AuthService {
       },
     };
   }
+
+  async getCurrentUser(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: {
+        id: userId,
+      },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException(
+        'Пользователь не найден',
+      );
+    }
+
+    return {
+      id: user.id,
+      email: user.email,
+      nickname: user.nickname,
+      displayName: user.displayName,
+      avatarUrl: user.avatarUrl,
+      createdAt: user.createdAt,
+    };
+  }
 }
