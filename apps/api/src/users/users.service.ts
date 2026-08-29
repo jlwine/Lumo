@@ -3,6 +3,11 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 
+import {
+  RelationshipInvitationStatus,
+  RelationshipStatus,
+} from '../generated/prisma/client.js';
+
 import { PrismaService } from '../prisma/prisma.service.js';
 
 @Injectable()
@@ -83,94 +88,173 @@ export class UsersService {
     });
   }
 
-    async findByNickname(
+  async findByNickname(
     nickname: string,
-    ) {
+    currentUserId: string,
+  ) {
     const normalizedNickname = nickname
-        .trim()
-        .toLowerCase();
+      .trim()
+      .toLowerCase();
 
     const user = await this.prisma.user.findUnique({
-        where: {
+      where: {
         nickname: normalizedNickname,
-        },
+      },
 
-        select: {
+      select: {
         id: true,
         nickname: true,
         displayName: true,
         avatarUrl: true,
         createdAt: true,
-        },
+      },
     });
 
     if (!user) {
-        throw new NotFoundException(
+      throw new NotFoundException(
         'Пользователь не найден',
-        );
+      );
     }
 
     const relationship =
-        await this.prisma.relationship.findFirst({
+      await this.prisma.relationship.findFirst({
         where: {
-            status: 'ACTIVE',
+          status: RelationshipStatus.ACTIVE,
 
-            OR: [
+          OR: [
             {
-                user1Id: user.id,
+              user1Id: user.id,
             },
             {
-                user2Id: user.id,
+              user2Id: user.id,
             },
-            ],
+          ],
         },
 
         include: {
-            user1: {
+          user1: {
             select: {
-                id: true,
-                nickname: true,
-                displayName: true,
-                avatarUrl: true,
+              id: true,
+              nickname: true,
+              displayName: true,
+              avatarUrl: true,
             },
-            },
+          },
 
-            user2: {
+          user2: {
             select: {
-                id: true,
-                nickname: true,
-                displayName: true,
-                avatarUrl: true,
+              id: true,
+              nickname: true,
+              displayName: true,
+              avatarUrl: true,
             },
-            },
+          },
         },
-        });
+      });
+
+    const currentUserRelationship =
+      await this.prisma.relationship.findFirst({
+        where: {
+          status: RelationshipStatus.ACTIVE,
+
+          OR: [
+            {
+              user1Id: currentUserId,
+            },
+            {
+              user2Id: currentUserId,
+            },
+          ],
+        },
+      });
+
+    const pendingInvitation =
+      currentUserId !== user.id
+        ? await this.prisma.relationshipInvitation.findFirst({
+            where: {
+              status:
+                RelationshipInvitationStatus.PENDING,
+
+              OR: [
+                {
+                  senderId: currentUserId,
+                  receiverId: user.id,
+                },
+                {
+                  senderId: user.id,
+                  receiverId: currentUserId,
+                },
+              ],
+            },
+          })
+        : null;
+
+    let relationshipInfo;
 
     if (!relationship) {
-        return {
-        ...user,
-
-        relationship: {
-            status: 'SINGLE',
-            partner: null,
-            startedAt: null,
-        },
-        };
-    }
-
-    const partner =
+      relationshipInfo = {
+        status: 'SINGLE',
+        partner: null,
+        startedAt: null,
+      };
+    } else {
+      const partner =
         relationship.user1Id === user.id
-        ? relationship.user2
-        : relationship.user1;
+          ? relationship.user2
+          : relationship.user1;
 
-    return {
-        ...user,
-
-        relationship: {
+      relationshipInfo = {
         status: 'ACTIVE',
         partner,
         startedAt: relationship.startedAt,
-        },
-    };
+      };
     }
+
+    let canInvite = true;
+    let inviteUnavailableReason: string | null = null;
+
+    if (user.id === currentUserId) {
+      canInvite = false;
+      inviteUnavailableReason = 'SELF';
+    } else if (currentUserRelationship) {
+      canInvite = false;
+      inviteUnavailableReason =
+        'CURRENT_USER_IN_RELATIONSHIP';
+    } else if (relationship) {
+      canInvite = false;
+      inviteUnavailableReason =
+        'USER_IN_RELATIONSHIP';
+    } else if (pendingInvitation) {
+      canInvite = false;
+      inviteUnavailableReason =
+        'INVITATION_ALREADY_EXISTS';
+    }
+
+    let invitation = null;
+
+    if (pendingInvitation) {
+      invitation = {
+        id: pendingInvitation.id,
+        status: pendingInvitation.status,
+
+        direction:
+          pendingInvitation.senderId === currentUserId
+            ? 'SENT'
+            : 'RECEIVED',
+      };
+    }
+
+    return {
+      ...user,
+
+      relationship: relationshipInfo,
+
+      actions: {
+        canInvite,
+        inviteUnavailableReason,
+      },
+
+      invitation,
+    };
+  }
 }

@@ -8,6 +8,7 @@ import {
 } from '@nestjs/common';
 
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard.js';
+
 import { UsersService } from './users.service.js';
 
 @Controller('users')
@@ -36,9 +37,11 @@ export class UsersController {
   @Get(':nickname')
   async findByNickname(
     @Param('nickname') nickname: string,
+    @Req() request: any,
   ) {
     return this.usersService.findByNickname(
       nickname,
+      request.user.sub,
     );
   }
 }
