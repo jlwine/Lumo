@@ -46,3 +46,13 @@ export { Prisma }
  * 
  */
 export type User = Prisma.UserModel
+/**
+ * Model RelationshipInvitation
+ * 
+ */
+export type RelationshipInvitation = Prisma.RelationshipInvitationModel
+/**
+ * Model Relationship
+ * 
+ */
+export type Relationship = Prisma.RelationshipModel

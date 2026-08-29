@@ -206,6 +206,10 @@ export type UserWhereInput = {
   avatarUrl?: Prisma.StringNullableFilter<"User"> | string | null
   createdAt?: Prisma.DateTimeFilter<"User"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"User"> | Date | string
+  sentRelationshipInvitations?: Prisma.RelationshipInvitationListRelationFilter
+  receivedRelationshipInvitations?: Prisma.RelationshipInvitationListRelationFilter
+  relationshipsAsUser1?: Prisma.RelationshipListRelationFilter
+  relationshipsAsUser2?: Prisma.RelationshipListRelationFilter
 }
 
 export type UserOrderByWithRelationInput = {
@@ -217,6 +221,10 @@ export type UserOrderByWithRelationInput = {
   avatarUrl?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
+  sentRelationshipInvitations?: Prisma.RelationshipInvitationOrderByRelationAggregateInput
+  receivedRelationshipInvitations?: Prisma.RelationshipInvitationOrderByRelationAggregateInput
+  relationshipsAsUser1?: Prisma.RelationshipOrderByRelationAggregateInput
+  relationshipsAsUser2?: Prisma.RelationshipOrderByRelationAggregateInput
 }
 
 export type UserWhereUniqueInput = Prisma.AtLeast<{
@@ -231,6 +239,10 @@ export type UserWhereUniqueInput = Prisma.AtLeast<{
   avatarUrl?: Prisma.StringNullableFilter<"User"> | string | null
   createdAt?: Prisma.DateTimeFilter<"User"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"User"> | Date | string
+  sentRelationshipInvitations?: Prisma.RelationshipInvitationListRelationFilter
+  receivedRelationshipInvitations?: Prisma.RelationshipInvitationListRelationFilter
+  relationshipsAsUser1?: Prisma.RelationshipListRelationFilter
+  relationshipsAsUser2?: Prisma.RelationshipListRelationFilter
 }, "id" | "email" | "nickname">
 
 export type UserOrderByWithAggregationInput = {
@@ -270,6 +282,10 @@ export type UserCreateInput = {
   avatarUrl?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  sentRelationshipInvitations?: Prisma.RelationshipInvitationCreateNestedManyWithoutSenderInput
+  receivedRelationshipInvitations?: Prisma.RelationshipInvitationCreateNestedManyWithoutReceiverInput
+  relationshipsAsUser1?: Prisma.RelationshipCreateNestedManyWithoutUser1Input
+  relationshipsAsUser2?: Prisma.RelationshipCreateNestedManyWithoutUser2Input
 }
 
 export type UserUncheckedCreateInput = {
@@ -281,6 +297,10 @@ export type UserUncheckedCreateInput = {
   avatarUrl?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  sentRelationshipInvitations?: Prisma.RelationshipInvitationUncheckedCreateNestedManyWithoutSenderInput
+  receivedRelationshipInvitations?: Prisma.RelationshipInvitationUncheckedCreateNestedManyWithoutReceiverInput
+  relationshipsAsUser1?: Prisma.RelationshipUncheckedCreateNestedManyWithoutUser1Input
+  relationshipsAsUser2?: Prisma.RelationshipUncheckedCreateNestedManyWithoutUser2Input
 }
 
 export type UserUpdateInput = {
@@ -292,6 +312,10 @@ export type UserUpdateInput = {
   avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  sentRelationshipInvitations?: Prisma.RelationshipInvitationUpdateManyWithoutSenderNestedInput
+  receivedRelationshipInvitations?: Prisma.RelationshipInvitationUpdateManyWithoutReceiverNestedInput
+  relationshipsAsUser1?: Prisma.RelationshipUpdateManyWithoutUser1NestedInput
+  relationshipsAsUser2?: Prisma.RelationshipUpdateManyWithoutUser2NestedInput
 }
 
 export type UserUncheckedUpdateInput = {
@@ -303,6 +327,10 @@ export type UserUncheckedUpdateInput = {
   avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  sentRelationshipInvitations?: Prisma.RelationshipInvitationUncheckedUpdateManyWithoutSenderNestedInput
+  receivedRelationshipInvitations?: Prisma.RelationshipInvitationUncheckedUpdateManyWithoutReceiverNestedInput
+  relationshipsAsUser1?: Prisma.RelationshipUncheckedUpdateManyWithoutUser1NestedInput
+  relationshipsAsUser2?: Prisma.RelationshipUncheckedUpdateManyWithoutUser2NestedInput
 }
 
 export type UserCreateManyInput = {
@@ -371,6 +399,11 @@ export type UserMinOrderByAggregateInput = {
   updatedAt?: Prisma.SortOrder
 }
 
+export type UserScalarRelationFilter = {
+  is?: Prisma.UserWhereInput
+  isNot?: Prisma.UserWhereInput
+}
+
 export type StringFieldUpdateOperationsInput = {
   set?: string
 }
@@ -383,6 +416,406 @@ export type DateTimeFieldUpdateOperationsInput = {
   set?: Date | string
 }
 
+export type UserCreateNestedOneWithoutSentRelationshipInvitationsInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutSentRelationshipInvitationsInput, Prisma.UserUncheckedCreateWithoutSentRelationshipInvitationsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutSentRelationshipInvitationsInput
+  connect?: Prisma.UserWhereUniqueInput
+}
+
+export type UserCreateNestedOneWithoutReceivedRelationshipInvitationsInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutReceivedRelationshipInvitationsInput, Prisma.UserUncheckedCreateWithoutReceivedRelationshipInvitationsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutReceivedRelationshipInvitationsInput
+  connect?: Prisma.UserWhereUniqueInput
+}
+
+export type UserUpdateOneRequiredWithoutSentRelationshipInvitationsNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutSentRelationshipInvitationsInput, Prisma.UserUncheckedCreateWithoutSentRelationshipInvitationsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutSentRelationshipInvitationsInput
+  upsert?: Prisma.UserUpsertWithoutSentRelationshipInvitationsInput
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutSentRelationshipInvitationsInput, Prisma.UserUpdateWithoutSentRelationshipInvitationsInput>, Prisma.UserUncheckedUpdateWithoutSentRelationshipInvitationsInput>
+}
+
+export type UserUpdateOneRequiredWithoutReceivedRelationshipInvitationsNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutReceivedRelationshipInvitationsInput, Prisma.UserUncheckedCreateWithoutReceivedRelationshipInvitationsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutReceivedRelationshipInvitationsInput
+  upsert?: Prisma.UserUpsertWithoutReceivedRelationshipInvitationsInput
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutReceivedRelationshipInvitationsInput, Prisma.UserUpdateWithoutReceivedRelationshipInvitationsInput>, Prisma.UserUncheckedUpdateWithoutReceivedRelationshipInvitationsInput>
+}
+
+export type UserCreateNestedOneWithoutRelationshipsAsUser1Input = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutRelationshipsAsUser1Input, Prisma.UserUncheckedCreateWithoutRelationshipsAsUser1Input>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutRelationshipsAsUser1Input
+  connect?: Prisma.UserWhereUniqueInput
+}
+
+export type UserCreateNestedOneWithoutRelationshipsAsUser2Input = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutRelationshipsAsUser2Input, Prisma.UserUncheckedCreateWithoutRelationshipsAsUser2Input>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutRelationshipsAsUser2Input
+  connect?: Prisma.UserWhereUniqueInput
+}
+
+export type UserUpdateOneRequiredWithoutRelationshipsAsUser1NestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutRelationshipsAsUser1Input, Prisma.UserUncheckedCreateWithoutRelationshipsAsUser1Input>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutRelationshipsAsUser1Input
+  upsert?: Prisma.UserUpsertWithoutRelationshipsAsUser1Input
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutRelationshipsAsUser1Input, Prisma.UserUpdateWithoutRelationshipsAsUser1Input>, Prisma.UserUncheckedUpdateWithoutRelationshipsAsUser1Input>
+}
+
+export type UserUpdateOneRequiredWithoutRelationshipsAsUser2NestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutRelationshipsAsUser2Input, Prisma.UserUncheckedCreateWithoutRelationshipsAsUser2Input>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutRelationshipsAsUser2Input
+  upsert?: Prisma.UserUpsertWithoutRelationshipsAsUser2Input
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutRelationshipsAsUser2Input, Prisma.UserUpdateWithoutRelationshipsAsUser2Input>, Prisma.UserUncheckedUpdateWithoutRelationshipsAsUser2Input>
+}
+
+export type UserCreateWithoutSentRelationshipInvitationsInput = {
+  id?: string
+  email: string
+  nickname: string
+  passwordHash: string
+  displayName?: string | null
+  avatarUrl?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  receivedRelationshipInvitations?: Prisma.RelationshipInvitationCreateNestedManyWithoutReceiverInput
+  relationshipsAsUser1?: Prisma.RelationshipCreateNestedManyWithoutUser1Input
+  relationshipsAsUser2?: Prisma.RelationshipCreateNestedManyWithoutUser2Input
+}
+
+export type UserUncheckedCreateWithoutSentRelationshipInvitationsInput = {
+  id?: string
+  email: string
+  nickname: string
+  passwordHash: string
+  displayName?: string | null
+  avatarUrl?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  receivedRelationshipInvitations?: Prisma.RelationshipInvitationUncheckedCreateNestedManyWithoutReceiverInput
+  relationshipsAsUser1?: Prisma.RelationshipUncheckedCreateNestedManyWithoutUser1Input
+  relationshipsAsUser2?: Prisma.RelationshipUncheckedCreateNestedManyWithoutUser2Input
+}
+
+export type UserCreateOrConnectWithoutSentRelationshipInvitationsInput = {
+  where: Prisma.UserWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserCreateWithoutSentRelationshipInvitationsInput, Prisma.UserUncheckedCreateWithoutSentRelationshipInvitationsInput>
+}
+
+export type UserCreateWithoutReceivedRelationshipInvitationsInput = {
+  id?: string
+  email: string
+  nickname: string
+  passwordHash: string
+  displayName?: string | null
+  avatarUrl?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  sentRelationshipInvitations?: Prisma.RelationshipInvitationCreateNestedManyWithoutSenderInput
+  relationshipsAsUser1?: Prisma.RelationshipCreateNestedManyWithoutUser1Input
+  relationshipsAsUser2?: Prisma.RelationshipCreateNestedManyWithoutUser2Input
+}
+
+export type UserUncheckedCreateWithoutReceivedRelationshipInvitationsInput = {
+  id?: string
+  email: string
+  nickname: string
+  passwordHash: string
+  displayName?: string | null
+  avatarUrl?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  sentRelationshipInvitations?: Prisma.RelationshipInvitationUncheckedCreateNestedManyWithoutSenderInput
+  relationshipsAsUser1?: Prisma.RelationshipUncheckedCreateNestedManyWithoutUser1Input
+  relationshipsAsUser2?: Prisma.RelationshipUncheckedCreateNestedManyWithoutUser2Input
+}
+
+export type UserCreateOrConnectWithoutReceivedRelationshipInvitationsInput = {
+  where: Prisma.UserWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserCreateWithoutReceivedRelationshipInvitationsInput, Prisma.UserUncheckedCreateWithoutReceivedRelationshipInvitationsInput>
+}
+
+export type UserUpsertWithoutSentRelationshipInvitationsInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutSentRelationshipInvitationsInput, Prisma.UserUncheckedUpdateWithoutSentRelationshipInvitationsInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutSentRelationshipInvitationsInput, Prisma.UserUncheckedCreateWithoutSentRelationshipInvitationsInput>
+  where?: Prisma.UserWhereInput
+}
+
+export type UserUpdateToOneWithWhereWithoutSentRelationshipInvitationsInput = {
+  where?: Prisma.UserWhereInput
+  data: Prisma.XOR<Prisma.UserUpdateWithoutSentRelationshipInvitationsInput, Prisma.UserUncheckedUpdateWithoutSentRelationshipInvitationsInput>
+}
+
+export type UserUpdateWithoutSentRelationshipInvitationsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  nickname?: Prisma.StringFieldUpdateOperationsInput | string
+  passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  displayName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  receivedRelationshipInvitations?: Prisma.RelationshipInvitationUpdateManyWithoutReceiverNestedInput
+  relationshipsAsUser1?: Prisma.RelationshipUpdateManyWithoutUser1NestedInput
+  relationshipsAsUser2?: Prisma.RelationshipUpdateManyWithoutUser2NestedInput
+}
+
+export type UserUncheckedUpdateWithoutSentRelationshipInvitationsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  nickname?: Prisma.StringFieldUpdateOperationsInput | string
+  passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  displayName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  receivedRelationshipInvitations?: Prisma.RelationshipInvitationUncheckedUpdateManyWithoutReceiverNestedInput
+  relationshipsAsUser1?: Prisma.RelationshipUncheckedUpdateManyWithoutUser1NestedInput
+  relationshipsAsUser2?: Prisma.RelationshipUncheckedUpdateManyWithoutUser2NestedInput
+}
+
+export type UserUpsertWithoutReceivedRelationshipInvitationsInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutReceivedRelationshipInvitationsInput, Prisma.UserUncheckedUpdateWithoutReceivedRelationshipInvitationsInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutReceivedRelationshipInvitationsInput, Prisma.UserUncheckedCreateWithoutReceivedRelationshipInvitationsInput>
+  where?: Prisma.UserWhereInput
+}
+
+export type UserUpdateToOneWithWhereWithoutReceivedRelationshipInvitationsInput = {
+  where?: Prisma.UserWhereInput
+  data: Prisma.XOR<Prisma.UserUpdateWithoutReceivedRelationshipInvitationsInput, Prisma.UserUncheckedUpdateWithoutReceivedRelationshipInvitationsInput>
+}
+
+export type UserUpdateWithoutReceivedRelationshipInvitationsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  nickname?: Prisma.StringFieldUpdateOperationsInput | string
+  passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  displayName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  sentRelationshipInvitations?: Prisma.RelationshipInvitationUpdateManyWithoutSenderNestedInput
+  relationshipsAsUser1?: Prisma.RelationshipUpdateManyWithoutUser1NestedInput
+  relationshipsAsUser2?: Prisma.RelationshipUpdateManyWithoutUser2NestedInput
+}
+
+export type UserUncheckedUpdateWithoutReceivedRelationshipInvitationsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  nickname?: Prisma.StringFieldUpdateOperationsInput | string
+  passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  displayName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  sentRelationshipInvitations?: Prisma.RelationshipInvitationUncheckedUpdateManyWithoutSenderNestedInput
+  relationshipsAsUser1?: Prisma.RelationshipUncheckedUpdateManyWithoutUser1NestedInput
+  relationshipsAsUser2?: Prisma.RelationshipUncheckedUpdateManyWithoutUser2NestedInput
+}
+
+export type UserCreateWithoutRelationshipsAsUser1Input = {
+  id?: string
+  email: string
+  nickname: string
+  passwordHash: string
+  displayName?: string | null
+  avatarUrl?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  sentRelationshipInvitations?: Prisma.RelationshipInvitationCreateNestedManyWithoutSenderInput
+  receivedRelationshipInvitations?: Prisma.RelationshipInvitationCreateNestedManyWithoutReceiverInput
+  relationshipsAsUser2?: Prisma.RelationshipCreateNestedManyWithoutUser2Input
+}
+
+export type UserUncheckedCreateWithoutRelationshipsAsUser1Input = {
+  id?: string
+  email: string
+  nickname: string
+  passwordHash: string
+  displayName?: string | null
+  avatarUrl?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  sentRelationshipInvitations?: Prisma.RelationshipInvitationUncheckedCreateNestedManyWithoutSenderInput
+  receivedRelationshipInvitations?: Prisma.RelationshipInvitationUncheckedCreateNestedManyWithoutReceiverInput
+  relationshipsAsUser2?: Prisma.RelationshipUncheckedCreateNestedManyWithoutUser2Input
+}
+
+export type UserCreateOrConnectWithoutRelationshipsAsUser1Input = {
+  where: Prisma.UserWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserCreateWithoutRelationshipsAsUser1Input, Prisma.UserUncheckedCreateWithoutRelationshipsAsUser1Input>
+}
+
+export type UserCreateWithoutRelationshipsAsUser2Input = {
+  id?: string
+  email: string
+  nickname: string
+  passwordHash: string
+  displayName?: string | null
+  avatarUrl?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  sentRelationshipInvitations?: Prisma.RelationshipInvitationCreateNestedManyWithoutSenderInput
+  receivedRelationshipInvitations?: Prisma.RelationshipInvitationCreateNestedManyWithoutReceiverInput
+  relationshipsAsUser1?: Prisma.RelationshipCreateNestedManyWithoutUser1Input
+}
+
+export type UserUncheckedCreateWithoutRelationshipsAsUser2Input = {
+  id?: string
+  email: string
+  nickname: string
+  passwordHash: string
+  displayName?: string | null
+  avatarUrl?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  sentRelationshipInvitations?: Prisma.RelationshipInvitationUncheckedCreateNestedManyWithoutSenderInput
+  receivedRelationshipInvitations?: Prisma.RelationshipInvitationUncheckedCreateNestedManyWithoutReceiverInput
+  relationshipsAsUser1?: Prisma.RelationshipUncheckedCreateNestedManyWithoutUser1Input
+}
+
+export type UserCreateOrConnectWithoutRelationshipsAsUser2Input = {
+  where: Prisma.UserWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserCreateWithoutRelationshipsAsUser2Input, Prisma.UserUncheckedCreateWithoutRelationshipsAsUser2Input>
+}
+
+export type UserUpsertWithoutRelationshipsAsUser1Input = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutRelationshipsAsUser1Input, Prisma.UserUncheckedUpdateWithoutRelationshipsAsUser1Input>
+  create: Prisma.XOR<Prisma.UserCreateWithoutRelationshipsAsUser1Input, Prisma.UserUncheckedCreateWithoutRelationshipsAsUser1Input>
+  where?: Prisma.UserWhereInput
+}
+
+export type UserUpdateToOneWithWhereWithoutRelationshipsAsUser1Input = {
+  where?: Prisma.UserWhereInput
+  data: Prisma.XOR<Prisma.UserUpdateWithoutRelationshipsAsUser1Input, Prisma.UserUncheckedUpdateWithoutRelationshipsAsUser1Input>
+}
+
+export type UserUpdateWithoutRelationshipsAsUser1Input = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  nickname?: Prisma.StringFieldUpdateOperationsInput | string
+  passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  displayName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  sentRelationshipInvitations?: Prisma.RelationshipInvitationUpdateManyWithoutSenderNestedInput
+  receivedRelationshipInvitations?: Prisma.RelationshipInvitationUpdateManyWithoutReceiverNestedInput
+  relationshipsAsUser2?: Prisma.RelationshipUpdateManyWithoutUser2NestedInput
+}
+
+export type UserUncheckedUpdateWithoutRelationshipsAsUser1Input = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  nickname?: Prisma.StringFieldUpdateOperationsInput | string
+  passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  displayName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  sentRelationshipInvitations?: Prisma.RelationshipInvitationUncheckedUpdateManyWithoutSenderNestedInput
+  receivedRelationshipInvitations?: Prisma.RelationshipInvitationUncheckedUpdateManyWithoutReceiverNestedInput
+  relationshipsAsUser2?: Prisma.RelationshipUncheckedUpdateManyWithoutUser2NestedInput
+}
+
+export type UserUpsertWithoutRelationshipsAsUser2Input = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutRelationshipsAsUser2Input, Prisma.UserUncheckedUpdateWithoutRelationshipsAsUser2Input>
+  create: Prisma.XOR<Prisma.UserCreateWithoutRelationshipsAsUser2Input, Prisma.UserUncheckedCreateWithoutRelationshipsAsUser2Input>
+  where?: Prisma.UserWhereInput
+}
+
+export type UserUpdateToOneWithWhereWithoutRelationshipsAsUser2Input = {
+  where?: Prisma.UserWhereInput
+  data: Prisma.XOR<Prisma.UserUpdateWithoutRelationshipsAsUser2Input, Prisma.UserUncheckedUpdateWithoutRelationshipsAsUser2Input>
+}
+
+export type UserUpdateWithoutRelationshipsAsUser2Input = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  nickname?: Prisma.StringFieldUpdateOperationsInput | string
+  passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  displayName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  sentRelationshipInvitations?: Prisma.RelationshipInvitationUpdateManyWithoutSenderNestedInput
+  receivedRelationshipInvitations?: Prisma.RelationshipInvitationUpdateManyWithoutReceiverNestedInput
+  relationshipsAsUser1?: Prisma.RelationshipUpdateManyWithoutUser1NestedInput
+}
+
+export type UserUncheckedUpdateWithoutRelationshipsAsUser2Input = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  nickname?: Prisma.StringFieldUpdateOperationsInput | string
+  passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  displayName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  sentRelationshipInvitations?: Prisma.RelationshipInvitationUncheckedUpdateManyWithoutSenderNestedInput
+  receivedRelationshipInvitations?: Prisma.RelationshipInvitationUncheckedUpdateManyWithoutReceiverNestedInput
+  relationshipsAsUser1?: Prisma.RelationshipUncheckedUpdateManyWithoutUser1NestedInput
+}
+
+
+/**
+ * Count Type UserCountOutputType
+ */
+
+export type UserCountOutputType = {
+  sentRelationshipInvitations: number
+  receivedRelationshipInvitations: number
+  relationshipsAsUser1: number
+  relationshipsAsUser2: number
+}
+
+export type UserCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  sentRelationshipInvitations?: boolean | UserCountOutputTypeCountSentRelationshipInvitationsArgs
+  receivedRelationshipInvitations?: boolean | UserCountOutputTypeCountReceivedRelationshipInvitationsArgs
+  relationshipsAsUser1?: boolean | UserCountOutputTypeCountRelationshipsAsUser1Args
+  relationshipsAsUser2?: boolean | UserCountOutputTypeCountRelationshipsAsUser2Args
+}
+
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeDefaultArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the UserCountOutputType
+   */
+  select?: Prisma.UserCountOutputTypeSelect<ExtArgs> | null
+}
+
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountSentRelationshipInvitationsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.RelationshipInvitationWhereInput
+}
+
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountReceivedRelationshipInvitationsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.RelationshipInvitationWhereInput
+}
+
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountRelationshipsAsUser1Args<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.RelationshipWhereInput
+}
+
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountRelationshipsAsUser2Args<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.RelationshipWhereInput
+}
 
 
 export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -394,6 +827,11 @@ export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   avatarUrl?: boolean
   createdAt?: boolean
   updatedAt?: boolean
+  sentRelationshipInvitations?: boolean | Prisma.User$sentRelationshipInvitationsArgs<ExtArgs>
+  receivedRelationshipInvitations?: boolean | Prisma.User$receivedRelationshipInvitationsArgs<ExtArgs>
+  relationshipsAsUser1?: boolean | Prisma.User$relationshipsAsUser1Args<ExtArgs>
+  relationshipsAsUser2?: boolean | Prisma.User$relationshipsAsUser2Args<ExtArgs>
+  _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["user"]>
 
 export type UserSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -430,10 +868,24 @@ export type UserSelectScalar = {
 }
 
 export type UserOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "email" | "nickname" | "passwordHash" | "displayName" | "avatarUrl" | "createdAt" | "updatedAt", ExtArgs["result"]["user"]>
+export type UserInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  sentRelationshipInvitations?: boolean | Prisma.User$sentRelationshipInvitationsArgs<ExtArgs>
+  receivedRelationshipInvitations?: boolean | Prisma.User$receivedRelationshipInvitationsArgs<ExtArgs>
+  relationshipsAsUser1?: boolean | Prisma.User$relationshipsAsUser1Args<ExtArgs>
+  relationshipsAsUser2?: boolean | Prisma.User$relationshipsAsUser2Args<ExtArgs>
+  _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>
+}
+export type UserIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
+export type UserIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
 
 export type $UserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "User"
-  objects: {}
+  objects: {
+    sentRelationshipInvitations: Prisma.$RelationshipInvitationPayload<ExtArgs>[]
+    receivedRelationshipInvitations: Prisma.$RelationshipInvitationPayload<ExtArgs>[]
+    relationshipsAsUser1: Prisma.$RelationshipPayload<ExtArgs>[]
+    relationshipsAsUser2: Prisma.$RelationshipPayload<ExtArgs>[]
+  }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
     email: string
@@ -837,6 +1289,10 @@ readonly fields: UserFieldRefs;
  */
 export interface Prisma__UserClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
+  sentRelationshipInvitations<T extends Prisma.User$sentRelationshipInvitationsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$sentRelationshipInvitationsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$RelationshipInvitationPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  receivedRelationshipInvitations<T extends Prisma.User$receivedRelationshipInvitationsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$receivedRelationshipInvitationsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$RelationshipInvitationPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  relationshipsAsUser1<T extends Prisma.User$relationshipsAsUser1Args<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$relationshipsAsUser1Args<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$RelationshipPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  relationshipsAsUser2<T extends Prisma.User$relationshipsAsUser2Args<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$relationshipsAsUser2Args<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$RelationshipPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -891,6 +1347,10 @@ export type UserFindUniqueArgs<ExtArgs extends runtime.Types.Extensions.Internal
    */
   omit?: Prisma.UserOmit<ExtArgs> | null
   /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.UserInclude<ExtArgs> | null
+  /**
    * Filter, which User to fetch.
    */
   where: Prisma.UserWhereUniqueInput
@@ -909,6 +1369,10 @@ export type UserFindUniqueOrThrowArgs<ExtArgs extends runtime.Types.Extensions.I
    */
   omit?: Prisma.UserOmit<ExtArgs> | null
   /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.UserInclude<ExtArgs> | null
+  /**
    * Filter, which User to fetch.
    */
   where: Prisma.UserWhereUniqueInput
@@ -926,6 +1390,10 @@ export type UserFindFirstArgs<ExtArgs extends runtime.Types.Extensions.InternalA
    * Omit specific fields from the User
    */
   omit?: Prisma.UserOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.UserInclude<ExtArgs> | null
   /**
    * Filter, which User to fetch.
    */
@@ -975,6 +1443,10 @@ export type UserFindFirstOrThrowArgs<ExtArgs extends runtime.Types.Extensions.In
    */
   omit?: Prisma.UserOmit<ExtArgs> | null
   /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.UserInclude<ExtArgs> | null
+  /**
    * Filter, which User to fetch.
    */
   where?: Prisma.UserWhereInput
@@ -1022,6 +1494,10 @@ export type UserFindManyArgs<ExtArgs extends runtime.Types.Extensions.InternalAr
    * Omit specific fields from the User
    */
   omit?: Prisma.UserOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.UserInclude<ExtArgs> | null
   /**
    * Filter, which Users to fetch.
    */
@@ -1071,6 +1547,10 @@ export type UserCreateArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs
    */
   omit?: Prisma.UserOmit<ExtArgs> | null
   /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.UserInclude<ExtArgs> | null
+  /**
    * The data needed to create a User.
    */
   data: Prisma.XOR<Prisma.UserCreateInput, Prisma.UserUncheckedCreateInput>
@@ -1118,6 +1598,10 @@ export type UserUpdateArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs
    * Omit specific fields from the User
    */
   omit?: Prisma.UserOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.UserInclude<ExtArgs> | null
   /**
    * The data needed to update a User.
    */
@@ -1185,6 +1669,10 @@ export type UserUpsertArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs
    */
   omit?: Prisma.UserOmit<ExtArgs> | null
   /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.UserInclude<ExtArgs> | null
+  /**
    * The filter to search for the User to update in case it exists.
    */
   where: Prisma.UserWhereUniqueInput
@@ -1211,6 +1699,10 @@ export type UserDeleteArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs
    */
   omit?: Prisma.UserOmit<ExtArgs> | null
   /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.UserInclude<ExtArgs> | null
+  /**
    * Filter which User to delete.
    */
   where: Prisma.UserWhereUniqueInput
@@ -1231,6 +1723,102 @@ export type UserDeleteManyArgs<ExtArgs extends runtime.Types.Extensions.Internal
 }
 
 /**
+ * User.sentRelationshipInvitations
+ */
+export type User$sentRelationshipInvitationsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the RelationshipInvitation
+   */
+  select?: Prisma.RelationshipInvitationSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the RelationshipInvitation
+   */
+  omit?: Prisma.RelationshipInvitationOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.RelationshipInvitationInclude<ExtArgs> | null
+  where?: Prisma.RelationshipInvitationWhereInput
+  orderBy?: Prisma.RelationshipInvitationOrderByWithRelationInput | Prisma.RelationshipInvitationOrderByWithRelationInput[]
+  cursor?: Prisma.RelationshipInvitationWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.RelationshipInvitationScalarFieldEnum | Prisma.RelationshipInvitationScalarFieldEnum[]
+}
+
+/**
+ * User.receivedRelationshipInvitations
+ */
+export type User$receivedRelationshipInvitationsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the RelationshipInvitation
+   */
+  select?: Prisma.RelationshipInvitationSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the RelationshipInvitation
+   */
+  omit?: Prisma.RelationshipInvitationOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.RelationshipInvitationInclude<ExtArgs> | null
+  where?: Prisma.RelationshipInvitationWhereInput
+  orderBy?: Prisma.RelationshipInvitationOrderByWithRelationInput | Prisma.RelationshipInvitationOrderByWithRelationInput[]
+  cursor?: Prisma.RelationshipInvitationWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.RelationshipInvitationScalarFieldEnum | Prisma.RelationshipInvitationScalarFieldEnum[]
+}
+
+/**
+ * User.relationshipsAsUser1
+ */
+export type User$relationshipsAsUser1Args<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the Relationship
+   */
+  select?: Prisma.RelationshipSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the Relationship
+   */
+  omit?: Prisma.RelationshipOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.RelationshipInclude<ExtArgs> | null
+  where?: Prisma.RelationshipWhereInput
+  orderBy?: Prisma.RelationshipOrderByWithRelationInput | Prisma.RelationshipOrderByWithRelationInput[]
+  cursor?: Prisma.RelationshipWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.RelationshipScalarFieldEnum | Prisma.RelationshipScalarFieldEnum[]
+}
+
+/**
+ * User.relationshipsAsUser2
+ */
+export type User$relationshipsAsUser2Args<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the Relationship
+   */
+  select?: Prisma.RelationshipSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the Relationship
+   */
+  omit?: Prisma.RelationshipOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.RelationshipInclude<ExtArgs> | null
+  where?: Prisma.RelationshipWhereInput
+  orderBy?: Prisma.RelationshipOrderByWithRelationInput | Prisma.RelationshipOrderByWithRelationInput[]
+  cursor?: Prisma.RelationshipWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.RelationshipScalarFieldEnum | Prisma.RelationshipScalarFieldEnum[]
+}
+
+/**
  * User without action
  */
 export type UserDefaultArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -1242,4 +1830,8 @@ export type UserDefaultArgs<ExtArgs extends runtime.Types.Extensions.InternalArg
    * Omit specific fields from the User
    */
   omit?: Prisma.UserOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.UserInclude<ExtArgs> | null
 }

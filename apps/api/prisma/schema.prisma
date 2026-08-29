@@ -7,14 +7,71 @@ datasource db {
   provider = "postgresql"
 }
 
+enum RelationshipStatus {
+  ACTIVE
+  ENDED
+}
+
+enum RelationshipInvitationStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+  CANCELLED
+}
+
 model User {
-  id           String   @id @default(uuid())
-  email        String   @unique
-  nickname     String   @unique
+  id           String  @id @default(uuid())
+  email        String  @unique
+  nickname     String  @unique
   passwordHash String
   displayName  String?
   avatarUrl    String?
 
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  sentRelationshipInvitations     RelationshipInvitation[] @relation("SentRelationshipInvitations")
+  receivedRelationshipInvitations RelationshipInvitation[] @relation("ReceivedRelationshipInvitations")
+
+  relationshipsAsUser1 Relationship[] @relation("RelationshipUser1")
+  relationshipsAsUser2 Relationship[] @relation("RelationshipUser2")
+}
+
+model RelationshipInvitation {
+  id String @id @default(uuid())
+
+  senderId   String
+  receiverId String
+
+  status RelationshipInvitationStatus @default(PENDING)
+
+  createdAt   DateTime  @default(now())
+  respondedAt DateTime?
+
+  sender   User @relation(name: "SentRelationshipInvitations", fields: [senderId], references: [id], onDelete: Cascade)
+  receiver User @relation(name: "ReceivedRelationshipInvitations", fields: [receiverId], references: [id], onDelete: Cascade)
+
+  @@index([senderId, status])
+  @@index([receiverId, status])
+}
+
+model Relationship {
+  id String @id @default(uuid())
+
+  user1Id String
+  user2Id String
+
+  status RelationshipStatus @default(ACTIVE)
+
+  startedAt DateTime  @default(now())
+  endedAt   DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user1 User @relation(name: "RelationshipUser1", fields: [user1Id], references: [id], onDelete: Cascade)
+  user2 User @relation(name: "RelationshipUser2", fields: [user2Id], references: [id], onDelete: Cascade)
+
+  @@index([user1Id, status])
+  @@index([user2Id, status])
 }

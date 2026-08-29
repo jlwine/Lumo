@@ -397,7 +397,9 @@ type FieldRefInputType<Model, FieldType> = Model extends never ? never : FieldRe
 
 
 export const ModelName = {
-  User: 'User'
+  User: 'User',
+  RelationshipInvitation: 'RelationshipInvitation',
+  Relationship: 'Relationship'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -413,7 +415,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "user"
+    modelProps: "user" | "relationshipInvitation" | "relationship"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -491,6 +493,154 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    RelationshipInvitation: {
+      payload: Prisma.$RelationshipInvitationPayload<ExtArgs>
+      fields: Prisma.RelationshipInvitationFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.RelationshipInvitationFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RelationshipInvitationPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.RelationshipInvitationFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RelationshipInvitationPayload>
+        }
+        findFirst: {
+          args: Prisma.RelationshipInvitationFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RelationshipInvitationPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.RelationshipInvitationFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RelationshipInvitationPayload>
+        }
+        findMany: {
+          args: Prisma.RelationshipInvitationFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RelationshipInvitationPayload>[]
+        }
+        create: {
+          args: Prisma.RelationshipInvitationCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RelationshipInvitationPayload>
+        }
+        createMany: {
+          args: Prisma.RelationshipInvitationCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.RelationshipInvitationCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RelationshipInvitationPayload>[]
+        }
+        delete: {
+          args: Prisma.RelationshipInvitationDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RelationshipInvitationPayload>
+        }
+        update: {
+          args: Prisma.RelationshipInvitationUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RelationshipInvitationPayload>
+        }
+        deleteMany: {
+          args: Prisma.RelationshipInvitationDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.RelationshipInvitationUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.RelationshipInvitationUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RelationshipInvitationPayload>[]
+        }
+        upsert: {
+          args: Prisma.RelationshipInvitationUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RelationshipInvitationPayload>
+        }
+        aggregate: {
+          args: Prisma.RelationshipInvitationAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateRelationshipInvitation>
+        }
+        groupBy: {
+          args: Prisma.RelationshipInvitationGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.RelationshipInvitationGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.RelationshipInvitationCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.RelationshipInvitationCountAggregateOutputType> | number
+        }
+      }
+    }
+    Relationship: {
+      payload: Prisma.$RelationshipPayload<ExtArgs>
+      fields: Prisma.RelationshipFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.RelationshipFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RelationshipPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.RelationshipFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RelationshipPayload>
+        }
+        findFirst: {
+          args: Prisma.RelationshipFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RelationshipPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.RelationshipFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RelationshipPayload>
+        }
+        findMany: {
+          args: Prisma.RelationshipFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RelationshipPayload>[]
+        }
+        create: {
+          args: Prisma.RelationshipCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RelationshipPayload>
+        }
+        createMany: {
+          args: Prisma.RelationshipCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.RelationshipCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RelationshipPayload>[]
+        }
+        delete: {
+          args: Prisma.RelationshipDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RelationshipPayload>
+        }
+        update: {
+          args: Prisma.RelationshipUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RelationshipPayload>
+        }
+        deleteMany: {
+          args: Prisma.RelationshipDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.RelationshipUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.RelationshipUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RelationshipPayload>[]
+        }
+        upsert: {
+          args: Prisma.RelationshipUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RelationshipPayload>
+        }
+        aggregate: {
+          args: Prisma.RelationshipAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateRelationship>
+        }
+        groupBy: {
+          args: Prisma.RelationshipGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.RelationshipGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.RelationshipCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.RelationshipCountAggregateOutputType> | number
+        }
+      }
+    }
   }
 } & {
   other: {
@@ -542,6 +692,32 @@ export const UserScalarFieldEnum = {
 } as const
 
 export type UserScalarFieldEnum = (typeof UserScalarFieldEnum)[keyof typeof UserScalarFieldEnum]
+
+
+export const RelationshipInvitationScalarFieldEnum = {
+  id: 'id',
+  senderId: 'senderId',
+  receiverId: 'receiverId',
+  status: 'status',
+  createdAt: 'createdAt',
+  respondedAt: 'respondedAt'
+} as const
+
+export type RelationshipInvitationScalarFieldEnum = (typeof RelationshipInvitationScalarFieldEnum)[keyof typeof RelationshipInvitationScalarFieldEnum]
+
+
+export const RelationshipScalarFieldEnum = {
+  id: 'id',
+  user1Id: 'user1Id',
+  user2Id: 'user2Id',
+  status: 'status',
+  startedAt: 'startedAt',
+  endedAt: 'endedAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type RelationshipScalarFieldEnum = (typeof RelationshipScalarFieldEnum)[keyof typeof RelationshipScalarFieldEnum]
 
 
 export const SortOrder = {
@@ -599,6 +775,34 @@ export type DateTimeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel
  * Reference to a field of type 'DateTime[]'
  */
 export type ListDateTimeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'DateTime[]'>
+    
+
+
+/**
+ * Reference to a field of type 'RelationshipInvitationStatus'
+ */
+export type EnumRelationshipInvitationStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'RelationshipInvitationStatus'>
+    
+
+
+/**
+ * Reference to a field of type 'RelationshipInvitationStatus[]'
+ */
+export type ListEnumRelationshipInvitationStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'RelationshipInvitationStatus[]'>
+    
+
+
+/**
+ * Reference to a field of type 'RelationshipStatus'
+ */
+export type EnumRelationshipStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'RelationshipStatus'>
+    
+
+
+/**
+ * Reference to a field of type 'RelationshipStatus[]'
+ */
+export type ListEnumRelationshipStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'RelationshipStatus[]'>
     
 
 
@@ -767,6 +971,8 @@ export interface PrismaClientOptionsWithAdapter extends PrismaClientBaseOptions 
 export type PrismaClientOptions = PrismaClientOptionsWithAccelerateUrl | PrismaClientOptionsWithAdapter
 export type GlobalOmitConfig = {
   user?: Prisma.UserOmit
+  relationshipInvitation?: Prisma.RelationshipInvitationOmit
+  relationship?: Prisma.RelationshipOmit
 }
 
 /* Types for Logging */
