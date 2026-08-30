@@ -7,6 +7,7 @@ import {
 
 import { useRouter } from 'next/navigation';
 import { UserSearch } from '@/components/user-search';
+import { InvitationsButton } from '@/components/invitations-button';
 
 import {
   CalendarDays,
@@ -258,6 +259,7 @@ export default function HomePage() {
                 </div>
               </button>
 
+              <InvitationsButton />
               <button
                 type="button"
                 onClick={handleLogout}
