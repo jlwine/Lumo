@@ -6,6 +6,7 @@ import {
 } from 'react';
 
 import { useRouter } from 'next/navigation';
+import { UserSearch } from '@/components/user-search';
 
 import {
   CalendarDays,
@@ -16,7 +17,6 @@ import {
   Home,
   LogOut,
   MapPin,
-  Search,
   Settings,
   UserRound,
 } from 'lucide-react';
@@ -233,16 +233,8 @@ export default function HomePage() {
           {/* Верхняя панель */}
           <header className="flex h-[88px] items-center justify-between border-b border-[#f0e2de] bg-[#fffdfb]/90 px-6 backdrop-blur md:px-10">
 
-            <div className="hidden w-full max-w-md items-center gap-3 rounded-2xl border border-[#eee1dd] bg-white px-4 py-3 md:flex">
-              <Search
-                size={18}
-                className="text-[#b5a19c]"
-              />
-
-              <span className="text-sm text-[#b5a19c]">
-                Поиск пользователей,
-                событий и желаний...
-              </span>
+            <div className="hidden w-full max-w-md md:block">
+              <UserSearch />
             </div>
 
             <div className="ml-auto flex items-center gap-4">
