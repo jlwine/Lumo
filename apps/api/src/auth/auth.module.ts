@@ -1,36 +1,67 @@
-import { Module } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { JwtModule } from '@nestjs/jwt';
+import {
+  Module,
+} from '@nestjs/common';
+
+import {
+  ConfigModule,
+  ConfigService,
+} from '@nestjs/config';
+
+import {
+  JwtModule,
+} from '@nestjs/jwt';
 
 import { AuthController } from './auth.controller.js';
 import { AuthService } from './auth.service.js';
-import { JwtAuthGuard } from './guards/jwt-auth.guard.js';
+
+import {
+  JwtAuthGuard,
+} from './guards/jwt-auth.guard.js';
 
 @Module({
   imports: [
+    ConfigModule,
+
     JwtModule.registerAsync({
-      inject: [ConfigService],
+      imports: [
+        ConfigModule,
+      ],
 
-      useFactory: (configService: ConfigService) => {
-        const secret = configService.get<string>('JWT_SECRET');
+      inject: [
+        ConfigService,
+      ],
 
-        if (!secret) {
+      useFactory: (
+        configService:
+          ConfigService,
+      ) => {
+        const jwtSecret =
+          configService.get<string>(
+            'JWT_SECRET',
+          );
+
+        if (!jwtSecret) {
           throw new Error(
             'Переменная окружения JWT_SECRET не найдена',
           );
         }
 
         return {
-          secret,
+          secret:
+            jwtSecret,
+
           signOptions: {
-            expiresIn: '15m',
+            expiresIn:
+              '15m',
           },
         };
       },
     }),
   ],
 
-  controllers: [AuthController],
+  controllers: [
+    AuthController,
+  ],
 
   providers: [
     AuthService,

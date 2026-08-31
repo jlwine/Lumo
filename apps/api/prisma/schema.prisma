@@ -36,6 +36,8 @@ model User {
 
   relationshipsAsUser1 Relationship[] @relation("RelationshipUser1")
   relationshipsAsUser2 Relationship[] @relation("RelationshipUser2")
+
+  createdCalendarEvents CalendarEvent[] @relation("CalendarEventCreator")
 }
 
 model RelationshipInvitation {
@@ -73,6 +75,34 @@ model Relationship {
   user1 User @relation(name: "RelationshipUser1", fields: [user1Id], references: [id], onDelete: Cascade)
   user2 User @relation(name: "RelationshipUser2", fields: [user2Id], references: [id], onDelete: Cascade)
 
+  calendarEvents CalendarEvent[]
+
   @@index([user1Id, status])
   @@index([user2Id, status])
+}
+
+model CalendarEvent {
+  id String @id @default(uuid())
+
+  relationshipId String
+  createdById    String
+
+  title       String
+  description String?
+  location    String?
+
+  startsAt DateTime
+  endsAt   DateTime?
+
+  allDay Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  relationship Relationship @relation(fields: [relationshipId], references: [id], onDelete: Cascade)
+
+  createdBy User @relation(name: "CalendarEventCreator", fields: [createdById], references: [id], onDelete: Cascade)
+
+  @@index([relationshipId, startsAt])
+  @@index([createdById])
 }
