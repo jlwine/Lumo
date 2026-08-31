@@ -5,22 +5,23 @@ import {
   useState,
 } from 'react';
 
-import { useRouter } from 'next/navigation';
-import { UserSearch } from '@/components/user-search';
-import { InvitationsButton } from '@/components/invitations-button';
-
 import {
   CalendarDays,
-  Camera,
   ChevronRight,
   Gift,
   Heart,
-  Home,
+  Images,
   LogOut,
   MapPin,
   Settings,
-  UserRound,
+  Settings2,
+  Sparkles,
 } from 'lucide-react';
+
+import { useRouter } from 'next/navigation';
+
+import { InvitationsButton } from '@/components/invitations-button';
+import { UserSearch } from '@/components/user-search';
 
 import { apiRequest } from '@/lib/api';
 
@@ -29,9 +30,12 @@ import {
   removeAccessToken,
 } from '@/lib/auth';
 
-import type { User } from '@/types/auth';
+import type {
+  User,
+} from '@/types/auth';
 
 import type {
+  Relationship,
   RelationshipResponse,
 } from '@/types/relationship';
 
@@ -42,18 +46,36 @@ export default function HomePage() {
     useState<User | null>(null);
 
   const [
-    relationshipData,
-    setRelationshipData,
-  ] = useState<RelationshipResponse>({
-    relationship: null,
-  });
+    relationship,
+    setRelationship,
+  ] =
+    useState<Relationship | null>(
+      null,
+    );
 
-  const [isLoading, setIsLoading] =
-    useState(true);
+  const [
+    isLoading,
+    setIsLoading,
+  ] = useState(true);
 
+  const [
+    error,
+    setError,
+  ] =
+    useState<string | null>(
+      null,
+    );
+
+  /*
+   * Загружаем текущего пользователя
+   * и его активные отношения.
+   */
   useEffect(() => {
+    let cancelled = false;
+
     async function loadHome() {
-      const token = getAccessToken();
+      const token =
+        getAccessToken();
 
       if (!token) {
         router.replace('/login');
@@ -61,538 +83,871 @@ export default function HomePage() {
       }
 
       try {
-        const headers = {
-          Authorization: `Bearer ${token}`,
-        };
-
         const [
           currentUser,
-          currentRelationship,
+          relationshipData,
         ] = await Promise.all([
           apiRequest<User>(
             '/auth/me',
             {
-              headers,
+              headers: {
+                Authorization:
+                  `Bearer ${token}`,
+              },
             },
           ),
 
           apiRequest<RelationshipResponse>(
             '/relationships/me',
             {
-              headers,
+              headers: {
+                Authorization:
+                  `Bearer ${token}`,
+              },
             },
           ),
         ]);
 
+        if (cancelled) {
+          return;
+        }
+
         setUser(currentUser);
 
-        setRelationshipData(
-          currentRelationship,
+        setRelationship(
+          relationshipData.relationship,
         );
-      } catch {
-        removeAccessToken();
-        router.replace('/login');
+      } catch (error) {
+        if (cancelled) {
+          return;
+        }
+
+        if (
+          error instanceof Error
+        ) {
+          setError(error.message);
+        } else {
+          setError(
+            'Не удалось загрузить данные',
+          );
+        }
       } finally {
-        setIsLoading(false);
+        if (!cancelled) {
+          setIsLoading(false);
+        }
       }
     }
 
     void loadHome();
+
+    return () => {
+      cancelled = true;
+    };
   }, [router]);
 
+  /*
+   * Выход из аккаунта.
+   */
   function handleLogout() {
     removeAccessToken();
+
     router.replace('/login');
   }
 
   if (isLoading) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-[#fffaf8]">
+
         <div className="text-center">
+
           <Heart
-            className="mx-auto mb-4 animate-pulse text-[#dc8f96]"
-            size={36}
+            size={38}
+            className="mx-auto animate-pulse text-[#d98a92]"
           />
 
-          <p className="text-[#8b7672]">
+          <p className="mt-4 text-sm text-[#9c8681]">
             Загружаем ваше пространство...
           </p>
+
         </div>
+
       </main>
     );
   }
 
   if (!user) {
-    return null;
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-[#fffaf8] p-5">
+
+        <section className="w-full max-w-md rounded-[28px] border border-[#eedfdb] bg-white p-8 text-center">
+
+          <Heart
+            size={32}
+            className="mx-auto text-[#d98a92]"
+          />
+
+          <h1 className="mt-5 text-2xl font-semibold text-[#554442]">
+            Не удалось открыть
+            ваше пространство
+          </h1>
+
+          <p className="mt-3 text-sm leading-6 text-[#927d78]">
+            {error ??
+              'Попробуйте войти в аккаунт ещё раз.'}
+          </p>
+
+          <button
+            type="button"
+            onClick={() => {
+              removeAccessToken();
+
+              router.replace(
+                '/login',
+              );
+            }}
+            className="mt-6 rounded-2xl bg-[#df8e94] px-6 py-3 font-medium text-white transition hover:bg-[#d57a82]"
+          >
+            Войти снова
+          </button>
+
+        </section>
+
+      </main>
+    );
   }
 
-  const relationship =
-    relationshipData.relationship;
+  const userName =
+    user.displayName ??
+    user.nickname;
 
   const partner =
-    relationship?.partner ?? null;
-
-  const userName =
-    user.displayName ?? user.nickname;
+    relationship?.partner ??
+    null;
 
   const partnerName =
     partner?.displayName ??
     partner?.nickname ??
-    '';
-
-  const userInitial =
-    userName.charAt(0).toUpperCase();
-
-  const partnerInitial =
-    partnerName.charAt(0).toUpperCase();
+    null;
 
   return (
-    <div className="min-h-screen bg-[#fffaf8] text-[#554442]">
+    <main className="min-h-screen bg-[#fffaf8]">
 
-      <div className="mx-auto flex min-h-screen max-w-[1700px]">
+      <div className="flex min-h-screen">
 
-        {/* Боковое меню */}
-        <aside className="hidden w-[270px] shrink-0 border-r border-[#f0e2de] bg-[#fffdfb] px-5 py-7 lg:flex lg:flex-col">
+        {/* Боковая панель */}
+        <aside className="hidden w-[250px] shrink-0 border-r border-[#efe2de] bg-[#fffdfc] lg:flex lg:flex-col">
 
-          <div className="mb-10 flex items-center gap-3 px-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#f9e3e5]">
-              <Heart
-                size={23}
-                strokeWidth={1.8}
-                className="text-[#d77f87]"
-              />
-            </div>
+          {/* Логотип */}
+          <div className="px-6 py-7">
 
-            <span className="text-2xl font-semibold tracking-tight">
-              Вдвоём
-            </span>
+            <button
+              type="button"
+              onClick={() =>
+                router.push('/home')
+              }
+              className="flex items-center gap-3"
+            >
+
+              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#f8dfe2] text-[#c46e77]">
+                <Heart
+                  size={21}
+                  fill="currentColor"
+                />
+              </div>
+
+              <div className="text-left">
+
+                <p className="text-lg font-semibold text-[#554442]">
+                  Вдвоём
+                </p>
+
+                <p className="text-xs text-[#ad9892]">
+                  пространство для двоих
+                </p>
+
+              </div>
+
+            </button>
+
           </div>
 
-          <nav className="space-y-2">
+          {/* Навигация */}
+          <nav className="flex-1 px-4">
 
             <SidebarItem
-              icon={<Home size={20} />}
+              icon={
+                <Sparkles size={19} />
+              }
               label="Главная"
               active
+              onClick={() =>
+                router.push('/home')
+              }
             />
 
             <SidebarItem
-              icon={<CalendarDays size={20} />}
+              icon={
+                <CalendarDays
+                  size={19}
+                />
+              }
               label="Календарь"
-              disabled
+              badge="скоро"
             />
 
             <SidebarItem
-              icon={<Gift size={20} />}
+              icon={
+                <Gift size={19} />
+              }
               label="Вишлисты"
-              disabled
+              badge="скоро"
             />
 
             <SidebarItem
-              icon={<MapPin size={20} />}
+              icon={
+                <MapPin size={19} />
+              }
               label="Карта"
-              disabled
+              badge="скоро"
             />
 
             <SidebarItem
-              icon={<Camera size={20} />}
+              icon={
+                <Images size={19} />
+              }
               label="Доска дня"
-              disabled
-            />
-
-            <SidebarItem
-              icon={<Settings size={20} />}
-              label="Настройки"
-              disabled
+              badge="скоро"
             />
 
           </nav>
 
-          <div className="mt-auto rounded-[24px] border border-[#f1e0dc] bg-[#fff8f5] p-5">
+          {/* Нижняя часть меню */}
+          <div className="border-t border-[#f0e4e0] p-4">
 
-            <Heart
-              size={22}
-              className="mb-3 text-[#dc8f96]"
+            {relationship && (
+              <SidebarItem
+                icon={
+                  <Heart size={19} />
+                }
+                label="Наши отношения"
+                onClick={() =>
+                  router.push(
+                    '/settings/relationship',
+                  )
+                }
+              />
+            )}
+
+            <SidebarItem
+              icon={
+                <Settings size={19} />
+              }
+              label="Настройки"
+              badge="скоро"
             />
-
-            <p className="font-medium">
-              Ваше пространство
-            </p>
-
-            <p className="mt-1 text-sm leading-6 text-[#9a8580]">
-              Всё важное для вас двоих
-              в одном месте.
-            </p>
 
           </div>
 
         </aside>
 
-        {/* Основная область */}
-        <main className="min-w-0 flex-1">
+        {/* Основная часть */}
+        <div className="min-w-0 flex-1">
 
           {/* Верхняя панель */}
-          <header className="flex h-[88px] items-center justify-between border-b border-[#f0e2de] bg-[#fffdfb]/90 px-6 backdrop-blur md:px-10">
+          <header className="sticky top-0 z-40 border-b border-[#f0e3df] bg-[#fffaf8]/90 px-5 py-4 backdrop-blur-xl md:px-8">
 
-            <div className="hidden w-full max-w-md md:block">
-              <UserSearch />
-            </div>
+            <div className="mx-auto flex max-w-[1400px] items-center justify-between gap-5">
 
-            <div className="ml-auto flex items-center gap-4">
+              {/* Поиск */}
+              <div className="hidden w-full max-w-md md:block">
+                <UserSearch />
+              </div>
 
+              {/* Мобильный логотип */}
               <button
                 type="button"
-                className="flex items-center gap-3 rounded-2xl px-3 py-2 transition hover:bg-[#fff4f2]"
+                onClick={() =>
+                  router.push('/home')
+                }
+                className="flex items-center gap-2 md:hidden"
               >
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#f6dfe1] font-semibold text-[#a75f66]">
-                  {userInitial}
-                </div>
+                <Heart
+                  size={22}
+                  className="text-[#c66f77]"
+                  fill="currentColor"
+                />
 
-                <div className="hidden text-left sm:block">
-                  <p className="text-sm font-medium">
-                    {userName}
-                  </p>
-
-                  <p className="text-xs text-[#a38f89]">
-                    @{user.nickname}
-                  </p>
-                </div>
+                <span className="font-semibold text-[#554442]">
+                  Вдвоём
+                </span>
               </button>
 
-              <InvitationsButton />
-              <button
-                type="button"
-                onClick={handleLogout}
-                title="Выйти"
-                className="flex h-10 w-10 items-center justify-center rounded-xl text-[#927c77] transition hover:bg-[#fff0ef] hover:text-[#c66f77]"
-              >
-                <LogOut size={19} />
-              </button>
+              {/* Пользователь */}
+              <div className="ml-auto flex items-center gap-2">
+
+                <InvitationsButton />
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    router.push(
+                      `/profile/${user.nickname}`,
+                    )
+                  }
+                  className="hidden items-center gap-3 rounded-2xl px-2 py-1.5 transition hover:bg-[#fff0ed] sm:flex"
+                >
+
+                  <Avatar
+                    name={userName}
+                    avatarUrl={
+                      user.avatarUrl
+                    }
+                    size="small"
+                  />
+
+                  <div className="max-w-[160px] text-left">
+
+                    <p className="truncate text-sm font-medium text-[#5f4c48]">
+                      {userName}
+                    </p>
+
+                    <p className="truncate text-xs text-[#a38e88]">
+                      @{user.nickname}
+                    </p>
+
+                  </div>
+
+                </button>
+
+                <button
+                  type="button"
+                  title="Выйти"
+                  onClick={
+                    handleLogout
+                  }
+                  className="flex h-10 w-10 items-center justify-center rounded-xl text-[#927c77] transition hover:bg-[#fff0ef] hover:text-[#c66f77]"
+                >
+                  <LogOut size={19} />
+                </button>
+
+              </div>
 
             </div>
 
           </header>
 
-          <div className="p-5 md:p-8 lg:p-10">
+          {/* Контент */}
+          <div className="px-5 py-7 md:px-8 md:py-9">
 
-            {/* Hero */}
-            <section className="overflow-hidden rounded-[32px] border border-[#efdeda] bg-gradient-to-br from-[#f9dfe2] via-[#f7e7ec] to-[#e9e2f5] p-7 md:p-10">
+            <div className="mx-auto max-w-[1400px]">
 
-              <div className="flex flex-col justify-between gap-10 xl:flex-row xl:items-center">
+              {/* Поиск на мобильном */}
+              <div className="mb-6 md:hidden">
+                <UserSearch />
+              </div>
 
-                <div className="flex items-center gap-5">
+              {error && (
+                <div className="mb-6 rounded-2xl border border-[#efc9cc] bg-[#fff1f1] px-5 py-4 text-sm text-[#a95057]">
+                  {error}
+                </div>
+              )}
 
-                  <Avatar
-                    letter={userInitial}
+              {/* Главная карточка */}
+              {relationship &&
+              partner &&
+              partnerName ? (
+                <CoupleHero
+                  user={user}
+                  userName={
+                    userName
+                  }
+                  relationship={
+                    relationship
+                  }
+                  partnerName={
+                    partnerName
+                  }
+                  onPartnerClick={() =>
+                    router.push(
+                      `/profile/${partner.nickname}`,
+                    )
+                  }
+                  onSettingsClick={() =>
+                    router.push(
+                      '/settings/relationship',
+                    )
+                  }
+                />
+              ) : (
+                <SingleHero
+                  userName={
+                    userName
+                  }
+                  onInvitationsClick={() =>
+                    router.push(
+                      '/invitations',
+                    )
+                  }
+                />
+              )}
+
+              {/* Основные функции */}
+              <section className="mt-7">
+
+                <div className="mb-4 flex items-end justify-between">
+
+                  <div>
+
+                    <p className="text-sm font-medium text-[#c1767d]">
+                      Всё для вас двоих
+                    </p>
+
+                    <h2 className="mt-1 text-2xl font-semibold text-[#554442]">
+                      Ваше пространство
+                    </h2>
+
+                  </div>
+
+                </div>
+
+                <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+
+                  <FeatureCard
+                    icon={
+                      <CalendarDays
+                        size={23}
+                      />
+                    }
+                    title="Календарь"
+                    description="Планы, встречи и важные даты в одном месте."
+                    background="bg-[#f9e4e4]"
+                    iconColor="text-[#bf7076]"
                   />
 
-                  {partner && (
+                  <FeatureCard
+                    icon={
+                      <Gift size={23} />
+                    }
+                    title="Вишлисты"
+                    description="Сохраняйте желания и идеи подарков друг для друга."
+                    background="bg-[#eee7f4]"
+                    iconColor="text-[#837495]"
+                  />
+
+                  <FeatureCard
+                    icon={
+                      <MapPin size={23} />
+                    }
+                    title="Карта"
+                    description="Делитесь местоположением, когда это нужно вам обоим."
+                    background="bg-[#e8efe4]"
+                    iconColor="text-[#718269]"
+                  />
+
+                  <FeatureCard
+                    icon={
+                      <Images size={23} />
+                    }
+                    title="Доска дня"
+                    description="Фотографии и маленькие моменты вашего дня."
+                    background="bg-[#f8eadc]"
+                    iconColor="text-[#aa7a59]"
+                  />
+
+                </div>
+
+              </section>
+
+              {/* Нижние карточки */}
+              <section className="mt-7 grid gap-5 xl:grid-cols-[1.35fr_0.65fr]">
+
+                {/* Ближайшие планы */}
+                <article className="rounded-[28px] border border-[#eee0dc] bg-white p-6 md:p-7">
+
+                  <div className="flex items-center justify-between">
+
+                    <div>
+
+                      <p className="text-sm text-[#c0767d]">
+                        Календарь
+                      </p>
+
+                      <h2 className="mt-1 text-xl font-semibold text-[#554442]">
+                        Ближайшие планы
+                      </h2>
+
+                    </div>
+
+                    <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#f9e4e4] text-[#bf7076]">
+                      <CalendarDays
+                        size={21}
+                      />
+                    </div>
+
+                  </div>
+
+                  <div className="mt-6 rounded-[22px] border border-dashed border-[#eadbd7] bg-[#fffaf9] px-5 py-10 text-center">
+
+                    <p className="font-medium text-[#765f5a]">
+                      Здесь появятся
+                      ваши общие события
+                    </p>
+
+                    <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-[#a08b85]">
+                      Следующим крупным
+                      модулем мы добавим
+                      полноценный общий
+                      календарь.
+                    </p>
+
+                  </div>
+
+                </article>
+
+                {/* Отношения */}
+                <article className="rounded-[28px] border border-[#eee0dc] bg-white p-6 md:p-7">
+
+                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#f9e2e4] text-[#c06e76]">
+                    <Heart
+                      size={21}
+                    />
+                  </div>
+
+                  {relationship &&
+                  partner &&
+                  partnerName ? (
                     <>
-                      <div className="-mx-3 flex h-11 w-11 items-center justify-center rounded-full bg-white shadow-sm">
-                        <Heart
-                          size={20}
-                          fill="#dc8f96"
-                          className="text-[#dc8f96]"
-                        />
+                      <p className="mt-5 text-sm text-[#9d8781]">
+                        Ваши отношения
+                      </p>
+
+                      <h2 className="mt-1 text-xl font-semibold text-[#554442]">
+                        {userName}
+                        {' ♡ '}
+                        {partnerName}
+                      </h2>
+
+                      <p className="mt-4 text-3xl font-semibold text-[#c36f77]">
+                        {
+                          relationship
+                            .daysTogether
+                        }
+                      </p>
+
+                      <p className="mt-1 text-sm text-[#9c8781]">
+                        дней вместе
+                      </p>
+
+                      <div className="mt-5 border-t border-[#f2e7e3] pt-5">
+
+                        <p className="text-sm text-[#9b8580]">
+                          Вместе с
+                        </p>
+
+                        <p className="mt-1 font-medium text-[#65514d]">
+                          {formatDate(
+                            relationship
+                              .startedAt,
+                          )}
+                        </p>
+
                       </div>
 
-                      <Avatar
-                        letter={partnerInitial}
-                        secondary
-                      />
+                      <button
+                        type="button"
+                        onClick={() =>
+                          router.push(
+                            '/settings/relationship',
+                          )
+                        }
+                        className="mt-5 flex items-center gap-2 rounded-xl border border-transparent px-3 py-2 text-sm font-medium text-[#9a7b76] transition-all duration-150 hover:border-[#efd5d3] hover:bg-[#fff0ef] hover:text-[#c36f77] active:scale-[0.97] active:bg-[#f9dfe1]"
+                      >
+                        <Settings2 size={17} />
+
+                        Настройки отношений
+                    </button>
+                    </>
+                  ) : (
+                    <>
+                      <p className="mt-5 text-sm text-[#9d8781]">
+                        Отношения
+                      </p>
+
+                      <h2 className="mt-1 text-xl font-semibold text-[#554442]">
+                        Найдите своего человека
+                      </h2>
+
+                      <p className="mt-3 text-sm leading-6 text-[#97817c]">
+                        Найдите пользователя
+                        через поиск и отправьте
+                        приглашение.
+                      </p>
+
+                      <button
+                        type="button"
+                        onClick={() =>
+                          router.push(
+                            '/invitations',
+                          )
+                        }
+                        className="mt-5 flex items-center gap-2 text-sm font-medium text-[#c36f77]"
+                      >
+                        Приглашения
+
+                        <ChevronRight
+                          size={17}
+                        />
+                      </button>
                     </>
                   )}
 
-                </div>
+                </article>
 
-                <div className="max-w-2xl xl:flex-1">
+              </section>
 
-                  <p className="mb-2 text-sm font-medium text-[#c26d75]">
-                    Ваше пространство ♡
-                  </p>
-
-                  <h1 className="text-3xl font-semibold leading-tight md:text-4xl">
-
-                    {partner
-                      ? `Добро пожаловать, ${userName} и ${partnerName}!`
-                      : `Добро пожаловать, ${userName}!`}
-
-                  </h1>
-
-                  <p className="mt-4 max-w-xl leading-7 text-[#826d69]">
-
-                    {partner
-                      ? 'Ваши планы, желания и маленькие моменты теперь всегда рядом.'
-                      : 'Найдите свою вторую половинку по никнейму и создайте общее пространство.'}
-
-                  </p>
-
-                </div>
-
-                {relationship ? (
-                  <div className="min-w-[220px] rounded-[26px] border border-white/70 bg-white/65 p-6 backdrop-blur">
-
-                    <p className="text-sm text-[#937e79]">
-                      Вместе уже
-                    </p>
-
-                    <div className="mt-2 flex items-end gap-2">
-                      <span className="text-5xl font-semibold">
-                        {relationship.daysTogether}
-                      </span>
-
-                      <span className="mb-1 text-[#c26d75]">
-                        дней
-                      </span>
-                    </div>
-
-                    <p className="mt-3 text-sm text-[#9f8a84]">
-                      с{' '}
-                      {formatDate(
-                        relationship.startedAt,
-                      )}
-                    </p>
-
-                  </div>
-                ) : (
-                  <div className="min-w-[220px] rounded-[26px] border border-white/70 bg-white/65 p-6 backdrop-blur">
-
-                    <UserRound
-                      size={25}
-                      className="text-[#d27f86]"
-                    />
-
-                    <p className="mt-4 font-medium">
-                      Пока вы здесь один
-                    </p>
-
-                    <p className="mt-2 text-sm leading-6 text-[#947f7a]">
-                      Скоро добавим удобный
-                      поиск второй половинки.
-                    </p>
-
-                  </div>
-                )}
-
-              </div>
-
-            </section>
-
-            {/* Карточки модулей */}
-            <section className="mt-7 grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
-
-              <FeatureCard
-                icon={
-                  <CalendarDays size={23} />
-                }
-                title="Календарь"
-                description="Совместные планы и важные события."
-                accent="pink"
-              />
-
-              <FeatureCard
-                icon={<Gift size={23} />}
-                title="Вишлисты"
-                description="Ваши желания и идеи подарков."
-                accent="lavender"
-              />
-
-              <FeatureCard
-                icon={<MapPin size={23} />}
-                title="Карта"
-                description="Будьте рядом даже на расстоянии."
-                accent="sage"
-              />
-
-              <FeatureCard
-                icon={<Camera size={23} />}
-                title="Доска дня"
-                description="Делитесь маленькими моментами дня."
-                accent="peach"
-              />
-
-            </section>
-
-            {/* Нижний блок */}
-            <section className="mt-7 grid gap-5 lg:grid-cols-3">
-
-              <div className="rounded-[28px] border border-[#efe1dd] bg-white p-7 lg:col-span-2">
-
-                <div className="flex items-center justify-between">
-
-                  <div>
-                    <p className="text-sm font-medium text-[#c26d75]">
-                      Ближайшие события
-                    </p>
-
-                    <h2 className="mt-1 text-xl font-semibold">
-                      Ваш общий календарь
-                    </h2>
-                  </div>
-
-                  <CalendarDays
-                    className="text-[#dc9ca1]"
-                  />
-
-                </div>
-
-                <div className="mt-8 flex min-h-[150px] items-center justify-center rounded-[22px] border border-dashed border-[#ecd9d5] bg-[#fffaf8]">
-
-                  <div className="text-center">
-
-                    <p className="font-medium text-[#796561]">
-                      Здесь появятся ваши планы
-                    </p>
-
-                    <p className="mt-2 text-sm text-[#ab9691]">
-                      Календарь будет следующим
-                      крупным модулем приложения.
-                    </p>
-
-                  </div>
-
-                </div>
-
-              </div>
-
-              <div className="rounded-[28px] border border-[#efe1dd] bg-white p-7">
-
-                <Heart
-                  size={25}
-                  className="text-[#dc8f96]"
-                />
-
-                <h2 className="mt-5 text-xl font-semibold">
-                  {partner
-                    ? `${userName} ♡ ${partnerName}`
-                    : 'Найдите друг друга'}
-                </h2>
-
-                <p className="mt-3 text-sm leading-6 text-[#97827d]">
-                  {partner
-                    ? 'Теперь это пространство принадлежит вам двоим.'
-                    : 'Профиль и приглашения в отношения уже поддерживаются backend.'}
-                </p>
-
-              </div>
-
-            </section>
+            </div>
 
           </div>
 
-        </main>
+        </div>
 
       </div>
-    </div>
+
+    </main>
   );
 }
 
-function SidebarItem({
-  icon,
-  label,
-  active = false,
-  disabled = false,
+/*
+ * Большая карточка для пользователя,
+ * который уже состоит в отношениях.
+ */
+function CoupleHero({
+  user,
+  userName,
+  relationship,
+  partnerName,
+  onPartnerClick,
+  onSettingsClick,
 }: {
-  icon: React.ReactNode;
-  label: string;
-  active?: boolean;
-  disabled?: boolean;
+  user: User;
+  userName: string;
+  relationship: Relationship;
+  partnerName: string;
+  onPartnerClick: () => void;
+  onSettingsClick: () => void;
 }) {
   return (
-    <button
-      type="button"
-      disabled={disabled}
-      className={[
-        'flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left text-sm font-medium transition',
-        active
-          ? 'bg-[#f9e1e3] text-[#b8666d]'
-          : 'text-[#75615d] hover:bg-[#fff3f1]',
-        disabled
-          ? 'cursor-default opacity-70'
-          : '',
-      ].join(' ')}
-    >
-      {icon}
+    <section className="relative overflow-hidden rounded-[32px] border border-[#ecdeda] bg-gradient-to-br from-[#fff0ef] via-[#fdf5f1] to-[#f0eaf6] p-7 shadow-[0_20px_70px_rgba(91,65,59,0.06)] md:p-10">
 
-      <span>{label}</span>
+      <div className="absolute -right-20 -top-24 h-64 w-64 rounded-full bg-white/40 blur-3xl" />
 
-      {disabled && (
-        <span className="ml-auto rounded-full bg-[#f5eeeb] px-2 py-0.5 text-[10px] font-normal text-[#ae9b96]">
-          скоро
-        </span>
-      )}
-    </button>
+      <div className="relative grid gap-8 lg:grid-cols-[1fr_auto] lg:items-center">
+
+        <div>
+
+          <div className="flex items-center gap-2 text-sm font-medium text-[#c06f77]">
+            <Heart
+              size={16}
+              fill="currentColor"
+            />
+
+            Ваше общее пространство
+          </div>
+
+          <h1 className="mt-4 max-w-2xl text-3xl font-semibold leading-tight text-[#554442] md:text-4xl">
+            Добро пожаловать,
+            {' '}
+            {userName}
+            {' ♡'}
+          </h1>
+
+          <p className="mt-3 max-w-xl text-sm leading-6 text-[#917b75] md:text-base">
+            Здесь будут храниться
+            ваши планы, желания,
+            фотографии и маленькие
+            моменты, которые важны
+            только вам двоим.
+          </p>
+
+          <div className="mt-7 flex flex-wrap gap-3">
+
+            <button
+              type="button"
+              onClick={
+                onPartnerClick
+              }
+              className="rounded-2xl bg-[#dc8b92] px-5 py-3 text-sm font-medium text-white transition hover:bg-[#d17a82]"
+            >
+              Профиль партнёра
+            </button>
+
+            <button
+              type="button"
+              onClick={
+                onSettingsClick
+              }
+              className="flex items-center gap-2 rounded-2xl border border-[#e5ceca] bg-white/70 px-5 py-3 text-sm font-medium text-[#806964] shadow-sm transition-all duration-150 hover:border-[#dc9298] hover:bg-[#fff0ef] hover:text-[#bd666e] hover:shadow-md active:scale-[0.97] active:bg-[#f9dfe1]"
+            >
+              <Settings2
+                size={17}
+              />
+
+              Настройки отношений
+            </button>
+
+          </div>
+
+        </div>
+
+        {/* Пара */}
+        <div className="flex flex-col items-center">
+
+          <div className="flex items-center">
+
+            <Avatar
+              name={userName}
+              avatarUrl={
+                user.avatarUrl
+              }
+              size="large"
+            />
+
+            <div className="-mx-2 z-10 flex h-11 w-11 items-center justify-center rounded-full border-4 border-[#fbf1f1] bg-white text-[#d47b83] shadow-sm">
+              <Heart
+                size={18}
+                fill="currentColor"
+              />
+            </div>
+
+            <Avatar
+              name={
+                partnerName
+              }
+              avatarUrl={
+                relationship
+                  .partner
+                  .avatarUrl
+              }
+              size="large"
+            />
+
+          </div>
+
+          <p className="mt-5 text-center text-sm text-[#9d8781]">
+            Вместе уже
+          </p>
+
+          <p className="mt-1 text-4xl font-semibold text-[#c36f77]">
+            {
+              relationship
+                .daysTogether
+            }
+          </p>
+
+          <p className="text-sm text-[#9d8781]">
+            дней
+          </p>
+
+          <p className="mt-3 text-xs text-[#ab9791]">
+            с{' '}
+            {formatDate(
+              relationship
+                .startedAt,
+            )}
+          </p>
+
+        </div>
+
+      </div>
+
+    </section>
   );
 }
 
-function Avatar({
-  letter,
-  secondary = false,
+/*
+ * Карточка для пользователя,
+ * у которого пока нет пары.
+ */
+function SingleHero({
+  userName,
+  onInvitationsClick,
 }: {
-  letter: string;
-  secondary?: boolean;
+  userName: string;
+  onInvitationsClick: () => void;
 }) {
   return (
-    <div
-      className={[
-        'flex h-20 w-20 items-center justify-center rounded-full border-4 border-white text-2xl font-semibold shadow-sm',
-        secondary
-          ? 'bg-[#e8e2f3] text-[#796a91]'
-          : 'bg-[#eadfcf] text-[#7c6658]',
-      ].join(' ')}
-    >
-      {letter}
-    </div>
+    <section className="relative overflow-hidden rounded-[32px] border border-[#ecdeda] bg-gradient-to-br from-[#fff0ef] via-[#fdf5f1] to-[#f0eaf6] p-7 md:p-10">
+
+      <div className="max-w-2xl">
+
+        <div className="flex items-center gap-2 text-sm font-medium text-[#c06f77]">
+          <Heart
+            size={16}
+          />
+
+          Вдвоём
+        </div>
+
+        <h1 className="mt-4 text-3xl font-semibold text-[#554442] md:text-4xl">
+          Привет,
+          {' '}
+          {userName}
+          {' ♡'}
+        </h1>
+
+        <p className="mt-3 leading-7 text-[#917b75]">
+          Сейчас у вас нет активных
+          отношений. Найдите человека
+          по никнейму или проверьте
+          входящие приглашения.
+        </p>
+
+        <button
+          type="button"
+          onClick={
+            onInvitationsClick
+          }
+          className="mt-6 flex items-center gap-2 rounded-2xl bg-[#dc8b92] px-5 py-3 text-sm font-medium text-white transition hover:bg-[#d17a82]"
+        >
+          Проверить приглашения
+
+          <ChevronRight
+            size={17}
+          />
+        </button>
+
+      </div>
+
+    </section>
   );
 }
 
+/*
+ * Карточка будущего раздела.
+ */
 function FeatureCard({
   icon,
   title,
   description,
-  accent,
+  background,
+  iconColor,
 }: {
   icon: React.ReactNode;
   title: string;
   description: string;
-  accent:
-    | 'pink'
-    | 'lavender'
-    | 'sage'
-    | 'peach';
+  background: string;
+  iconColor: string;
 }) {
-  const accentClasses = {
-    pink: 'bg-[#f9e2e4] text-[#c57279]',
-    lavender:
-      'bg-[#eee7f6] text-[#83729b]',
-    sage: 'bg-[#e8f0e5] text-[#708168]',
-    peach: 'bg-[#faeadf] text-[#b77d62]',
-  };
-
   return (
-    <button
-      type="button"
-      className="group rounded-[26px] border border-[#efe1dd] bg-white p-6 text-left transition hover:-translate-y-0.5 hover:shadow-[0_14px_40px_rgba(102,72,66,0.08)]"
-    >
-      <div className="flex items-start justify-between">
+    <article className="group rounded-[26px] border border-[#eee0dc] bg-white p-5 transition hover:-translate-y-0.5 hover:shadow-[0_16px_45px_rgba(91,65,59,0.06)]">
 
-        <div
-          className={[
-            'flex h-11 w-11 items-center justify-center rounded-2xl',
-            accentClasses[accent],
-          ].join(' ')}
-        >
-          {icon}
-        </div>
-
-        <ChevronRight
-          size={18}
-          className="text-[#c7b7b2] transition group-hover:translate-x-1"
-        />
-
+      <div
+        className={`flex h-11 w-11 items-center justify-center rounded-2xl ${background} ${iconColor}`}
+      >
+        {icon}
       </div>
 
-      <h3 className="mt-5 text-lg font-semibold">
+      <h3 className="mt-5 font-semibold text-[#554442]">
         {title}
       </h3>
 
@@ -600,10 +955,126 @@ function FeatureCard({
         {description}
       </p>
 
+      <div className="mt-5 flex items-center gap-1 text-xs font-medium text-[#b5a09a]">
+        Скоро
+
+        <ChevronRight
+          size={14}
+          className="transition group-hover:translate-x-0.5"
+        />
+      </div>
+
+    </article>
+  );
+}
+
+/*
+ * Пункт бокового меню.
+ */
+function SidebarItem({
+  icon,
+  label,
+  active = false,
+  badge,
+  onClick,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  active?: boolean;
+  badge?: string;
+  onClick?: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={!onClick}
+      className={[
+        'mb-1 flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left text-sm transition',
+        active
+          ? 'bg-[#fff0ef] font-medium text-[#c36f77]'
+          : 'text-[#846f69]',
+        onClick
+          ? 'hover:bg-[#fff5f2]'
+          : 'cursor-default',
+      ].join(' ')}
+    >
+
+      <span
+        className={
+          active
+            ? 'text-[#c36f77]'
+            : 'text-[#a08b85]'
+        }
+      >
+        {icon}
+      </span>
+
+      <span className="flex-1">
+        {label}
+      </span>
+
+      {badge && (
+        <span className="rounded-full bg-[#f5ece9] px-2 py-1 text-[10px] font-medium text-[#b09a94]">
+          {badge}
+        </span>
+      )}
+
     </button>
   );
 }
 
+/*
+ * Универсальный аватар.
+ */
+function Avatar({
+  name,
+  avatarUrl,
+  size,
+}: {
+  name: string;
+  avatarUrl: string | null;
+  size: 'small' | 'large';
+}) {
+  const initial =
+    name
+      .charAt(0)
+      .toUpperCase();
+
+  const sizeClasses =
+    size === 'large'
+      ? 'h-20 w-20 text-2xl'
+      : 'h-9 w-9 text-sm';
+
+  if (avatarUrl) {
+    return (
+      <div
+        role="img"
+        aria-label={
+          `Аватар ${name}`
+        }
+        className={`${sizeClasses} shrink-0 rounded-full bg-cover bg-center shadow-sm`}
+        style={{
+          backgroundImage:
+            `url("${avatarUrl}")`,
+        }}
+      />
+    );
+  }
+
+  return (
+    <div
+      className={`${sizeClasses} flex shrink-0 items-center justify-center rounded-full bg-[#f4dfe0] font-semibold text-[#b66870] shadow-sm`}
+    >
+      {initial}
+    </div>
+  );
+}
+
+/*
+ * Приводим дату к привычному виду:
+ * 27 марта 2026 г.
+ */
 function formatDate(
   value: string,
 ) {
