@@ -1,7 +1,7 @@
 'use client';
 
 import {
-  ChangeEvent,
+  type ChangeEvent,
   useEffect,
   useRef,
   useState,
@@ -12,6 +12,9 @@ import {
   Cake,
   Camera,
   Heart,
+  ImagePlus,
+  Minus,
+  Plus,
   Save,
   UserRound,
   X,
@@ -21,6 +24,10 @@ import {
   useRouter,
 } from 'next/navigation';
 
+import Cropper, {
+  type Area,
+} from 'react-easy-crop';
+
 import { apiRequest } from '@/lib/api';
 
 import {
@@ -28,9 +35,18 @@ import {
   removeAccessToken,
 } from '@/lib/auth';
 
+import {
+  getCroppedAvatar,
+} from '@/lib/crop-image';
+
 import type {
   User,
 } from '@/types/auth';
+
+type CropPosition = {
+  x: number;
+  y: number;
+};
 
 export default function ProfileSettingsPage() {
   const router =
@@ -101,6 +117,44 @@ export default function ProfileSettingsPage() {
       null,
     );
 
+  /*
+   * Состояние редактора аватара.
+   */
+  const [
+    cropImageUrl,
+    setCropImageUrl,
+  ] =
+    useState<string | null>(
+      null,
+    );
+
+  const [
+    crop,
+    setCrop,
+  ] =
+    useState<CropPosition>({
+      x: 0,
+      y: 0,
+    });
+
+  const [
+    zoom,
+    setZoom,
+  ] =
+    useState(1);
+
+  const [
+    croppedAreaPixels,
+    setCroppedAreaPixels,
+  ] =
+    useState<Area | null>(
+      null,
+    );
+
+  /*
+   * Получение данных
+   * текущего пользователя.
+   */
   useEffect(() => {
     let cancelled =
       false;
@@ -169,7 +223,9 @@ export default function ProfileSettingsPage() {
         }
       } finally {
         if (!cancelled) {
-          setIsLoading(false);
+          setIsLoading(
+            false,
+          );
         }
       }
     }
@@ -182,8 +238,8 @@ export default function ProfileSettingsPage() {
   }, [router]);
 
   /*
-   * Сохраняем имя,
-   * никнейм и дату рождения.
+   * Сохраняем основные
+   * данные профиля.
    */
   async function saveProfile() {
     const token =
@@ -191,6 +247,7 @@ export default function ProfileSettingsPage() {
 
     if (!token) {
       removeAccessToken();
+
       router.replace(
         '/login',
       );
@@ -198,10 +255,14 @@ export default function ProfileSettingsPage() {
       return;
     }
 
-    if (
+    const normalizedNickname =
       nickname
         .trim()
-        .length < 3
+        .toLowerCase();
+
+    if (
+      normalizedNickname.length <
+      3
     ) {
       setError(
         'Никнейм должен содержать минимум 3 символа',
@@ -232,9 +293,7 @@ export default function ProfileSettingsPage() {
                   displayName.trim(),
 
                 nickname:
-                  nickname
-                    .trim()
-                    .toLowerCase(),
+                  normalizedNickname,
 
                 ...(birthDate
                   ? {
@@ -285,9 +344,13 @@ export default function ProfileSettingsPage() {
   }
 
   /*
-   * Загружаем новый аватар.
+   * Пользователь выбирает
+   * исходную фотографию.
+   *
+   * На сервер она пока
+   * НЕ отправляется.
    */
-  async function handleAvatarChange(
+  function handleAvatarFileChange(
     event:
       ChangeEvent<HTMLInputElement>,
   ) {
@@ -333,11 +396,104 @@ export default function ProfileSettingsPage() {
       return;
     }
 
+    /*
+     * Если до этого редактор
+     * уже использовался,
+     * освобождаем старый URL.
+     */
+    if (cropImageUrl) {
+      URL.revokeObjectURL(
+        cropImageUrl,
+      );
+    }
+
+    const imageUrl =
+      URL.createObjectURL(
+        file,
+      );
+
+    setCropImageUrl(
+      imageUrl,
+    );
+
+    setCrop({
+      x: 0,
+      y: 0,
+    });
+
+    setZoom(1);
+
+    setCroppedAreaPixels(
+      null,
+    );
+
+    setError(null);
+    setSuccess(null);
+
+    /*
+     * Позволяет потом выбрать
+     * тот же самый файл повторно.
+     */
+    event.target.value =
+      '';
+  }
+
+  /*
+   * react-easy-crop сообщает
+   * координаты выбранного участка.
+   */
+  function handleCropComplete(
+    _croppedArea: Area,
+    croppedPixels: Area,
+  ) {
+    setCroppedAreaPixels(
+      croppedPixels,
+    );
+  }
+
+  /*
+   * Закрываем редактор.
+   */
+  function closeCropEditor() {
+    if (cropImageUrl) {
+      URL.revokeObjectURL(
+        cropImageUrl,
+      );
+    }
+
+    setCropImageUrl(null);
+
+    setCroppedAreaPixels(
+      null,
+    );
+
+    setCrop({
+      x: 0,
+      y: 0,
+    });
+
+    setZoom(1);
+  }
+
+  /*
+   * Физически обрезаем изображение
+   * и только после этого отправляем
+   * полученный аватар на backend.
+   */
+  async function saveCroppedAvatar() {
+    if (
+      !cropImageUrl ||
+      !croppedAreaPixels
+    ) {
+      return;
+    }
+
     const token =
       getAccessToken();
 
     if (!token) {
       removeAccessToken();
+
       router.replace(
         '/login',
       );
@@ -353,12 +509,30 @@ export default function ProfileSettingsPage() {
       setError(null);
       setSuccess(null);
 
+      const avatarBlob =
+        await getCroppedAvatar(
+          cropImageUrl,
+          croppedAreaPixels,
+        );
+
+      const avatarFile =
+        new File(
+          [
+            avatarBlob,
+          ],
+          'avatar.jpg',
+          {
+            type:
+              'image/jpeg',
+          },
+        );
+
       const formData =
         new FormData();
 
       formData.append(
         'avatar',
-        file,
+        avatarFile,
       );
 
       const result =
@@ -382,6 +556,8 @@ export default function ProfileSettingsPage() {
       setSuccess(
         'Аватар обновлён',
       );
+
+      closeCropEditor();
     } catch (error) {
       if (
         error instanceof Error
@@ -391,26 +567,25 @@ export default function ProfileSettingsPage() {
         );
       } else {
         setError(
-          'Не удалось загрузить аватар',
+          'Не удалось сохранить аватар',
         );
       }
     } finally {
       setIsUploadingAvatar(
         false,
       );
-
-      event.target.value =
-        '';
     }
   }
 
   if (isLoading) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-[#fffaf8]">
+
         <Heart
           size={36}
           className="animate-pulse text-[#d98a92]"
         />
+
       </main>
     );
   }
@@ -578,7 +753,7 @@ export default function ProfileSettingsPage() {
                   type="file"
                   accept="image/jpeg,image/png,image/webp"
                   onChange={
-                    handleAvatarChange
+                    handleAvatarFileChange
                   }
                   className="hidden"
                 />
@@ -603,11 +778,13 @@ export default function ProfileSettingsPage() {
                   onClick={() =>
                     fileInputRef.current?.click()
                   }
-                  className="mt-3 rounded-xl px-3 py-2 text-sm font-medium text-[#b96b72] transition-all hover:bg-[#fff0ef] active:scale-[0.97]"
+                  className="mt-3 flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-[#b96b72] transition-all hover:bg-[#fff0ef] active:scale-[0.97]"
                 >
-                  {isUploadingAvatar
-                    ? 'Загружаем...'
-                    : 'Изменить фотографию'}
+                  <ImagePlus
+                    size={16}
+                  />
+
+                  Изменить фотографию
                 </button>
 
                 <p className="mt-1 text-xs text-[#b09b95]">
@@ -619,7 +796,7 @@ export default function ProfileSettingsPage() {
 
             </div>
 
-            {/* Поля */}
+            {/* Поля профиля */}
             <div className="mt-9 grid gap-6">
 
               <div>
@@ -766,7 +943,235 @@ export default function ProfileSettingsPage() {
 
       </div>
 
+      {/* Редактор миниатюры */}
+      {cropImageUrl && (
+        <AvatarCropDialog
+          imageUrl={
+            cropImageUrl
+          }
+          crop={crop}
+          zoom={zoom}
+          isSaving={
+            isUploadingAvatar
+          }
+          onCropChange={
+            setCrop
+          }
+          onZoomChange={
+            setZoom
+          }
+          onCropComplete={
+            handleCropComplete
+          }
+          onCancel={
+            closeCropEditor
+          }
+          onSave={() =>
+            void saveCroppedAvatar()
+          }
+        />
+      )}
+
     </main>
+  );
+}
+
+function AvatarCropDialog({
+  imageUrl,
+  crop,
+  zoom,
+  isSaving,
+  onCropChange,
+  onZoomChange,
+  onCropComplete,
+  onCancel,
+  onSave,
+}: {
+  imageUrl: string;
+
+  crop: CropPosition;
+
+  zoom: number;
+
+  isSaving: boolean;
+
+  onCropChange: (
+    value: CropPosition,
+  ) => void;
+
+  onZoomChange: (
+    value: number,
+  ) => void;
+
+  onCropComplete: (
+    croppedArea: Area,
+    croppedAreaPixels: Area,
+  ) => void;
+
+  onCancel: () => void;
+
+  onSave: () => void;
+}) {
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#493c3b]/40 p-5 backdrop-blur-sm">
+
+      <div className="w-full max-w-lg overflow-hidden rounded-[30px] border border-[#eadbd7] bg-white shadow-[0_30px_100px_rgba(73,48,45,0.24)]">
+
+        {/* Заголовок */}
+        <div className="flex items-start justify-between gap-4 px-6 pb-5 pt-6">
+
+          <div>
+
+            <p className="text-sm font-medium text-[#c8757c]">
+              Фотография профиля
+            </p>
+
+            <h2 className="mt-1 text-2xl font-semibold text-[#554442]">
+              Выберите миниатюру
+            </h2>
+
+            <p className="mt-2 text-sm text-[#927d78]">
+              Перемещайте фотографию,
+              чтобы выбрать область,
+              которая будет видна
+              в аватаре.
+            </p>
+
+          </div>
+
+          <button
+            type="button"
+            disabled={
+              isSaving
+            }
+            onClick={
+              onCancel
+            }
+            title="Закрыть"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-[#947f79] transition-all hover:bg-[#fff0ef] hover:text-[#c36f77] active:scale-[0.94] disabled:opacity-50"
+          >
+            <X size={20} />
+          </button>
+
+        </div>
+
+        {/* Область кадрирования */}
+        <div className="relative h-[420px] w-full bg-[#2e2928]">
+
+          <Cropper
+            image={
+              imageUrl
+            }
+            crop={
+              crop
+            }
+            zoom={
+              zoom
+            }
+            aspect={1}
+            cropShape="round"
+            showGrid={false}
+            objectFit="contain"
+            onCropChange={
+              onCropChange
+            }
+            onZoomChange={
+              onZoomChange
+            }
+            onCropComplete={
+              onCropComplete
+            }
+          />
+
+        </div>
+
+        {/* Масштаб */}
+        <div className="px-6 py-5">
+
+          <div className="flex items-center gap-4">
+
+            <Minus
+              size={18}
+              className="shrink-0 text-[#a28b85]"
+            />
+
+            <input
+              type="range"
+              min={1}
+              max={3}
+              step={0.01}
+              value={
+                zoom
+              }
+              onChange={(
+                event,
+              ) =>
+                onZoomChange(
+                  Number(
+                    event.target
+                      .value,
+                  ),
+                )
+              }
+              aria-label="Масштаб фотографии"
+              className="w-full accent-[#d68189]"
+            />
+
+            <Plus
+              size={18}
+              className="shrink-0 text-[#a28b85]"
+            />
+
+          </div>
+
+          <p className="mt-3 text-center text-xs text-[#a7928c]">
+            Перетаскивайте фотографию
+            мышкой и используйте ползунок
+            для изменения масштаба.
+          </p>
+
+        </div>
+
+        {/* Кнопки */}
+        <div className="flex flex-col-reverse gap-3 border-t border-[#f0e3df] px-6 py-5 sm:flex-row">
+
+          <button
+            type="button"
+            disabled={
+              isSaving
+            }
+            onClick={
+              onCancel
+            }
+            className="flex-1 rounded-2xl border border-[#e7d8d4] px-5 py-3 font-medium text-[#79635f] transition-all hover:border-[#dbc2bd] hover:bg-[#fff3f0] active:scale-[0.97] disabled:pointer-events-none disabled:opacity-50"
+          >
+            Отмена
+          </button>
+
+          <button
+            type="button"
+            disabled={
+              isSaving
+            }
+            onClick={
+              onSave
+            }
+            className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-[#df8e94] px-5 py-3 font-medium text-white shadow-sm transition-all hover:bg-[#d17a82] hover:shadow-md active:scale-[0.97] disabled:pointer-events-none disabled:opacity-50"
+          >
+            <Camera
+              size={18}
+            />
+
+            {isSaving
+              ? 'Сохраняем...'
+              : 'Сохранить фото'}
+          </button>
+
+        </div>
+
+      </div>
+
+    </div>
   );
 }
 
