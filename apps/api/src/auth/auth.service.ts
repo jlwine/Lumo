@@ -3,11 +3,13 @@ import {
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
+
 import { JwtService } from '@nestjs/jwt';
 
 import * as bcrypt from 'bcrypt';
 
 import { PrismaService } from '../prisma/prisma.service.js';
+
 import { LoginDto } from './dto/login.dto.js';
 import { RegisterDto } from './dto/register.dto.js';
 
@@ -18,95 +20,171 @@ export class AuthService {
     private readonly jwtService: JwtService,
   ) {}
 
-  async register(data: RegisterDto) {
-    const email = data.email.trim().toLowerCase();
-    const nickname = data.nickname.trim().toLowerCase();
+  /*
+   * Регистрация нового пользователя.
+   */
+  async register(
+    data: RegisterDto,
+  ) {
+    /*
+     * Email и никнейм храним
+     * в нижнем регистре.
+     */
+    const email =
+      data.email
+        .trim()
+        .toLowerCase();
 
-    const existingEmail = await this.prisma.user.findUnique({
-      where: {
-        email,
-      },
-    });
+    const nickname =
+      data.nickname
+        .trim()
+        .toLowerCase();
 
-    if (existingEmail) {
+    /*
+     * Проверяем, не занят ли email.
+     */
+    const userWithEmail =
+      await this.prisma.user.findUnique({
+        where: {
+          email,
+        },
+
+        select: {
+          id: true,
+        },
+      });
+
+    if (userWithEmail) {
       throw new ConflictException(
         'Пользователь с таким email уже существует',
       );
     }
 
-    const existingNickname = await this.prisma.user.findUnique({
-      where: {
-        nickname,
-      },
-    });
+    /*
+     * Проверяем уникальность никнейма.
+     */
+    const userWithNickname =
+      await this.prisma.user.findUnique({
+        where: {
+          nickname,
+        },
 
-    if (existingNickname) {
+        select: {
+          id: true,
+        },
+      });
+
+    if (userWithNickname) {
       throw new ConflictException(
-        'Пользователь с таким никнеймом уже существует',
+        'Этот никнейм уже занят',
       );
     }
 
-    const passwordHash = await bcrypt.hash(
-      data.password,
-      12,
-    );
+    /*
+     * Хешируем пароль.
+     * Сам пароль в базу никогда
+     * не сохраняется.
+     */
+    const passwordHash =
+      await bcrypt.hash(
+        data.password,
+        12,
+      );
 
-    const user = await this.prisma.user.create({
-      data: {
-        email,
-        nickname,
-        displayName: data.displayName?.trim(),
-        passwordHash,
-      },
-    });
+    /*
+     * Создаём пользователя.
+     */
+    const user =
+      await this.prisma.user.create({
+        data: {
+          email,
+          nickname,
+          passwordHash,
 
-    return {
-      id: user.id,
-      email: user.email,
-      nickname: user.nickname,
-      displayName: user.displayName,
-      avatarUrl: user.avatarUrl,
-      createdAt: user.createdAt,
-    };
+          displayName:
+            data.displayName
+              ?.trim() ||
+            null,
+        },
+
+        select: {
+          id: true,
+          email: true,
+          nickname: true,
+          displayName: true,
+          avatarUrl: true,
+          birthDate: true,
+          createdAt: true,
+        },
+      });
+
+    return user;
   }
 
-  async login(data: LoginDto) {
-    const login = data.login.trim().toLowerCase();
+  /*
+   * Авторизация по email
+   * или никнейму.
+   */
+  async login(
+    data: LoginDto,
+  ) {
+    const login =
+      data.login
+        .trim()
+        .toLowerCase();
 
-    const user = login.includes('@')
-      ? await this.prisma.user.findUnique({
-          where: {
-            email: login,
-          },
-        })
-      : await this.prisma.user.findUnique({
-          where: {
-            nickname: login,
-          },
-        });
+    /*
+     * Ищем пользователя сразу
+     * по email или nickname.
+     */
+    const user =
+      await this.prisma.user.findFirst({
+        where: {
+          OR: [
+            {
+              email: login,
+            },
+            {
+              nickname: login,
+            },
+          ],
+        },
+      });
 
+    /*
+     * Не сообщаем отдельно,
+     * существует пользователь или нет.
+     * Это безопаснее для авторизации.
+     */
     if (!user) {
       throw new UnauthorizedException(
-        'Неверный email, никнейм или пароль',
+        'Неверный логин или пароль',
       );
     }
 
-    const passwordMatches = await bcrypt.compare(
-      data.password,
-      user.passwordHash,
-    );
+    const passwordMatches =
+      await bcrypt.compare(
+        data.password,
+        user.passwordHash,
+      );
 
     if (!passwordMatches) {
       throw new UnauthorizedException(
-        'Неверный email, никнейм или пароль',
+        'Неверный логин или пароль',
       );
     }
 
-    const accessToken = await this.jwtService.signAsync({
-      sub: user.id,
-      email: user.email,
-      nickname: user.nickname,
-    });
+    /*
+     * В JWT храним только данные,
+     * необходимые для авторизации.
+     */
+    const accessToken =
+      await this.jwtService.signAsync({
+        sub: user.id,
+        email: user.email,
+        nickname:
+          user.nickname,
+      });
 
     return {
       accessToken,
@@ -114,19 +192,41 @@ export class AuthService {
       user: {
         id: user.id,
         email: user.email,
-        nickname: user.nickname,
-        displayName: user.displayName,
-        avatarUrl: user.avatarUrl,
+        nickname:
+          user.nickname,
+        displayName:
+          user.displayName,
+        avatarUrl:
+          user.avatarUrl,
+        birthDate:
+          user.birthDate,
       },
     };
   }
 
-  async getCurrentUser(userId: string) {
-    const user = await this.prisma.user.findUnique({
-      where: {
-        id: userId,
-      },
-    });
+  /*
+   * Получение текущего пользователя
+   * по id из JWT.
+   */
+  async getCurrentUser(
+    userId: string,
+  ) {
+    const user =
+      await this.prisma.user.findUnique({
+        where: {
+          id: userId,
+        },
+
+        select: {
+          id: true,
+          email: true,
+          nickname: true,
+          displayName: true,
+          avatarUrl: true,
+          birthDate: true,
+          createdAt: true,
+        },
+      });
 
     if (!user) {
       throw new UnauthorizedException(
@@ -134,13 +234,6 @@ export class AuthService {
       );
     }
 
-    return {
-      id: user.id,
-      email: user.email,
-      nickname: user.nickname,
-      displayName: user.displayName,
-      avatarUrl: user.avatarUrl,
-      createdAt: user.createdAt,
-    };
+    return user;
   }
 }

@@ -17,12 +17,21 @@ export type PublicUserProfile = {
   nickname: string;
   displayName: string | null;
   avatarUrl: string | null;
+  birthDate: string | null;
   createdAt: string;
 
   relationship: {
-    status: 'SINGLE' | 'ACTIVE';
-    partner: ProfilePartner | null;
-    startedAt: string | null;
+    status:
+      | 'SINGLE'
+      | 'ACTIVE';
+
+    partner:
+      | ProfilePartner
+      | null;
+
+    startedAt:
+      | string
+      | null;
   };
 
   actions: {
@@ -39,6 +48,9 @@ export type PublicUserProfile = {
   invitation: {
     id: string;
     status: string;
-    direction: 'SENT' | 'RECEIVED';
+
+    direction:
+      | 'SENT'
+      | 'RECEIVED';
   } | null;
 };

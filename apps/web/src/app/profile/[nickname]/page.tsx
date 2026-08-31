@@ -8,8 +8,10 @@ import {
 
 import {
   ArrowLeft,
+  Cake,
   CalendarDays,
   Heart,
+  Pencil,
   UserRound,
 } from 'lucide-react';
 
@@ -26,83 +28,142 @@ import {
 } from '@/lib/auth';
 
 import type {
+  User,
+} from '@/types/auth';
+
+import type {
   PublicUserProfile,
 } from '@/types/user-profile';
 
 export default function ProfilePage() {
-  const router = useRouter();
+  const router =
+    useRouter();
 
-  const params = useParams<{
-    nickname: string;
-  }>();
+  const params =
+    useParams<{
+      nickname: string;
+    }>();
 
-  const nickname = params.nickname;
+  const nickname =
+    params.nickname;
 
-  const [profile, setProfile] =
+  const [
+    profile,
+    setProfile,
+  ] =
     useState<PublicUserProfile | null>(
       null,
     );
 
-  const [isLoading, setIsLoading] =
+  const [
+    currentUser,
+    setCurrentUser,
+  ] =
+    useState<User | null>(
+      null,
+    );
+
+  const [
+    isLoading,
+    setIsLoading,
+  ] =
     useState(true);
 
-  const [isInviting, setIsInviting] =
+  const [
+    isInviting,
+    setIsInviting,
+  ] =
     useState(false);
 
-  const [error, setError] =
-    useState<string | null>(null);
+  const [
+    error,
+    setError,
+  ] =
+    useState<string | null>(
+      null,
+    );
 
-  /*
-   * Функция только получает профиль пользователя.
-   * React-state здесь не изменяется.
-   */
-  const fetchProfile = useCallback(
-    async () => {
-      const token = getAccessToken();
+  const fetchPageData =
+    useCallback(
+      async () => {
+        const token =
+          getAccessToken();
 
-      if (!token) {
-        router.replace('/login');
+        if (!token) {
+          router.replace(
+            '/login',
+          );
 
-        return null;
-      }
+          return null;
+        }
 
-      return apiRequest<PublicUserProfile>(
-        `/users/${encodeURIComponent(
-          nickname,
-        )}`,
-        {
-          headers: {
-            Authorization:
-              `Bearer ${token}`,
-          },
-        },
-      );
-    },
-    [
-      nickname,
-      router,
-    ],
-  );
+        const [
+          profileResult,
+          currentUserResult,
+        ] =
+          await Promise.all([
+            apiRequest<PublicUserProfile>(
+              `/users/${encodeURIComponent(
+                nickname,
+              )}`,
+              {
+                headers: {
+                  Authorization:
+                    `Bearer ${token}`,
+                },
+              },
+            ),
 
-  /*
-   * Загружаем профиль при открытии страницы
-   * или изменении никнейма в URL.
-   */
+            apiRequest<User>(
+              '/auth/me',
+              {
+                headers: {
+                  Authorization:
+                    `Bearer ${token}`,
+                },
+              },
+            ),
+          ]);
+
+        return {
+          profile:
+            profileResult,
+
+          currentUser:
+            currentUserResult,
+        };
+      },
+      [
+        nickname,
+        router,
+      ],
+    );
+
   useEffect(() => {
-    let cancelled = false;
+    let cancelled =
+      false;
 
-    async function loadProfile() {
+    async function loadPage() {
       try {
         const result =
-          await fetchProfile();
+          await fetchPageData();
 
         if (
-          !cancelled &&
-          result
+          cancelled ||
+          !result
         ) {
-          setProfile(result);
-          setError(null);
+          return;
         }
+
+        setProfile(
+          result.profile,
+        );
+
+        setCurrentUser(
+          result.currentUser,
+        );
+
+        setError(null);
       } catch (error) {
         if (cancelled) {
           return;
@@ -111,7 +172,9 @@ export default function ProfilePage() {
         if (
           error instanceof Error
         ) {
-          setError(error.message);
+          setError(
+            error.message,
+          );
         } else {
           setError(
             'Не удалось загрузить профиль',
@@ -124,24 +187,23 @@ export default function ProfilePage() {
       }
     }
 
-    void loadProfile();
+    void loadPage();
 
     return () => {
       cancelled = true;
     };
-  }, [fetchProfile]);
+  }, [fetchPageData]);
 
-  /*
-   * Отправка приглашения
-   * пользователю в отношения.
-   */
   async function handleInvite() {
     const token =
       getAccessToken();
 
     if (!token) {
       removeAccessToken();
-      router.replace('/login');
+
+      router.replace(
+        '/login',
+      );
 
       return;
     }
@@ -164,25 +226,25 @@ export default function ProfilePage() {
         },
       );
 
-      /*
-       * После отправки приглашения
-       * заново получаем профиль,
-       * чтобы интерфейс сразу показал
-       * новый статус приглашения.
-       */
-      const updatedProfile =
-        await fetchProfile();
+      const updatedData =
+        await fetchPageData();
 
-      if (updatedProfile) {
+      if (updatedData) {
         setProfile(
-          updatedProfile,
+          updatedData.profile,
+        );
+
+        setCurrentUser(
+          updatedData.currentUser,
         );
       }
     } catch (error) {
       if (
         error instanceof Error
       ) {
-        setError(error.message);
+        setError(
+          error.message,
+        );
       } else {
         setError(
           'Не удалось отправить приглашение',
@@ -193,9 +255,6 @@ export default function ProfilePage() {
     }
   }
 
-  /*
-   * Экран загрузки.
-   */
   if (isLoading) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-[#fffaf8]">
@@ -207,9 +266,6 @@ export default function ProfilePage() {
     );
   }
 
-  /*
-   * Если профиль получить не удалось.
-   */
   if (!profile) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-[#fffaf8] p-6">
@@ -224,9 +280,11 @@ export default function ProfilePage() {
           <button
             type="button"
             onClick={() =>
-              router.push('/home')
+              router.push(
+                '/home',
+              )
             }
-            className="mt-5 rounded-xl bg-[#df8e94] px-5 py-3 text-white transition hover:bg-[#d77c83]"
+            className="mt-5 rounded-xl bg-[#df8e94] px-5 py-3 text-white transition-all hover:bg-[#d77c83] active:scale-[0.97]"
           >
             На главную
           </button>
@@ -247,20 +305,24 @@ export default function ProfilePage() {
       .toUpperCase();
 
   const partner =
-    profile.relationship.partner;
+    profile.relationship
+      .partner;
+
+  const isOwnProfile =
+    currentUser?.id ===
+    profile.id;
 
   return (
     <main className="min-h-screen bg-[#fffaf8] px-5 py-8">
 
       <div className="mx-auto max-w-5xl">
 
-        {/* Кнопка назад */}
         <button
           type="button"
           onClick={() =>
             router.back()
           }
-          className="mb-6 flex items-center gap-2 rounded-xl px-3 py-2 text-sm text-[#876f6a] transition hover:bg-[#fff0ed]"
+          className="mb-6 flex items-center gap-2 rounded-xl border border-transparent px-3 py-2 text-sm font-medium text-[#876f6a] transition-all duration-150 hover:border-[#efd8d4] hover:bg-[#fff0ed] hover:text-[#c36f77] active:scale-[0.96]"
         >
           <ArrowLeft
             size={18}
@@ -269,10 +331,8 @@ export default function ProfilePage() {
           Назад
         </button>
 
-        {/* Основная карточка профиля */}
         <section className="overflow-hidden rounded-[32px] border border-[#eeddda] bg-white shadow-[0_20px_70px_rgba(91,65,59,0.07)]">
 
-          {/* Обложка */}
           <div className="h-40 bg-gradient-to-r from-[#f6dce0] via-[#f4e4eb] to-[#e7e0f3]" />
 
           <div className="px-7 pb-8 md:px-10">
@@ -281,7 +341,6 @@ export default function ProfilePage() {
 
               <div>
 
-                {/* Аватар */}
                 {profile.avatarUrl ? (
                   <div
                     role="img"
@@ -300,7 +359,6 @@ export default function ProfilePage() {
                   </div>
                 )}
 
-                {/* Имя */}
                 <div className="mt-5">
 
                   <h1 className="text-3xl font-semibold text-[#554442]">
@@ -315,27 +373,44 @@ export default function ProfilePage() {
 
               </div>
 
-              {/* Действие с профилем */}
-              <ProfileAction
-                profile={profile}
-                isInviting={
-                  isInviting
-                }
-                onInvite={
-                  handleInvite
-                }
-              />
+              {isOwnProfile ? (
+                <button
+                  type="button"
+                  onClick={() =>
+                    router.push(
+                      '/settings/profile',
+                    )
+                  }
+                  className="flex items-center justify-center gap-2 rounded-2xl border border-[#e5ceca] bg-white px-6 py-3 font-medium text-[#806964] shadow-sm transition-all duration-150 hover:border-[#dc9298] hover:bg-[#fff0ef] hover:text-[#bd666e] hover:shadow-md active:scale-[0.97] active:bg-[#f9dfe1]"
+                >
+                  <Pencil
+                    size={17}
+                  />
+
+                  Редактировать профиль
+                </button>
+              ) : (
+                <ProfileAction
+                  profile={
+                    profile
+                  }
+                  isInviting={
+                    isInviting
+                  }
+                  onInvite={
+                    handleInvite
+                  }
+                />
+              )}
 
             </div>
 
-            {/* Ошибка */}
             {error && (
               <div className="mt-6 rounded-2xl border border-[#f1c9cc] bg-[#fff2f2] px-5 py-4 text-sm text-[#a84e55]">
                 {error}
               </div>
             )}
 
-            {/* Информация */}
             <div className="mt-8 grid gap-5 md:grid-cols-2">
 
               {/* Отношения */}
@@ -355,7 +430,8 @@ export default function ProfilePage() {
 
                 </div>
 
-                {profile.relationship.status ===
+                {profile.relationship
+                  .status ===
                   'ACTIVE' &&
                 partner ? (
                   <div className="mt-5">
@@ -400,32 +476,74 @@ export default function ProfilePage() {
 
               </div>
 
-              {/* Дата регистрации */}
+              {/* Информация */}
               <div className="rounded-[24px] border border-[#eee0dc] bg-[#fffaf8] p-6">
 
                 <div className="flex items-center gap-3">
 
                   <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#eee8f5] text-[#83759a]">
-                    <CalendarDays
+                    <UserRound
                       size={20}
                     />
                   </div>
 
                   <h2 className="font-semibold text-[#554442]">
-                    В приложении
+                    О пользователе
                   </h2>
 
                 </div>
 
-                <p className="mt-5 text-sm text-[#9b8580]">
-                  Зарегистрирован
-                </p>
+                <div className="mt-5">
 
-                <p className="mt-2 font-medium text-[#65514d]">
-                  {formatDate(
-                    profile.createdAt,
-                  )}
-                </p>
+                  <div className="flex items-start gap-3">
+
+                    <Cake
+                      size={18}
+                      className="mt-0.5 shrink-0 text-[#c07b82]"
+                    />
+
+                    <div>
+
+                      <p className="text-sm text-[#9b8580]">
+                        День рождения
+                      </p>
+
+                      <p className="mt-1 font-medium text-[#65514d]">
+                        {profile.birthDate
+                          ? formatDate(
+                              profile.birthDate,
+                            )
+                          : 'Не указан'}
+                      </p>
+
+                    </div>
+
+                  </div>
+
+                  <div className="mt-5 flex items-start gap-3">
+
+                    <CalendarDays
+                      size={18}
+                      className="mt-0.5 shrink-0 text-[#83759a]"
+                    />
+
+                    <div>
+
+                      <p className="text-sm text-[#9b8580]">
+                        В приложении с
+                      </p>
+
+                      <p className="mt-1 font-medium text-[#65514d]">
+                        {formatDate(
+                          profile.createdAt,
+                        )}
+                      </p>
+
+                    </div>
+
+                  </div>
+
+                </div>
 
               </div>
 
@@ -441,10 +559,6 @@ export default function ProfilePage() {
   );
 }
 
-/*
- * Кнопка или статус действия
- * относительно открытого пользователя.
- */
 function ProfileAction({
   profile,
   isInviting,
@@ -460,9 +574,13 @@ function ProfileAction({
     return (
       <button
         type="button"
-        disabled={isInviting}
-        onClick={onInvite}
-        className="flex items-center justify-center gap-2 rounded-2xl bg-[#df8e94] px-6 py-3 font-medium text-white transition hover:bg-[#d77c83] disabled:cursor-not-allowed disabled:opacity-60"
+        disabled={
+          isInviting
+        }
+        onClick={
+          onInvite
+        }
+        className="flex items-center justify-center gap-2 rounded-2xl bg-[#df8e94] px-6 py-3 font-medium text-white transition-all hover:bg-[#d77c83] active:scale-[0.97] disabled:opacity-60"
       >
         <Heart
           size={18}
@@ -475,13 +593,10 @@ function ProfileAction({
     );
   }
 
-  /*
-   * Текущий пользователь уже
-   * отправил приглашение.
-   */
   if (
     profile.invitation
-      ?.direction === 'SENT'
+      ?.direction ===
+    'SENT'
   ) {
     return (
       <div className="rounded-2xl bg-[#fff0ef] px-5 py-3 text-sm font-medium text-[#b76870]">
@@ -490,13 +605,10 @@ function ProfileAction({
     );
   }
 
-  /*
-   * Открытый пользователь уже
-   * отправил приглашение текущему.
-   */
   if (
     profile.invitation
-      ?.direction === 'RECEIVED'
+      ?.direction ===
+    'RECEIVED'
   ) {
     return (
       <div className="rounded-2xl bg-[#eee8f5] px-5 py-3 text-sm font-medium text-[#786a90]">
@@ -538,10 +650,6 @@ function ProfileAction({
   );
 }
 
-/*
- * Форматирование даты
- * в привычный русский вид.
- */
 function formatDate(
   value: string,
 ) {

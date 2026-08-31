@@ -4,6 +4,7 @@ export type User = {
   nickname: string;
   displayName: string | null;
   avatarUrl: string | null;
+  birthDate: string | null;
 };
 
 export type LoginResponse = {
@@ -17,5 +18,6 @@ export type RegisterResponse = {
   nickname: string;
   displayName: string | null;
   avatarUrl: string | null;
+  birthDate: string | null;
   createdAt: string;
 };

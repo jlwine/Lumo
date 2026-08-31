@@ -3,40 +3,99 @@ const API_URL =
   'http://localhost:3001';
 
 type ApiErrorResponse = {
-  message?: string | string[];
+  message?:
+    | string
+    | string[];
 };
 
 export async function apiRequest<T>(
   path: string,
   options: RequestInit = {},
 ): Promise<T> {
-  const response = await fetch(
-    `${API_URL}${path}`,
-    {
-      ...options,
+  const headers =
+    new Headers(
+      options.headers,
+    );
 
-      headers: {
-        'Content-Type': 'application/json',
-        ...options.headers,
+  /*
+   * Для FormData браузер сам
+   * должен выставить Content-Type
+   * вместе с boundary.
+   */
+  const isFormData =
+    options.body instanceof
+    FormData;
+
+  if (
+    !isFormData &&
+    !headers.has(
+      'Content-Type',
+    )
+  ) {
+    headers.set(
+      'Content-Type',
+      'application/json',
+    );
+  }
+
+  const response =
+    await fetch(
+      `${API_URL}${path}`,
+      {
+        ...options,
+        headers,
       },
-    },
-  );
+    );
 
-  const data = await response.json();
+  const contentType =
+    response.headers.get(
+      'content-type',
+    );
+
+  let data: unknown =
+    null;
+
+  if (
+    contentType?.includes(
+      'application/json',
+    )
+  ) {
+    data =
+      await response.json();
+  } else {
+    const text =
+      await response.text();
+
+    data =
+      text || null;
+  }
 
   if (!response.ok) {
-    const errorData = data as ApiErrorResponse;
+    const errorData =
+      data as ApiErrorResponse;
 
     let message =
       'Произошла ошибка при обращении к серверу';
 
-    if (Array.isArray(errorData.message)) {
-      message = errorData.message.join(', ');
-    } else if (errorData.message) {
-      message = errorData.message;
+    if (
+      Array.isArray(
+        errorData?.message,
+      )
+    ) {
+      message =
+        errorData.message.join(
+          ', ',
+        );
+    } else if (
+      errorData?.message
+    ) {
+      message =
+        errorData.message;
     }
 
-    throw new Error(message);
+    throw new Error(
+      message,
+    );
   }
 
   return data as T;
