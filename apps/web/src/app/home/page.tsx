@@ -52,6 +52,18 @@ import type {
   RelationshipResponse,
 } from '@/types/relationship';
 
+import type {
+  WishlistItem,
+  WishlistOwner,
+  WishlistsResponse,
+} from '@/types/wishlist';
+
+type WishlistPreviewEntry = {
+  item: WishlistItem;
+  wishlistTitle: string;
+  owner: WishlistOwner;
+};
+
 export default function HomePage() {
   const router =
     useRouter();
@@ -81,6 +93,15 @@ export default function HomePage() {
     );
 
   const [
+    wishlists,
+    setWishlists,
+  ] =
+    useState<WishlistsResponse>({
+      mine: [],
+      partner: [],
+    });
+
+  const [
     isLoading,
     setIsLoading,
   ] =
@@ -94,6 +115,10 @@ export default function HomePage() {
       null,
     );
 
+  /*
+   * Загружаем основную информацию
+   * для главной страницы.
+   */
   useEffect(() => {
     let cancelled =
       false;
@@ -111,6 +136,10 @@ export default function HomePage() {
       }
 
       try {
+        /*
+         * Пользователь и отношения
+         * являются основными данными.
+         */
         const [
           currentUser,
           relationshipData,
@@ -149,6 +178,12 @@ export default function HomePage() {
           relationshipData.relationship,
         );
 
+        /*
+         * Загружаем календарь отдельно.
+         * Если он временно сломается,
+         * вся главная не должна умереть
+         * вместе с ним.
+         */
         if (
           relationshipData.relationship
         ) {
@@ -196,6 +231,39 @@ export default function HomePage() {
           setUpcomingEvents(
             [],
           );
+        }
+
+        /*
+         * Вишлисты тоже загружаем
+         * независимо от остальных
+         * частей главной страницы.
+         */
+        try {
+          const wishlistsData =
+            await apiRequest<
+              WishlistsResponse
+            >(
+              '/wishlists',
+              {
+                headers: {
+                  Authorization:
+                    `Bearer ${token}`,
+                },
+              },
+            );
+
+          if (!cancelled) {
+            setWishlists(
+              wishlistsData,
+            );
+          }
+        } catch {
+          if (!cancelled) {
+            setWishlists({
+              mine: [],
+              partner: [],
+            });
+          }
         }
       } catch (error) {
         if (cancelled) {
@@ -251,6 +319,10 @@ export default function HomePage() {
     partner?.nickname ??
     null;
 
+  /*
+   * Первые четыре события
+   * для компактного превью.
+   */
   const previewEvents =
     useMemo(
       () =>
@@ -259,6 +331,58 @@ export default function HomePage() {
           4,
         ),
       [upcomingEvents],
+    );
+
+  /*
+   * Собираем желания пользователя
+   * и партнёра в один список.
+   *
+   * Самые новые желания
+   * оказываются первыми.
+   */
+  const wishlistPreview =
+    useMemo<
+      WishlistPreviewEntry[]
+    >(
+      () => {
+        const allWishlists = [
+          ...wishlists.partner,
+          ...wishlists.mine,
+        ];
+
+        return allWishlists
+          .flatMap(
+            (wishlist) =>
+              wishlist.items.map(
+                (item) => ({
+                  item,
+
+                  wishlistTitle:
+                    wishlist.title,
+
+                  owner:
+                    wishlist.owner,
+                }),
+              ),
+          )
+          .sort(
+            (
+              first,
+              second,
+            ) =>
+              new Date(
+                second.item.createdAt,
+              ).getTime() -
+              new Date(
+                first.item.createdAt,
+              ).getTime(),
+          )
+          .slice(
+            0,
+            3,
+          );
+      },
+      [wishlists],
     );
 
   const firstUpcomingEvent =
@@ -337,8 +461,10 @@ export default function HomePage() {
 
       <div className="flex min-h-screen">
 
+        {/* Боковая панель */}
         <aside className="hidden w-[245px] shrink-0 border-r border-[#efe2de] bg-[#fffdfc] lg:flex lg:flex-col">
 
+          {/* Логотип */}
           <div className="px-6 py-6">
 
             <button
@@ -374,6 +500,7 @@ export default function HomePage() {
 
           </div>
 
+          {/* Навигация */}
           <nav className="px-3">
 
             <SidebarItem
@@ -412,7 +539,11 @@ export default function HomePage() {
                 />
               }
               label="Вишлисты"
-              badge="скоро"
+              onClick={() =>
+                router.push(
+                  '/wishlists',
+                )
+              }
             />
 
             <SidebarItem
@@ -437,6 +568,7 @@ export default function HomePage() {
 
           </nav>
 
+          {/* Нижняя часть */}
           <div className="mt-auto border-t border-[#f1e6e3] p-4">
 
             {relationship && (
@@ -506,8 +638,10 @@ export default function HomePage() {
 
         </aside>
 
+        {/* Основная часть */}
         <div className="min-w-0 flex-1">
 
+          {/* Верхняя панель */}
           <header className="sticky top-0 z-30 border-b border-[#f0e4e0] bg-[#fffaf8]/90 px-5 py-4 backdrop-blur-xl md:px-8">
 
             <div className="mx-auto flex max-w-[1440px] items-center justify-between gap-4">
@@ -525,6 +659,7 @@ export default function HomePage() {
                 }
                 className="flex items-center gap-2 md:hidden"
               >
+
                 <Heart
                   size={20}
                   className="text-[#c66f77]"
@@ -534,6 +669,7 @@ export default function HomePage() {
                 <span className="font-semibold text-[#554442]">
                   Вдвоём
                 </span>
+
               </button>
 
               <div className="ml-auto flex items-center gap-2">
@@ -595,6 +731,7 @@ export default function HomePage() {
 
           </header>
 
+          {/* Контент */}
           <div className="px-5 py-7 md:px-8 md:py-8">
 
             <div className="mx-auto max-w-[1440px]">
@@ -609,6 +746,7 @@ export default function HomePage() {
                 </div>
               )}
 
+              {/* Hero */}
               {relationship &&
               partner &&
               partnerName ? (
@@ -649,6 +787,7 @@ export default function HomePage() {
                 />
               )}
 
+              {/* Превью разделов */}
               <section className="mt-7 grid gap-5 xl:grid-cols-3">
 
                 <PlansPreviewCard
@@ -662,12 +801,22 @@ export default function HomePage() {
                   }
                 />
 
-                <EmptyWishlistPreview />
+                <WishlistPreviewCard
+                  entries={
+                    wishlistPreview
+                  }
+                  onOpenWishlists={() =>
+                    router.push(
+                      '/wishlists',
+                    )
+                  }
+                />
 
                 <EmptyDayBoardPreview />
 
               </section>
 
+              {/* Нижняя часть */}
               <section className="mt-6 grid gap-5 xl:grid-cols-[1.45fr_0.65fr]">
 
                 <UpcomingPlansCard
@@ -1061,57 +1210,200 @@ function PlansPreviewCard({
   );
 }
 
-function EmptyWishlistPreview() {
+/*
+ * Превью настоящих желаний
+ * из backend.
+ */
+function WishlistPreviewCard({
+  entries,
+  onOpenWishlists,
+}: {
+  entries: WishlistPreviewEntry[];
+  onOpenWishlists: () => void;
+}) {
   return (
     <article className="rounded-[28px] border border-[#eee0dc] bg-white p-5 shadow-[0_10px_30px_rgba(91,65,59,0.03)]">
 
-      <div className="flex items-center gap-3">
+      <div className="flex items-center justify-between gap-3">
 
-        <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#efe8f7] text-[#8d7ca4]">
-          <Gift
-            size={20}
-          />
-        </div>
+        <div className="flex items-center gap-3">
 
-        <h2 className="text-xl font-semibold text-[#554442]">
-          Вишлист
-        </h2>
-
-      </div>
-
-      <div className="mt-5 flex min-h-[250px] items-center justify-center rounded-[20px] border border-dashed border-[#e8dfe8] bg-[#fdfafd] px-6 text-center">
-
-        <div>
-
-          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[#eee7f4] text-[#8b7b9d]">
+          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#eee7f4] text-[#88769a]">
             <Gift
-              size={25}
+              size={20}
             />
           </div>
 
-          <p className="mt-4 font-medium text-[#705e6f]">
-            Вишлист пока пуст
-          </p>
-
-          <p className="mx-auto mt-2 max-w-[260px] text-sm leading-6 text-[#a393a2]">
-            Когда здесь появятся
-            желания, часть из них
-            будет отображаться
-            на главной.
-          </p>
-
-          <span className="mt-4 inline-block rounded-full bg-[#f2ebf5] px-3 py-1.5 text-xs font-medium text-[#9e8ba9]">
-            Раздел скоро появится
-          </span>
+          <h2 className="text-xl font-semibold text-[#554442]">
+            Вишлист
+          </h2>
 
         </div>
 
+        {entries.length >
+          0 && (
+          <span className="rounded-full bg-[#f3edf6] px-2.5 py-1 text-[11px] font-medium text-[#8f7ba0]">
+            последние желания
+          </span>
+        )}
+
       </div>
+
+      {entries.length >
+      0 ? (
+        <>
+          <div className="mt-5 grid grid-cols-3 gap-3">
+
+            {entries.map(
+              (
+                entry,
+              ) => {
+                const ownerName =
+                  entry.owner
+                    .displayName ??
+                  entry.owner
+                    .nickname;
+
+                return (
+                  <button
+                    key={
+                      entry.item.id
+                    }
+                    type="button"
+                    onClick={
+                      onOpenWishlists
+                    }
+                    className="group min-w-0 rounded-[18px] border border-[#eee3ef] bg-[#fffdfc] p-2 text-left transition-all hover:-translate-y-0.5 hover:border-[#d5c6de] hover:bg-[#fdf9ff] hover:shadow-sm active:scale-[0.98]"
+                  >
+
+                    {entry.item
+                      .imageUrl ? (
+                      <div
+                        role="img"
+                        aria-label={
+                          entry.item
+                            .title
+                        }
+                        className="aspect-square w-full rounded-[14px] bg-[#f3edf5] bg-cover bg-center"
+                        style={{
+                          backgroundImage:
+                            `url("${entry.item.imageUrl}")`,
+                        }}
+                      />
+                    ) : (
+                      <div className="flex aspect-square w-full items-center justify-center rounded-[14px] bg-gradient-to-br from-[#f2eaf6] to-[#fbf4ef] text-[#a08daf]">
+
+                        <Gift
+                          size={29}
+                        />
+
+                      </div>
+                    )}
+
+                    <p className="mt-3 line-clamp-2 min-h-[40px] text-sm font-medium leading-5 text-[#594847]">
+                      {
+                        entry.item
+                          .title
+                      }
+                    </p>
+
+                    {entry.item.price !==
+                    null ? (
+                      <p className="mt-1 truncate text-sm font-semibold text-[#89739a]">
+                        {formatPrice(
+                          entry.item
+                            .price,
+                        )}
+                      </p>
+                    ) : (
+                      <p className="mt-1 text-xs text-[#b09da8]">
+                        Цена не указана
+                      </p>
+                    )}
+
+                    <div className="mt-3 border-t border-[#f2e9f1] pt-2">
+
+                      <p className="truncate text-[10px] text-[#a4929f]">
+                        {ownerName}
+                      </p>
+
+                      <p className="mt-0.5 truncate text-[10px] text-[#baaab5]">
+                        {
+                          entry.wishlistTitle
+                        }
+                      </p>
+
+                    </div>
+
+                  </button>
+                );
+              },
+            )}
+
+          </div>
+
+          <button
+            type="button"
+            onClick={
+              onOpenWishlists
+            }
+            className="mt-5 flex items-center gap-2 rounded-xl px-2 py-2 text-sm font-medium text-[#8d779f] transition hover:bg-[#f5eff8] hover:text-[#735f85] active:scale-[0.98]"
+          >
+            Открыть вишлисты
+
+            <ChevronRight
+              size={15}
+            />
+          </button>
+        </>
+      ) : (
+        <div className="mt-5 flex min-h-[250px] items-center justify-center rounded-[20px] border border-dashed border-[#e8dfe8] bg-[#fdfafd] px-6 text-center">
+
+          <div>
+
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[#eee7f4] text-[#8b7b9d]">
+              <Gift
+                size={25}
+              />
+            </div>
+
+            <p className="mt-4 font-medium text-[#705e6f]">
+              Вишлисты пока пусты
+            </p>
+
+            <p className="mx-auto mt-2 max-w-[260px] text-sm leading-6 text-[#a393a2]">
+              Добавьте первое желание,
+              и оно появится здесь.
+            </p>
+
+            <button
+              type="button"
+              onClick={
+                onOpenWishlists
+              }
+              className="mt-5 inline-flex items-center gap-2 rounded-xl bg-[#eee7f4] px-4 py-2.5 text-sm font-medium text-[#806b91] transition hover:bg-[#e4d9eb] active:scale-[0.97]"
+            >
+              Открыть вишлисты
+
+              <ChevronRight
+                size={15}
+              />
+            </button>
+
+          </div>
+
+        </div>
+      )}
 
     </article>
   );
 }
 
+/*
+ * Доска дня ещё не реализована,
+ * поэтому здесь честное
+ * пустое состояние.
+ */
 function EmptyDayBoardPreview() {
   return (
     <article className="rounded-[28px] border border-[#eee0dc] bg-white p-5 shadow-[0_10px_30px_rgba(91,65,59,0.03)]">
@@ -1231,6 +1523,7 @@ function UpcomingPlansCard({
         <>
           <div className="mt-6 grid gap-4 lg:grid-cols-[1.05fr_0.95fr]">
 
+            {/* Ближайшее событие */}
             <button
               type="button"
               onClick={
@@ -1275,7 +1568,9 @@ function UpcomingPlansCard({
                       : formatEventTime(
                           firstUpcomingEvent,
                         )}
+
                     {' • '}
+
                     {formatWeekdayFull(
                       firstUpcomingEvent
                         .startsAt,
@@ -1306,8 +1601,7 @@ function UpcomingPlansCard({
 
             </button>
 
-            {/* Нажатие на заметку сразу
-                открывает редактирование события. */}
+            {/* Заметка */}
             <button
               type="button"
               onClick={() =>
@@ -1646,12 +1940,17 @@ function formatLongDate(
   return new Intl.DateTimeFormat(
     'ru-RU',
     {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
+      day:
+        'numeric',
+      month:
+        'long',
+      year:
+        'numeric',
     },
   ).format(
-    new Date(value),
+    new Date(
+      value,
+    ),
   );
 }
 
@@ -1661,11 +1960,14 @@ function formatMonthUpper(
   return new Intl.DateTimeFormat(
     'ru-RU',
     {
-      month: 'short',
+      month:
+        'short',
     },
   )
     .format(
-      new Date(value),
+      new Date(
+        value,
+      ),
     )
     .replace(
       '.',
@@ -1690,11 +1992,14 @@ function formatWeekdayShort(
   return new Intl.DateTimeFormat(
     'ru-RU',
     {
-      weekday: 'short',
+      weekday:
+        'short',
     },
   )
     .format(
-      new Date(value),
+      new Date(
+        value,
+      ),
     )
     .replace(
       '.',
@@ -1709,10 +2014,13 @@ function formatWeekdayFull(
   return new Intl.DateTimeFormat(
     'ru-RU',
     {
-      weekday: 'long',
+      weekday:
+        'long',
     },
   ).format(
-    new Date(value),
+    new Date(
+      value,
+    ),
   );
 }
 
@@ -1723,8 +2031,10 @@ function formatEventTime(
     new Intl.DateTimeFormat(
       'ru-RU',
       {
-        hour: '2-digit',
-        minute: '2-digit',
+        hour:
+          '2-digit',
+        minute:
+          '2-digit',
       },
     ).format(
       new Date(
@@ -1740,8 +2050,10 @@ function formatEventTime(
     new Intl.DateTimeFormat(
       'ru-RU',
       {
-        hour: '2-digit',
-        minute: '2-digit',
+        hour:
+          '2-digit',
+        minute:
+          '2-digit',
       },
     ).format(
       new Date(
@@ -1750,6 +2062,24 @@ function formatEventTime(
     );
 
   return `${start}–${end}`;
+}
+
+function formatPrice(
+  value: number,
+) {
+  return new Intl.NumberFormat(
+    'ru-RU',
+    {
+      style:
+        'currency',
+      currency:
+        'RUB',
+      maximumFractionDigits:
+        0,
+    },
+  ).format(
+    value,
+  );
 }
 
 function pluralizeEvents(

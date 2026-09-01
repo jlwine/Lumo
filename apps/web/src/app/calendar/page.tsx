@@ -160,6 +160,10 @@ export default function CalendarPage() {
       emptyForm,
     );
 
+  /*
+   * Формируем дни,
+   * отображаемые в календаре.
+   */
   const calendarDays =
     useMemo(
       () =>
@@ -177,6 +181,10 @@ export default function CalendarPage() {
       calendarDays.length - 1
     ]?.date;
 
+  /*
+   * Получаем события
+   * для текущей календарной сетки.
+   */
   const fetchEvents =
     useCallback(
       async () => {
@@ -244,7 +252,8 @@ export default function CalendarPage() {
 
   /*
    * Загружаем события
-   * текущей календарной сетки.
+   * при открытии календаря
+   * или смене месяца.
    */
   useEffect(() => {
     let cancelled =
@@ -302,21 +311,26 @@ export default function CalendarPage() {
   }, [fetchEvents]);
 
   /*
-   * Если открыли страницу через:
+   * Если календарь открыт через:
    *
    * /calendar?edit=ID
    *
-   * отдельно получаем конкретное
-   * событие и сразу открываем
-   * форму его редактирования.
-   *
-   * Это работает даже если событие
-   * находится в другом месяце.
+   * получаем конкретное событие
+   * и сразу открываем его
+   * в режиме редактирования.
    */
   useEffect(() => {
     if (!editEventId) {
       return;
     }
+
+    /*
+     * Сохраняем значение отдельно,
+     * чтобы TypeScript точно знал,
+     * что eventId имеет тип string.
+     */
+    const eventId =
+      editEventId;
 
     let cancelled =
       false;
@@ -339,7 +353,7 @@ export default function CalendarPage() {
         const event =
           await apiRequest<CalendarEvent>(
             `/calendar/${encodeURIComponent(
-              editEventId,
+              eventId,
             )}`,
             {
               headers: {
@@ -389,10 +403,9 @@ export default function CalendarPage() {
         );
 
         /*
-         * Убираем параметр из URL,
-         * чтобы редактор не открылся
-         * повторно после дальнейших
-         * изменений страницы.
+         * После открытия редактора
+         * убираем параметр edit
+         * из адресной строки.
          */
         router.replace(
           '/calendar',
@@ -429,6 +442,11 @@ export default function CalendarPage() {
     router,
   ]);
 
+  /*
+   * Повторная загрузка событий
+   * после создания, изменения
+   * или удаления.
+   */
   async function refreshEvents() {
     const result =
       await fetchEvents();
@@ -484,6 +502,11 @@ export default function CalendarPage() {
       day.date,
     );
 
+    /*
+     * Если выбран день
+     * соседнего месяца,
+     * переключаем месяц.
+     */
     if (
       !day.isCurrentMonth
     ) {
@@ -497,6 +520,10 @@ export default function CalendarPage() {
     }
   }
 
+  /*
+   * Открываем создание
+   * нового события.
+   */
   function openCreateEvent(
     date:
       | Date
@@ -529,6 +556,10 @@ export default function CalendarPage() {
     );
   }
 
+  /*
+   * Открываем карточку
+   * существующего события.
+   */
   function openEvent(
     event: CalendarEvent,
   ) {
@@ -545,6 +576,10 @@ export default function CalendarPage() {
     );
   }
 
+  /*
+   * Переходим из просмотра
+   * события к редактированию.
+   */
   function editSelectedEvent() {
     if (!selectedEvent) {
       return;
@@ -561,6 +596,10 @@ export default function CalendarPage() {
     );
   }
 
+  /*
+   * Закрываем форму
+   * создания или изменения.
+   */
   function closeEventForm() {
     setShowEventForm(
       false,
@@ -570,6 +609,13 @@ export default function CalendarPage() {
       emptyForm,
     );
 
+    /*
+     * Если это было создание,
+     * закрываем всё.
+     *
+     * При редактировании оставляем
+     * карточку события выбранной.
+     */
     if (!selectedEvent) {
       setSelectedEvent(
         null,
@@ -577,6 +623,9 @@ export default function CalendarPage() {
     }
   }
 
+  /*
+   * Создаём или изменяем событие.
+   */
   async function saveEvent() {
     const token =
       getAccessToken();
@@ -769,6 +818,9 @@ export default function CalendarPage() {
     }
   }
 
+  /*
+   * Удаляем событие.
+   */
   async function deleteEvent() {
     if (!selectedEvent) {
       return;
@@ -837,6 +889,10 @@ export default function CalendarPage() {
     }
   }
 
+  /*
+   * События выбранного дня
+   * для правой панели.
+   */
   const selectedDayEvents =
     selectedDate
       ? events.filter(
@@ -855,6 +911,7 @@ export default function CalendarPage() {
 
       <div className="mx-auto max-w-[1450px]">
 
+        {/* Верхние кнопки */}
         <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
 
           <button
@@ -889,6 +946,7 @@ export default function CalendarPage() {
 
         </div>
 
+        {/* Заголовок */}
         <header className="mb-7">
 
           <p className="text-sm font-medium text-[#c8757c]">
@@ -906,6 +964,7 @@ export default function CalendarPage() {
 
         </header>
 
+        {/* Ошибка */}
         {error && (
           <div className="mb-6 flex items-start justify-between gap-4 rounded-2xl border border-[#efc9cc] bg-[#fff1f1] px-5 py-4 text-sm text-[#a95057]">
 
@@ -932,8 +991,10 @@ export default function CalendarPage() {
 
         <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
 
+          {/* Календарь */}
           <section className="overflow-hidden rounded-[30px] border border-[#eedfdb] bg-white shadow-[0_20px_70px_rgba(91,65,59,0.05)]">
 
+            {/* Навигация по месяцам */}
             <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[#f1e5e1] px-5 py-5 md:px-7">
 
               <div className="flex items-center gap-2">
@@ -984,6 +1045,7 @@ export default function CalendarPage() {
 
             </div>
 
+            {/* Дни недели */}
             <div className="grid grid-cols-7 border-b border-[#f1e5e1] bg-[#fffaf9]">
 
               {[
@@ -1009,6 +1071,7 @@ export default function CalendarPage() {
 
             </div>
 
+            {/* Календарная сетка */}
             {isLoading ? (
               <div className="flex min-h-[600px] items-center justify-center">
 
@@ -1055,9 +1118,11 @@ export default function CalendarPage() {
                         }
                         className={[
                           'relative min-h-[105px] border-b border-r border-[#f1e7e3] p-2 text-left transition md:min-h-[135px] md:p-3',
+
                           day.isCurrentMonth
                             ? 'bg-white'
                             : 'bg-[#fffaf9]',
+
                           isSelected
                             ? 'bg-[#fff5f4]'
                             : '',
@@ -1066,6 +1131,7 @@ export default function CalendarPage() {
                         )}
                       >
 
+                        {/* Нажатие по пустой части дня */}
                         <button
                           type="button"
                           onClick={() =>
@@ -1086,11 +1152,13 @@ export default function CalendarPage() {
                           }
                         />
 
+                        {/* Номер дня */}
                         <div className="pointer-events-none relative z-10">
 
                           <div
                             className={[
                               'flex h-7 w-7 items-center justify-center rounded-full text-sm',
+
                               isToday
                                 ? 'bg-[#df8e94] font-semibold text-white'
                                 : day.isCurrentMonth
@@ -1105,6 +1173,7 @@ export default function CalendarPage() {
 
                         </div>
 
+                        {/* События */}
                         <div className="relative z-20 mt-2 space-y-1">
 
                           {dayEvents
@@ -1166,6 +1235,7 @@ export default function CalendarPage() {
 
           </section>
 
+          {/* События выбранного дня */}
           <aside className="self-start rounded-[28px] border border-[#eedfdb] bg-white p-5 xl:sticky xl:top-6">
 
             <div className="flex items-start justify-between gap-3">
@@ -1291,6 +1361,7 @@ export default function CalendarPage() {
 
       </div>
 
+      {/* Просмотр события */}
       {selectedEvent &&
         !showEventForm && (
         <EventDetailsDialog
@@ -1313,6 +1384,7 @@ export default function CalendarPage() {
         />
       )}
 
+      {/* Создание / редактирование */}
       {showEventForm && (
         <EventFormDialog
           form={
@@ -1338,6 +1410,7 @@ export default function CalendarPage() {
         />
       )}
 
+      {/* Подтверждение удаления */}
       {showDeleteDialog &&
         selectedEvent && (
         <DeleteEventDialog
@@ -1892,6 +1965,10 @@ function DeleteEventDialog({
   );
 }
 
+/*
+ * Преобразуем событие
+ * из backend в форму.
+ */
 function calendarEventToForm(
   event: CalendarEvent,
 ): EventForm {
@@ -1941,6 +2018,10 @@ function calendarEventToForm(
   };
 }
 
+/*
+ * Формируем сетку
+ * 6 недель × 7 дней.
+ */
 function createCalendarDays(
   month: Date,
 ) {
@@ -2073,6 +2154,10 @@ function toTimeInputValue(
   return `${hours}:${minutes}`;
 }
 
+/*
+ * Преобразуем локальную
+ * дату и время в ISO.
+ */
 function createEventDate(
   date: string,
   time: string,

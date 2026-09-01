@@ -11,14 +11,10 @@ import { CalendarModule } from './calendar/calendar.module.js';
 import { PrismaModule } from './prisma/prisma.module.js';
 import { RelationshipsModule } from './relationships/relationships.module.js';
 import { UsersModule } from './users/users.module.js';
+import { WishlistsModule } from './wishlists/wishlists.module.js';
 
 @Module({
   imports: [
-    /*
-     * Загружаем переменные окружения
-     * из .env и делаем ConfigService
-     * доступным во всём приложении.
-     */
     ConfigModule.forRoot({
       isGlobal: true,
     }),
@@ -28,6 +24,7 @@ import { UsersModule } from './users/users.module.js';
     UsersModule,
     RelationshipsModule,
     CalendarModule,
+    WishlistsModule,
   ],
 })
 export class AppModule {}

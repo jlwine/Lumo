@@ -38,6 +38,8 @@ model User {
   relationshipsAsUser2 Relationship[] @relation("RelationshipUser2")
 
   createdCalendarEvents CalendarEvent[] @relation("CalendarEventCreator")
+
+  wishlists Wishlist[]
 }
 
 model RelationshipInvitation {
@@ -105,4 +107,41 @@ model CalendarEvent {
 
   @@index([relationshipId, startsAt])
   @@index([createdById])
+}
+
+model Wishlist {
+  id String @id @default(uuid())
+
+  ownerId String
+
+  title       String
+  description String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  owner User @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  items WishlistItem[]
+
+  @@index([ownerId])
+}
+
+model WishlistItem {
+  id String @id @default(uuid())
+
+  wishlistId String
+
+  title       String
+  description String?
+  url         String?
+  imageUrl    String?
+  price       Int?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  wishlist Wishlist @relation(fields: [wishlistId], references: [id], onDelete: Cascade)
+
+  @@index([wishlistId])
 }
