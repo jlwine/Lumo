@@ -1,26 +1,448 @@
 @import "tailwindcss";
 
+/*
+ * Ручная тёмная тема.
+ *
+ * Мы не используем prefers-color-scheme напрямую
+ * для цветов приложения, потому что пользователь
+ * может выбрать тему вручную.
+ */
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  color-scheme: light;
+
+  --background: #fffaf7;
+  --foreground: #554442;
+
+  --surface: #ffffff;
+  --surface-soft: #fffaf9;
+  --surface-muted: #fff4f2;
+
+  --border: #eee0db;
+  --border-soft: #f1e5e1;
+
+  --text-primary: #554442;
+  --text-secondary: #876f6a;
+  --text-muted: #a18d87;
+
+  --accent: #df8e94;
+  --accent-hover: #d37b83;
+  --accent-soft: #fde9e8;
+
+  --lavender: #a993bb;
+  --lavender-soft: #f2eaf8;
+
+  --success-soft: #edf3e8;
+
+  --shadow-soft: 0 14px 45px rgba(91, 65, 59, 0.05);
+}
+
+html.dark {
+  color-scheme: dark;
+
+  --background: #1c1819;
+  --foreground: #f3e8e4;
+
+  --surface: #282224;
+  --surface-soft: #30282a;
+  --surface-muted: #382b2e;
+
+  --border: #44383b;
+  --border-soft: #3a3032;
+
+  --text-primary: #f3e8e4;
+  --text-secondary: #d2bfba;
+  --text-muted: #a99490;
+
+  --accent: #e39aa2;
+  --accent-hover: #ecaab1;
+  --accent-soft: #472e33;
+
+  --lavender: #b9a3cb;
+  --lavender-soft: #352e3d;
+
+  --success-soft: #2d352d;
+
+  --shadow-soft: 0 18px 50px rgba(0, 0, 0, 0.22);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  min-height: 100%;
+  background: var(--background);
 }
 
 body {
+  min-height: 100%;
+  margin: 0;
+
   background: var(--background);
   color: var(--foreground);
+
   font-family: Arial, Helvetica, sans-serif;
+
+  transition:
+    background-color 260ms ease,
+    color 260ms ease;
 }
+
+/*
+ * Плавный переход между темами.
+ *
+ * Не применяем transition вообще ко всему через "*",
+ * чтобы не испортить существующие hover/transform-анимации.
+ */
+body,
+header,
+aside,
+main,
+section,
+article,
+nav,
+dialog,
+input,
+textarea,
+select {
+  transition-property:
+    background-color,
+    border-color,
+    color,
+    box-shadow;
+  transition-duration: 260ms;
+  transition-timing-function: ease;
+}
+
+/*
+ * ------------------------------------------------------------------
+ * Переходный слой для существующего интерфейса.
+ * ------------------------------------------------------------------
+ *
+ * Сейчас значительная часть приложения использует Tailwind-классы
+ * с жёстко заданными hex-цветами:
+ *
+ * bg-[#fffaf7]
+ * text-[#554442]
+ * border-[#eee0db]
+ *
+ * Чтобы тёмная тема заработала сразу на уже написанных страницах,
+ * здесь переопределяем наиболее частые текущие цвета.
+ *
+ * По мере дальнейшей разработки эти цвета можно постепенно
+ * заменять на семантические переменные.
+ */
+
+/* Основные светлые фоны -> тёмные поверхности. */
+html.dark [class~="bg-[#fffaf7]"],
+html.dark [class~="bg-[#fffaf8]"] {
+  background-color: var(--background) !important;
+}
+
+html.dark [class~="bg-white"],
+html.dark [class~="bg-[#ffffff]"],
+html.dark [class~="bg-[#fffdf9]"],
+html.dark [class~="bg-[#fffdfb]"],
+html.dark [class~="bg-[#fffdfc]"] {
+  background-color: var(--surface) !important;
+}
+
+html.dark [class~="bg-[#fffaf9]"],
+html.dark [class~="bg-[#fff8f6]"],
+html.dark [class~="bg-[#fff9f7]"] {
+  background-color: var(--surface-soft) !important;
+}
+
+html.dark [class~="bg-[#fff4f2]"],
+html.dark [class~="bg-[#fff5f4]"],
+html.dark [class~="bg-[#fff0ef]"],
+html.dark [class~="bg-[#fff0ec]"],
+html.dark [class~="bg-[#fff1ef]"],
+html.dark [class~="bg-[#fff1f1]"],
+html.dark [class~="bg-[#fff4f3]"] {
+  background-color: var(--surface-muted) !important;
+}
+
+/* Розовые мягкие состояния и активные элементы. */
+html.dark [class~="bg-[#fde9e8]"],
+html.dark [class~="bg-[#fae5e6]"],
+html.dark [class~="bg-[#f9e4e4]"],
+html.dark [class~="bg-[#fdeaea]"],
+html.dark [class~="bg-[#fff0f0]"],
+html.dark [class~="bg-[#fdeff1]"] {
+  background-color: var(--accent-soft) !important;
+}
+
+html.dark [class~="bg-[#f6d7da]"],
+html.dark [class~="bg-[#f7e3e5]"] {
+  background-color: #52353a !important;
+}
+
+/* Лавандовые поверхности. */
+html.dark [class~="bg-[#f5edf7]"],
+html.dark [class~="bg-[#f2eaf8]"],
+html.dark [class~="bg-[#f7f2fa]"],
+html.dark [class~="bg-[#eee7f4]"] {
+  background-color: var(--lavender-soft) !important;
+}
+
+/* Зелёные декоративные поверхности. */
+html.dark [class~="bg-[#e8eee2]"],
+html.dark [class~="bg-[#eef1e8]"],
+html.dark [class~="bg-[#edf3e8]"] {
+  background-color: var(--success-soft) !important;
+}
+
+/* Основные границы. */
+html.dark [class~="border-[#efe2dc]"],
+html.dark [class~="border-[#f0e5e0]"],
+html.dark [class~="border-[#eeded9]"],
+html.dark [class~="border-[#eee0db]"],
+html.dark [class~="border-[#eedfdb]"],
+html.dark [class~="border-[#eee0dc]"],
+html.dark [class~="border-[#eee1df]"],
+html.dark [class~="border-[#eee2df]"],
+html.dark [class~="border-[#eadbd7]"],
+html.dark [class~="border-[#e8dedf]"],
+html.dark [class~="border-[#e8dcdf]"],
+html.dark [class~="border-[#e7d3cf]"],
+html.dark [class~="border-[#eadfe5]"],
+html.dark [class~="border-[#e5dce5]"] {
+  border-color: var(--border) !important;
+}
+
+html.dark [class~="border-[#f1e5e1]"],
+html.dark [class~="border-[#f1e7e3]"],
+html.dark [class~="border-[#f0e1dd]"],
+html.dark [class~="border-[#f0e5e1]"],
+html.dark [class~="border-[#f2e6e2]"] {
+  border-color: var(--border-soft) !important;
+}
+
+/* Ошибки и опасные действия оставляем различимыми, но темнее. */
+html.dark [class~="border-[#efc9cc]"],
+html.dark [class~="border-[#efd3d4]"],
+html.dark [class~="border-[#efd4d4]"],
+html.dark [class~="border-[#efc7c9]"] {
+  border-color: #694348 !important;
+}
+
+/* Основной текст. */
+html.dark [class~="text-[#554442]"],
+html.dark [class~="text-[#594844]"],
+html.dark [class~="text-[#584642]"],
+html.dark [class~="text-[#594744]"],
+html.dark [class~="text-[#574642]"],
+html.dark [class~="text-[#5e4a47]"],
+html.dark [class~="text-[#5e4b48]"],
+html.dark [class~="text-[#62504c]"],
+html.dark [class~="text-[#624b48]"],
+html.dark [class~="text-[#654f4a]"],
+html.dark [class~="text-[#65514d]"],
+html.dark [class~="text-[#66514d]"],
+html.dark [class~="text-[#665451]"],
+html.dark [class~="text-[#67514d]"],
+html.dark [class~="text-[#6f5a56]"],
+html.dark [class~="text-[#765f5b]"],
+html.dark [class~="text-[#76625d]"],
+html.dark [class~="text-[#75615c]"],
+html.dark [class~="text-[#78635e]"],
+html.dark [class~="text-[#79635f]"],
+html.dark [class~="text-[#79645f]"],
+html.dark [class~="text-[#806a65]"],
+html.dark [class~="text-[#806c67]"],
+html.dark [class~="text-[#876f69]"],
+html.dark [class~="text-[#896f69]"],
+html.dark [class~="text-[#8e7771]"] {
+  color: var(--text-primary) !important;
+}
+
+/* Вторичный текст. */
+html.dark [class~="text-[#907b75]"],
+html.dark [class~="text-[#917975]"],
+html.dark [class~="text-[#927d78]"],
+html.dark [class~="text-[#98837e]"],
+html.dark [class~="text-[#9a8580]"],
+html.dark [class~="text-[#9a8588]"],
+html.dark [class~="text-[#9b8580]"],
+html.dark [class~="text-[#9c8882]"],
+html.dark [class~="text-[#9e8983]"],
+html.dark [class~="text-[#9f8a84]"],
+html.dark [class~="text-[#a18b86]"],
+html.dark [class~="text-[#a18d87]"],
+html.dark [class~="text-[#a38f89]"],
+html.dark [class~="text-[#a48e88]"],
+html.dark [class~="text-[#a48f89]"],
+html.dark [class~="text-[#aa948e]"],
+html.dark [class~="text-[#ac9892]"],
+html.dark [class~="text-[#ad948d]"],
+html.dark [class~="text-[#ad9993]"],
+html.dark [class~="text-[#b09b95]"],
+html.dark [class~="text-[#b29e98]"],
+html.dark [class~="text-[#baa7a1]"] {
+  color: var(--text-muted) !important;
+}
+
+/* Акцентные розовые цвета оставляем яркими в тёмной теме. */
+html.dark [class~="text-[#c16b74]"],
+html.dark [class~="text-[#c36f77]"],
+html.dark [class~="text-[#c8757c]"],
+html.dark [class~="text-[#cb7079]"],
+html.dark [class~="text-[#cd747c]"],
+html.dark [class~="text-[#d1767e]"],
+html.dark [class~="text-[#d2767f]"],
+html.dark [class~="text-[#d57780]"],
+html.dark [class~="text-[#dc7d87]"],
+html.dark [class~="text-[#df8993]"],
+html.dark [class~="text-[#df8e94]"],
+html.dark [class~="text-[#df939b]"] {
+  color: var(--accent) !important;
+}
+
+/* Основные розовые кнопки. */
+html.dark [class~="bg-[#df8e94]"],
+html.dark [class~="bg-[#df858e]"],
+html.dark [class~="bg-[#df818b]"] {
+  background-color: var(--accent) !important;
+}
+
+/* Градиент приветственного блока. */
+html.dark [class~="from-[#fff0ec]"] {
+  --tw-gradient-from: #38282b !important;
+}
+
+html.dark [class~="via-[#fff4ee]"] {
+  --tw-gradient-via: #34292a !important;
+}
+
+html.dark [class~="to-[#f2eaf8]"] {
+  --tw-gradient-to: #302a38 !important;
+}
+
+/* Поля ввода. */
+html.dark input,
+html.dark textarea,
+html.dark select {
+  caret-color: var(--accent);
+}
+
+html.dark input::placeholder,
+html.dark textarea::placeholder {
+  color: #857377;
+}
+
+/*
+ * Нативные элементы браузера тоже должны
+ * соответствовать выбранной теме.
+ */
+html.dark input[type="date"],
+html.dark input[type="time"] {
+  color-scheme: dark;
+}
+
+/*
+ * Небольшое улучшение скроллбаров.
+ */
+html {
+  scrollbar-color: #d7bbb9 transparent;
+}
+
+html.dark {
+  scrollbar-color: #675156 #1c1819;
+}
+
+
+/*
+ * ------------------------------------------------------------------
+ * Дополнительные исправления тёмной темы.
+ * ------------------------------------------------------------------
+ *
+ * Некоторые страницы используют прозрачные светлые фоны
+ * и немного другие цвета градиентов.
+ * Без этих правил они выглядят как белый "засвет"
+ * поверх тёмной темы.
+ */
+
+/* Верхняя панель главной страницы. */
+html.dark [class~="bg-[#fffaf7]/95"] {
+  background-color: rgba(28, 24, 25, 0.95) !important;
+}
+
+/* Полупрозрачные белые поверхности. */
+html.dark [class~="bg-white/95"] {
+  background-color: rgba(40, 34, 36, 0.95) !important;
+}
+
+html.dark [class~="bg-white/90"] {
+  background-color: rgba(40, 34, 36, 0.90) !important;
+}
+
+html.dark [class~="bg-white/70"] {
+  background-color: rgba(40, 34, 36, 0.70) !important;
+}
+
+html.dark [class~="bg-white/60"] {
+  background-color: rgba(40, 34, 36, 0.60) !important;
+}
+
+html.dark [class~="bg-white/55"] {
+  background-color: rgba(40, 34, 36, 0.55) !important;
+}
+
+/* Полупрозрачные белые границы. */
+html.dark [class~="border-white/70"] {
+  border-color: rgba(90, 72, 77, 0.75) !important;
+}
+
+/*
+ * Градиент шапки "Доски дня".
+ * Там используются немного другие светлые оттенки,
+ * чем на главной странице.
+ */
+html.dark [class~="via-[#fff5ef]"] {
+  --tw-gradient-via: #34292a !important;
+}
+
+html.dark [class~="to-[#f1ebf8]"] {
+  --tw-gradient-to: #302a38 !important;
+}
+
+/* Дополнительные светлые градиенты на пустых карточках. */
+html.dark [class~="from-[#fffaf8]"] {
+  --tw-gradient-from: #2a2325 !important;
+}
+
+html.dark [class~="to-[#f7f0f6]"] {
+  --tw-gradient-to: #312a35 !important;
+}
+
+/*
+ * Иногда Tailwind генерирует градиентные CSS-переменные
+ * так, что старый светлый цвет остаётся в промежуточном значении.
+ * Эти правила гарантируют, что конкретные блоки не будут светиться.
+ */
+html.dark [class*="bg-gradient-to-r"][class*="from-[#fff0ec]"] {
+  background-image:
+    linear-gradient(
+      to right,
+      #38282b,
+      #34292a,
+      #302a38
+    ) !important;
+}
+
+html.dark [class*="bg-gradient-to-br"][class*="from-[#fffaf8]"] {
+  background-image:
+    linear-gradient(
+      to bottom right,
+      #2a2325,
+      #312a35
+    ) !important;
+}
+
