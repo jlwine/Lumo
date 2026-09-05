@@ -40,6 +40,12 @@ model User {
   createdCalendarEvents CalendarEvent[] @relation("CalendarEventCreator")
 
   wishlists Wishlist[]
+
+  /**
+   * Фотографии пользователя
+   * на доске дня.
+   */
+  dayBoardEntries DayBoardEntry[] @relation("DayBoardEntryAuthor")
 }
 
 model RelationshipInvitation {
@@ -78,6 +84,12 @@ model Relationship {
   user2 User @relation(name: "RelationshipUser2", fields: [user2Id], references: [id], onDelete: Cascade)
 
   calendarEvents CalendarEvent[]
+
+  /**
+   * Общая история доски дня
+   * для этой пары.
+   */
+  dayBoardEntries DayBoardEntry[]
 
   @@index([user1Id, status])
   @@index([user2Id, status])
@@ -155,4 +167,34 @@ model WishlistItem {
   wishlist Wishlist @relation(fields: [wishlistId], references: [id], onDelete: Cascade)
 
   @@index([wishlistId])
+}
+
+/**
+ * Одна фотография от каждого
+ * участника пары на один календарный день.
+ * imageUrl — полноразмерная оптимизированная версия.
+ * thumbnailUrl — облегчённая версия для главной
+ * страницы и будущего мобильного виджета.
+ */
+model DayBoardEntry {
+  id String @id @default(uuid())
+
+  relationshipId String
+  authorId       String
+
+  boardDate DateTime @db.Date
+
+  imageUrl     String
+  thumbnailUrl String
+  caption      String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  relationship Relationship @relation(fields: [relationshipId], references: [id], onDelete: Cascade)
+  author       User         @relation(name: "DayBoardEntryAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@unique([relationshipId, authorId, boardDate])
+  @@index([relationshipId, boardDate])
+  @@index([authorId, boardDate])
 }

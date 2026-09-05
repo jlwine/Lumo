@@ -19,6 +19,7 @@ import {
   Settings,
   Sparkles,
   Star,
+  X,
 } from 'lucide-react';
 
 import {
@@ -47,6 +48,10 @@ import type {
 import type {
   CalendarEvent,
 } from '@/types/calendar';
+
+import type {
+  DayBoardTodayResponse,
+} from '@/types/day-board';
 
 import type {
   Relationship,
@@ -101,6 +106,14 @@ export default function HomePage() {
       mine: [],
       partner: [],
     });
+
+  const [
+    dayBoard,
+    setDayBoard,
+  ] =
+    useState<DayBoardTodayResponse | null>(
+      null,
+    );
 
   const [
     isLoading,
@@ -251,6 +264,52 @@ export default function HomePage() {
               partner: [],
             });
           }
+        }
+
+        /*
+         * Загружаем сегодняшнюю
+         * доску дня.
+         */
+        if (
+          relationshipData.relationship
+        ) {
+          try {
+            const today =
+              toLocalDateValue(
+                new Date(),
+              );
+
+            const dayBoardData =
+              await apiRequest<
+                DayBoardTodayResponse
+              >(
+                `/day-board/today?date=${encodeURIComponent(
+                  today,
+                )}`,
+                {
+                  headers: {
+                    Authorization:
+                      `Bearer ${token}`,
+                  },
+                },
+              );
+
+            if (!cancelled) {
+              setDayBoard(
+                dayBoardData,
+              );
+            }
+          } catch {
+            if (!cancelled) {
+              setDayBoard(
+                null,
+              );
+            }
+          }
+        } else if (!cancelled) {
+          setDayBoard(
+            null,
+          );
         }
       } catch (error) {
         if (cancelled) {
@@ -547,7 +606,11 @@ export default function HomePage() {
                   />
                 }
                 label="Доска дня"
-                badge="скоро"
+                onClick={() =>
+                  router.push(
+                    '/day-board',
+                  )
+                }
               />
 
               <SidebarItem
@@ -764,7 +827,16 @@ export default function HomePage() {
 
                   <MapDashboardCard />
 
-                  <DayBoardDashboardCard />
+                  <DayBoardDashboardCard
+                    dayBoard={
+                      dayBoard
+                    }
+                    onOpen={() =>
+                      router.push(
+                        '/day-board',
+                      )
+                    }
+                  />
 
                 </section>
 
@@ -1278,61 +1350,372 @@ function MapDashboardCard() {
   );
 }
 
-function DayBoardDashboardCard() {
+function DayBoardDashboardCard({
+  dayBoard,
+  onOpen,
+}: {
+  dayBoard: DayBoardTodayResponse | null;
+  onOpen: () => void;
+}) {
+  const [
+    preview,
+    setPreview,
+  ] =
+    useState<{
+      imageUrl: string;
+      label: string;
+      caption: string | null;
+    } | null>(
+      null,
+    );
+
+  /*
+   * Отдельное состояние отвечает
+   * только за плавность появления
+   * и закрытия полноэкранного фото.
+   */
+  const [
+    isPreviewVisible,
+    setIsPreviewVisible,
+  ] =
+    useState(false);
+
+  function openPreview(
+    value: {
+      imageUrl: string;
+      label: string;
+      caption: string | null;
+    },
+  ) {
+    setPreview(
+      value,
+    );
+
+    /*
+     * Два кадра дают браузеру сначала
+     * отрисовать скрытое состояние,
+     * а затем красиво анимировать его.
+     */
+    requestAnimationFrame(
+      () => {
+        requestAnimationFrame(
+          () => {
+            setIsPreviewVisible(
+              true,
+            );
+          },
+        );
+      },
+    );
+  }
+
+  function closePreview() {
+    setIsPreviewVisible(
+      false,
+    );
+
+    /*
+     * Ждём окончания CSS-анимации
+     * и только потом убираем модалку
+     * из DOM.
+     */
+    window.setTimeout(
+      () => {
+        setPreview(
+          null,
+        );
+      },
+      260,
+    );
+  }
+
+  const entries = [
+    {
+      label:
+        dayBoard?.me.displayName ??
+        dayBoard?.me.nickname ??
+        'Вы',
+
+      entry:
+        dayBoard?.mine ??
+        null,
+    },
+    {
+      label:
+        dayBoard?.partnerUser.displayName ??
+        dayBoard?.partnerUser.nickname ??
+        'Партнёр',
+
+      entry:
+        dayBoard?.partner ??
+        null,
+    },
+  ];
+
+  /*
+   * Закрываем полноэкранный просмотр
+   * фотографии по Escape.
+   */
+  useEffect(() => {
+    if (!preview) {
+      return;
+    }
+
+    function handleKeyDown(
+      event: KeyboardEvent,
+    ) {
+      if (
+        event.key ===
+        'Escape'
+      ) {
+        closePreview();
+      }
+    }
+
+    window.addEventListener(
+      'keydown',
+      handleKeyDown,
+    );
+
+    return () => {
+      window.removeEventListener(
+        'keydown',
+        handleKeyDown,
+      );
+    };
+  }, [preview]);
+
   return (
-    <article className="flex min-h-[390px] flex-col rounded-[24px] border border-[#eee0db] bg-white p-5">
+    <>
+      <article className="flex min-h-[390px] flex-col rounded-[24px] border border-[#eee0db] bg-white p-5">
 
-      <CardHeader
-        icon={
-          <Images
-            size={19}
-          />
-        }
-        title="Доска дня"
-        badge="скоро"
-      />
+        <CardHeader
+          icon={
+            <Images
+              size={19}
+            />
+          }
+          title="Доска дня"
+          action="Открыть"
+          onAction={
+            onOpen
+          }
+        />
 
-      <p className="mt-5 text-xs text-[#8d7973]">
-        Наши моменты
-      </p>
+        <p className="mt-5 text-xs text-[#8d7973]">
+          Сегодняшние моменты
+        </p>
 
-      <div className="mt-4 grid flex-1 grid-cols-2 gap-3">
+        <div className="mt-4 grid flex-1 grid-cols-2 gap-3">
 
-        <PhotoPlaceholder />
+          {entries.map(
+            ({
+              label,
+              entry,
+            }) => (
+              <button
+                key={
+                  label
+                }
+                type="button"
+                onClick={() => {
+                  if (entry) {
+                    openPreview({
+                      imageUrl:
+                        entry.imageUrl,
 
-        <PhotoPlaceholder />
+                      label,
 
-        <div className="rounded-[12px] bg-[#f6c5cc] p-4">
+                      caption:
+                        entry.caption,
+                    });
 
-          <p className="font-serif text-sm text-[#805c60]">
-            Ты моё
-            <br />
-            любимое
-            <br />
-            место ♡
-          </p>
+                    return;
+                  }
+
+                  onOpen();
+                }}
+                className="group relative min-h-[235px] overflow-hidden rounded-[16px] border border-[#eee0db] bg-[#fffaf8] text-left transition hover:border-[#e3c8c6] hover:shadow-sm"
+              >
+
+                {entry ? (
+                  <>
+
+                    <div
+                      role="img"
+                      aria-label={
+                        `Фото дня: ${label}`
+                      }
+                      className="absolute inset-0 bg-cover bg-center transition duration-300 group-hover:scale-[1.03]"
+                      style={{
+                        backgroundImage:
+                          `url("${entry.thumbnailUrl}")`,
+                      }}
+                    />
+
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#403231]/70 via-transparent to-transparent" />
+
+                    {/*
+                     * Маленькая подсказка,
+                     * что фотографию можно
+                     * открыть целиком.
+                     */}
+                    <div className="absolute right-2.5 top-2.5 rounded-full bg-black/35 px-2 py-1 text-[9px] font-medium text-white/90 opacity-0 backdrop-blur-sm transition group-hover:opacity-100">
+                      Нажмите, чтобы открыть
+                    </div>
+
+                    <div className="absolute inset-x-0 bottom-0 p-3 text-white">
+
+                      <p className="text-[11px] font-medium text-white/80">
+                        {label}
+                      </p>
+
+                      {entry.caption ? (
+                        <p className="mt-1 line-clamp-2 text-xs leading-4">
+                          {entry.caption}
+                        </p>
+                      ) : (
+                        <p className="mt-1 text-xs text-white/75">
+                          Фото сегодня
+                        </p>
+                      )}
+
+                    </div>
+
+                  </>
+                ) : (
+                  <div className="flex h-full min-h-[235px] flex-col items-center justify-center px-3 text-center">
+
+                    <Images
+                      size={26}
+                      className="text-[#c7b2bd]"
+                    />
+
+                    <p className="mt-3 text-xs font-medium text-[#806b70]">
+                      {label}
+                    </p>
+
+                    <p className="mt-1 text-[10px] leading-4 text-[#aa9599]">
+                      Фото пока нет
+                    </p>
+
+                  </div>
+                )}
+
+              </button>
+            ),
+          )}
 
         </div>
 
-        <PhotoPlaceholder />
+        <button
+          type="button"
+          onClick={
+            onOpen
+          }
+          className="mt-4 flex items-center justify-center gap-1 text-xs font-medium text-[#d1767e] transition hover:text-[#bb626a]"
+        >
+          Открыть доску дня
 
-      </div>
+          <ChevronRight
+            size={13}
+          />
+        </button>
 
-    </article>
-  );
-}
+      </article>
 
-function PhotoPlaceholder() {
-  return (
-    <div className="flex min-h-[90px] items-center justify-center rounded-[12px] bg-gradient-to-br from-[#efd9c6] to-[#969c8b]">
+      {/*
+       * Полноэкранный просмотр фотографии.
+       * На главной превью обрезается через
+       * cover, а здесь показываем оригинал
+       * целиком через object-contain.
+       */}
+      {preview && (
+        <div
+          className={[
+            'fixed inset-0 z-[150] flex items-center justify-center overflow-hidden p-4 transition-all duration-300 ease-out [zoom:0.8] md:p-8',
 
-      <Heart
-        size={22}
-        fill="currentColor"
-        className="text-white/70"
-      />
+            isPreviewVisible
+              ? 'bg-[#241d1d]/85 opacity-100 backdrop-blur-md'
+              : 'bg-[#241d1d]/0 opacity-0 backdrop-blur-none',
+          ].join(
+            ' ',
+          )}
+          role="dialog"
+          aria-modal="true"
+          aria-label={`Фото дня: ${preview.label}`}
+          onClick={
+            closePreview
+          }
+        >
 
-    </div>
+          <button
+            type="button"
+            aria-label="Закрыть фотографию"
+            onClick={
+              closePreview
+            }
+            className={[
+              'absolute right-5 top-5 z-10 flex h-11 w-11 items-center justify-center rounded-full bg-white/15 text-white backdrop-blur-md transition-all duration-300 hover:bg-white/25 active:scale-[0.95] md:right-8 md:top-8',
+
+              isPreviewVisible
+                ? 'translate-y-0 scale-100 opacity-100'
+                : '-translate-y-2 scale-90 opacity-0',
+            ].join(
+              ' ',
+            )}
+          >
+            <X
+              size={22}
+            />
+          </button>
+
+          <div
+            className={[
+              'flex max-h-[calc(100dvh-2rem)] max-w-full flex-col items-center justify-center transition-all duration-300 ease-out md:max-h-[calc(100dvh-4rem)]',
+
+              isPreviewVisible
+                ? 'translate-y-0 scale-100 opacity-100'
+                : 'translate-y-5 scale-[0.94] opacity-0',
+            ].join(
+              ' ',
+            )}
+            onClick={(
+              event,
+            ) =>
+              event.stopPropagation()
+            }
+          >
+
+            <img
+              src={
+                preview.imageUrl
+              }
+              alt={
+                `Фото дня: ${preview.label}`
+              }
+              className="max-h-[calc(100dvh-9rem)] max-w-[92vw] rounded-[20px] object-contain shadow-[0_30px_100px_rgba(0,0,0,0.45)] md:max-h-[calc(100dvh-10rem)]"
+            />
+
+            <div className="mt-4 max-w-2xl text-center text-white">
+
+              <p className="text-sm font-medium text-white/85">
+                {preview.label}
+              </p>
+
+              {preview.caption && (
+                <p className="mt-1 text-sm leading-6 text-white/75">
+                  {preview.caption}
+                </p>
+              )}
+
+            </div>
+
+          </div>
+
+        </div>
+      )}
+    </>
   );
 }
 
@@ -1699,6 +2082,31 @@ function formatPrice(
   ).format(
     value,
   );
+}
+
+function toLocalDateValue(
+  value: Date,
+) {
+  const year =
+    value.getFullYear();
+
+  const month =
+    String(
+      value.getMonth() + 1,
+    ).padStart(
+      2,
+      '0',
+    );
+
+  const day =
+    String(
+      value.getDate(),
+    ).padStart(
+      2,
+      '0',
+    );
+
+  return `${year}-${month}-${day}`;
 }
 
 function pluralizeDays(
