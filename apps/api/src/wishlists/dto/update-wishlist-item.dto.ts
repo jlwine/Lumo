@@ -37,9 +37,6 @@ export class UpdateWishlistItemDto {
   /*
    * Пустая строка означает,
    * что пользователь удалил фото.
-   *
-   * localhost разрешаем
-   * для локальной разработки.
    */
   @IsOptional()
   @ValidateIf(
@@ -58,4 +55,14 @@ export class UpdateWishlistItemDto {
   @Min(0)
   @Max(100000000)
   price?: number;
+
+  /*
+   * Приоритет желания:
+   * от 1 до 5.
+   */
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(5)
+  priority?: number;
 }

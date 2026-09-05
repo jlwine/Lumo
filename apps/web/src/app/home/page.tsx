@@ -10,14 +10,15 @@ import {
 import {
   CalendarDays,
   ChevronRight,
-  Clock3,
   Gift,
   Heart,
   Images,
+  Leaf,
   LogOut,
   MapPin,
   Settings,
-  Settings2,
+  Sparkles,
+  Star,
 } from 'lucide-react';
 
 import {
@@ -115,10 +116,6 @@ export default function HomePage() {
       null,
     );
 
-  /*
-   * Загружаем основную информацию
-   * для главной страницы.
-   */
   useEffect(() => {
     let cancelled =
       false;
@@ -136,10 +133,6 @@ export default function HomePage() {
       }
 
       try {
-        /*
-         * Пользователь и отношения
-         * являются основными данными.
-         */
         const [
           currentUser,
           relationshipData,
@@ -178,20 +171,23 @@ export default function HomePage() {
           relationshipData.relationship,
         );
 
-        /*
-         * Загружаем календарь отдельно.
-         * Если он временно сломается,
-         * вся главная не должна умереть
-         * вместе с ним.
-         */
         if (
           relationshipData.relationship
         ) {
           const from =
             new Date();
 
+          from.setHours(
+            0,
+            0,
+            0,
+            0,
+          );
+
           const to =
-            new Date();
+            new Date(
+              from,
+            );
 
           to.setDate(
             to.getDate() + 30,
@@ -227,19 +223,10 @@ export default function HomePage() {
               );
             }
           }
-        } else {
-          setUpcomingEvents(
-            [],
-          );
         }
 
-        /*
-         * Вишлисты тоже загружаем
-         * независимо от остальных
-         * частей главной страницы.
-         */
         try {
-          const wishlistsData =
+          const wishlistData =
             await apiRequest<
               WishlistsResponse
             >(
@@ -254,7 +241,7 @@ export default function HomePage() {
 
           if (!cancelled) {
             setWishlists(
-              wishlistsData,
+              wishlistData,
             );
           }
         } catch {
@@ -270,17 +257,11 @@ export default function HomePage() {
           return;
         }
 
-        if (
+        setError(
           error instanceof Error
-        ) {
-          setError(
-            error.message,
-          );
-        } else {
-          setError(
-            'Не удалось загрузить данные',
-          );
-        }
+            ? error.message
+            : 'Не удалось загрузить данные',
+        );
       } finally {
         if (!cancelled) {
           setIsLoading(
@@ -295,7 +276,9 @@ export default function HomePage() {
     return () => {
       cancelled = true;
     };
-  }, [router]);
+  }, [
+    router,
+  ]);
 
   function handleLogout() {
     removeAccessToken();
@@ -319,26 +302,24 @@ export default function HomePage() {
     partner?.nickname ??
     null;
 
-  /*
-   * Первые четыре события
-   * для компактного превью.
-   */
   const previewEvents =
     useMemo(
       () =>
         upcomingEvents.slice(
           0,
-          4,
+          3,
         ),
-      [upcomingEvents],
+      [
+        upcomingEvents,
+      ],
     );
 
   /*
-   * Собираем желания пользователя
-   * и партнёра в один список.
+   * Для главной сначала показываем
+   * самые желанные вещи.
    *
-   * Самые новые желания
-   * оказываются первыми.
+   * При одинаковом приоритете
+   * более новая будет выше.
    */
   const wishlistPreview =
     useMemo<
@@ -352,9 +333,13 @@ export default function HomePage() {
 
         return allWishlists
           .flatMap(
-            (wishlist) =>
+            (
+              wishlist,
+            ) =>
               wishlist.items.map(
-                (item) => ({
+                (
+                  item,
+                ) => ({
                   item,
 
                   wishlistTitle:
@@ -369,47 +354,66 @@ export default function HomePage() {
             (
               first,
               second,
-            ) =>
-              new Date(
-                second.item.createdAt,
-              ).getTime() -
-              new Date(
-                first.item.createdAt,
-              ).getTime(),
+            ) => {
+              if (
+                second.item.priority !==
+                first.item.priority
+              ) {
+                return (
+                  second.item.priority -
+                  first.item.priority
+                );
+              }
+
+              return (
+                new Date(
+                  second.item.createdAt,
+                ).getTime() -
+                new Date(
+                  first.item.createdAt,
+                ).getTime()
+              );
+            },
           )
           .slice(
             0,
             3,
           );
       },
-      [wishlists],
+      [
+        wishlists,
+      ],
     );
 
-  const firstUpcomingEvent =
-    upcomingEvents[0] ??
-    null;
-
-  const moreEventsCount =
-    upcomingEvents.length > 1
-      ? upcomingEvents.length - 1
-      : 0;
+  const wishlistCount =
+    useMemo(
+      () =>
+        [
+          ...wishlists.mine,
+          ...wishlists.partner,
+        ].reduce(
+          (
+            total,
+            wishlist,
+          ) =>
+            total +
+            wishlist.items.length,
+          0,
+        ),
+      [
+        wishlists,
+      ],
+    );
 
   if (isLoading) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-[#fffaf8]">
+      <main className="flex min-h-screen items-center justify-center bg-[#fffaf7]">
 
-        <div className="text-center">
-
-          <Heart
-            size={38}
-            className="mx-auto animate-pulse text-[#d98a92]"
-          />
-
-          <p className="mt-4 text-sm text-[#9c8681]">
-            Загружаем ваше пространство...
-          </p>
-
-        </div>
+        <Heart
+          size={38}
+          fill="currentColor"
+          className="animate-pulse text-[#df8993]"
+        />
 
       </main>
     );
@@ -417,238 +421,36 @@ export default function HomePage() {
 
   if (!user) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-[#fffaf8] p-5">
+      <main className="flex min-h-screen items-center justify-center bg-[#fffaf7]">
 
-        <section className="w-full max-w-md rounded-[28px] border border-[#eedfdb] bg-white p-8 text-center">
-
-          <Heart
-            size={32}
-            className="mx-auto text-[#d98a92]"
-          />
-
-          <h1 className="mt-5 text-2xl font-semibold text-[#554442]">
-            Не удалось открыть
-            пространство
-          </h1>
-
-          <p className="mt-3 text-sm leading-6 text-[#927d78]">
-            {error ??
-              'Попробуйте войти ещё раз.'}
-          </p>
-
-          <button
-            type="button"
-            onClick={() => {
-              removeAccessToken();
-
-              router.replace(
-                '/login',
-              );
-            }}
-            className="mt-6 rounded-2xl bg-[#df8e94] px-6 py-3 font-medium text-white transition-all hover:bg-[#d57a82] active:scale-[0.97]"
-          >
-            Войти снова
-          </button>
-
-        </section>
+        <p className="text-[#927d78]">
+          {error ??
+            'Не удалось открыть страницу'}
+        </p>
 
       </main>
     );
   }
 
   return (
-    <main className="min-h-screen bg-[#fffaf8]">
+    <main className="min-h-screen overflow-x-hidden bg-[#fffaf7]">
 
-      <div className="flex min-h-screen">
+      {/*
+       * Интерфейс увеличен до 125%.
+       *
+       * 80vh × 1.25 = 100vh.
+       *
+       * Благодаря этому zoom больше
+       * не создаёт лишние 25% высоты
+       * страницы внизу.
+       */}
+      <div className="min-h-[80vh] w-full [zoom:1.25]">
 
-        {/* Боковая панель */}
-        <aside className="hidden w-[245px] shrink-0 border-r border-[#efe2de] bg-[#fffdfc] lg:flex lg:flex-col">
+        <div className="flex min-h-[80vh]">
 
-          {/* Логотип */}
-          <div className="px-6 py-6">
+          <aside className="hidden w-[260px] shrink-0 border-r border-[#efe2dc] bg-[#fffdf9] lg:flex lg:flex-col">
 
-            <button
-              type="button"
-              onClick={() =>
-                router.push(
-                  '/home',
-                )
-              }
-              className="flex items-center gap-3"
-            >
-
-              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#f7dfe2] text-[#cb727b]">
-                <Heart
-                  size={20}
-                  fill="currentColor"
-                />
-              </div>
-
-              <div className="text-left">
-
-                <p className="text-lg font-semibold text-[#554442]">
-                  Вдвоём
-                </p>
-
-                <p className="mt-0.5 text-xs text-[#ab9690]">
-                  пространство для двоих
-                </p>
-
-              </div>
-
-            </button>
-
-          </div>
-
-          {/* Навигация */}
-          <nav className="px-3">
-
-            <SidebarItem
-              icon={
-                <Heart
-                  size={18}
-                />
-              }
-              label="Главная"
-              active
-              onClick={() =>
-                router.push(
-                  '/home',
-                )
-              }
-            />
-
-            <SidebarItem
-              icon={
-                <CalendarDays
-                  size={18}
-                />
-              }
-              label="Календарь"
-              onClick={() =>
-                router.push(
-                  '/calendar',
-                )
-              }
-            />
-
-            <SidebarItem
-              icon={
-                <Gift
-                  size={18}
-                />
-              }
-              label="Вишлисты"
-              onClick={() =>
-                router.push(
-                  '/wishlists',
-                )
-              }
-            />
-
-            <SidebarItem
-              icon={
-                <MapPin
-                  size={18}
-                />
-              }
-              label="Карта"
-              badge="скоро"
-            />
-
-            <SidebarItem
-              icon={
-                <Images
-                  size={18}
-                />
-              }
-              label="Доска дня"
-              badge="скоро"
-            />
-
-          </nav>
-
-          {/* Нижняя часть */}
-          <div className="mt-auto border-t border-[#f1e6e3] p-4">
-
-            {relationship && (
-              <SidebarItem
-                icon={
-                  <Heart
-                    size={18}
-                  />
-                }
-                label="Наши отношения"
-                onClick={() =>
-                  router.push(
-                    '/settings/relationship',
-                  )
-                }
-              />
-            )}
-
-            <div className="mt-4 flex items-center gap-3 rounded-2xl p-2">
-
-              <Avatar
-                name={
-                  userName
-                }
-                avatarUrl={
-                  user.avatarUrl
-                }
-                size="medium"
-              />
-
-              <button
-                type="button"
-                onClick={() =>
-                  router.push(
-                    `/profile/${user.nickname}`,
-                  )
-                }
-                className="min-w-0 flex-1 text-left"
-              >
-
-                <p className="truncate text-sm font-medium text-[#5a4744]">
-                  {userName}
-                </p>
-
-                <p className="truncate text-xs text-[#a28d87]">
-                  @{user.nickname}
-                </p>
-
-              </button>
-
-              <button
-                type="button"
-                title="Выйти"
-                onClick={
-                  handleLogout
-                }
-                className="flex h-9 w-9 items-center justify-center rounded-xl text-[#9c8680] transition hover:bg-[#fff0ef] hover:text-[#c36f77] active:scale-[0.94]"
-              >
-                <LogOut
-                  size={17}
-                />
-              </button>
-
-            </div>
-
-          </div>
-
-        </aside>
-
-        {/* Основная часть */}
-        <div className="min-w-0 flex-1">
-
-          {/* Верхняя панель */}
-          <header className="sticky top-0 z-30 border-b border-[#f0e4e0] bg-[#fffaf8]/90 px-5 py-4 backdrop-blur-xl md:px-8">
-
-            <div className="mx-auto flex max-w-[1440px] items-center justify-between gap-4">
-
-              <div className="hidden w-full max-w-md md:block">
-                <UserSearch />
-              </div>
+            <div className="px-7 py-7">
 
               <button
                 type="button"
@@ -657,214 +459,325 @@ export default function HomePage() {
                     '/home',
                   )
                 }
-                className="flex items-center gap-2 md:hidden"
+                className="flex items-center gap-3"
               >
 
-                <Heart
-                  size={20}
-                  className="text-[#c66f77]"
-                  fill="currentColor"
-                />
+                <div className="flex h-11 w-11 items-center justify-center rounded-full border border-[#eabdc2] text-[#dc7d87]">
+                  <Heart
+                    size={24}
+                  />
+                </div>
 
-                <span className="font-semibold text-[#554442]">
-                  Вдвоём
-                </span>
+                <div className="text-left">
+
+                  <p className="text-[24px] font-medium text-[#554442]">
+                    Вдвоём
+                  </p>
+
+                  <p className="text-[10px] text-[#b29e98]">
+                    пространство для двоих
+                  </p>
+
+                </div>
 
               </button>
 
-              <div className="ml-auto flex items-center gap-2">
+            </div>
 
-                <InvitationsButton />
+            <nav className="px-5">
 
-                <button
-                  type="button"
-                  onClick={() =>
-                    router.push(
-                      `/profile/${user.nickname}`,
-                    )
-                  }
-                  className="hidden items-center gap-3 rounded-2xl px-2 py-1.5 transition hover:bg-[#fff0ed] active:scale-[0.98] sm:flex"
-                >
-
-                  <Avatar
-                    name={
-                      userName
-                    }
-                    avatarUrl={
-                      user.avatarUrl
-                    }
-                    size="small"
+              <SidebarItem
+                icon={
+                  <Heart
+                    size={18}
+                    fill="currentColor"
                   />
+                }
+                label="Главная"
+                active
+                onClick={() =>
+                  router.push(
+                    '/home',
+                  )
+                }
+              />
 
-                  <div className="max-w-[170px] text-left">
+              <SidebarItem
+                icon={
+                  <CalendarDays
+                    size={18}
+                  />
+                }
+                label="Календарь"
+                onClick={() =>
+                  router.push(
+                    '/calendar',
+                  )
+                }
+              />
 
-                    <p className="truncate text-sm font-medium text-[#5f4c48]">
-                      {userName}
-                    </p>
+              <SidebarItem
+                icon={
+                  <Gift
+                    size={18}
+                  />
+                }
+                label="Вишлисты"
+                onClick={() =>
+                  router.push(
+                    '/wishlists',
+                  )
+                }
+              />
 
-                    <p className="truncate text-xs text-[#a38e88]">
-                      @{user.nickname}
-                    </p>
+              <SidebarItem
+                icon={
+                  <MapPin
+                    size={18}
+                  />
+                }
+                label="Карта"
+                badge="скоро"
+              />
 
-                  </div>
+              <SidebarItem
+                icon={
+                  <Images
+                    size={18}
+                  />
+                }
+                label="Доска дня"
+                badge="скоро"
+              />
 
-                </button>
-
-                <button
-                  type="button"
-                  title="Настройки профиля"
-                  onClick={() =>
-                    router.push(
-                      '/settings/profile',
-                    )
-                  }
-                  className="flex h-10 w-10 items-center justify-center rounded-xl text-[#927c77] transition hover:bg-[#fff0ef] hover:text-[#c66f77] active:scale-[0.92]"
-                >
+              <SidebarItem
+                icon={
                   <Settings
                     size={18}
                   />
-                </button>
+                }
+                label="Настройки"
+                onClick={() =>
+                  router.push(
+                    '/settings/profile',
+                  )
+                }
+              />
+
+            </nav>
+
+            <div className="mt-auto px-7 pb-8">
+
+              <div className="relative h-[140px]">
+
+                <Leaf
+                  size={55}
+                  className="absolute bottom-6 left-6 -rotate-[30deg] text-[#c5b6cf]"
+                />
+
+                <div className="absolute bottom-0 right-7 h-[62px] w-[76px] rounded-b-[24px] rounded-t-[12px] bg-[#f6cfd2]">
+
+                  <Heart
+                    size={22}
+                    fill="currentColor"
+                    className="absolute left-1/2 top-5 -translate-x-1/2 text-white"
+                  />
+
+                </div>
 
               </div>
 
             </div>
 
-          </header>
+          </aside>
 
-          {/* Контент */}
-          <div className="px-5 py-7 md:px-8 md:py-8">
+          <div className="min-w-0 flex-1">
 
-            <div className="mx-auto max-w-[1440px]">
+            <header className="sticky top-0 z-30 border-b border-[#f0e5e0] bg-[#fffaf7]/95 px-6 py-4 backdrop-blur-xl">
 
-              <div className="mb-6 md:hidden">
-                <UserSearch />
+              {/*
+               * Рабочая ширина 1360px.
+               */}
+              <div className="mx-auto flex w-full max-w-[1360px] items-center gap-5">
+
+                <div className="hidden min-w-[185px] items-center gap-2 text-sm text-[#846f69] xl:flex">
+
+                  <CalendarDays
+                    size={18}
+                  />
+
+                  {formatCurrentDate()}
+
+                </div>
+
+                <div className="w-full max-w-[500px]">
+                  <UserSearch />
+                </div>
+
+                <div className="ml-auto flex items-center gap-2">
+
+                  <InvitationsButton />
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      router.push(
+                        `/profile/${user.nickname}`,
+                      )
+                    }
+                    className="group hidden items-center gap-3 rounded-2xl px-3 py-2 transition hover:bg-[#fff0ec] sm:flex"
+                  >
+
+                    <Avatar
+                      name={
+                        userName
+                      }
+                      avatarUrl={
+                        user.avatarUrl
+                      }
+                      size="small"
+                    />
+
+                    <div className="text-left">
+
+                      <p className="text-sm font-medium text-[#584642] group-hover:text-[#c16b74]">
+                        {userName}
+                      </p>
+
+                      <p className="text-xs text-[#a18d87] group-hover:text-[#c88489]">
+                        @{user.nickname}
+                      </p>
+
+                    </div>
+
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      router.push(
+                        '/settings/profile',
+                      )
+                    }
+                    className="flex h-10 w-10 items-center justify-center rounded-xl text-[#9c8882] hover:bg-[#fff0ed]"
+                  >
+                    <Settings
+                      size={17}
+                    />
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={
+                      handleLogout
+                    }
+                    className="flex h-10 w-10 items-center justify-center rounded-xl text-[#9c8882] hover:bg-[#fff0f0]"
+                  >
+                    <LogOut
+                      size={17}
+                    />
+                  </button>
+
+                </div>
+
               </div>
 
-              {error && (
-                <div className="mb-6 rounded-2xl border border-[#efc9cc] bg-[#fff1f1] px-5 py-4 text-sm text-[#a95057]">
-                  {error}
-                </div>
-              )}
+            </header>
 
-              {/* Hero */}
-              {relationship &&
-              partner &&
-              partnerName ? (
-                <CoupleHero
-                  user={
-                    user
-                  }
-                  userName={
-                    userName
-                  }
-                  relationship={
-                    relationship
-                  }
-                  partnerName={
-                    partnerName
-                  }
-                  onPartnerClick={() =>
-                    router.push(
-                      `/profile/${partner.nickname}`,
-                    )
-                  }
-                  onSettingsClick={() =>
-                    router.push(
-                      '/settings/relationship',
-                    )
-                  }
-                />
-              ) : (
-                <SingleHero
-                  userName={
-                    userName
-                  }
-                  onInvitationsClick={() =>
-                    router.push(
-                      '/invitations',
-                    )
-                  }
-                />
-              )}
+            <div className="px-6 py-7">
 
-              {/* Превью разделов */}
-              <section className="mt-7 grid gap-5 xl:grid-cols-3">
+              <div className="mx-auto w-full max-w-[1360px]">
 
-                <PlansPreviewCard
-                  events={
-                    previewEvents
-                  }
-                  onOpenCalendar={() =>
-                    router.push(
-                      '/calendar',
-                    )
-                  }
-                />
+                {error && (
+                  <div className="mb-5 rounded-2xl border border-[#efc9cc] bg-[#fff1f1] p-4 text-sm text-[#a95057]">
+                    {error}
+                  </div>
+                )}
 
-                <WishlistPreviewCard
-                  entries={
-                    wishlistPreview
-                  }
-                  onOpenWishlists={() =>
-                    router.push(
-                      '/wishlists',
-                    )
-                  }
-                />
+                <section className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_255px]">
 
-                <EmptyDayBoardPreview />
+                  {relationship &&
+                  partner &&
+                  partnerName ? (
+                    <CoupleHero
+                      user={
+                        user
+                      }
+                      userName={
+                        userName
+                      }
+                      relationship={
+                        relationship
+                      }
+                      partnerName={
+                        partnerName
+                      }
+                      onPartnerClick={() =>
+                        router.push(
+                          `/profile/${partner.nickname}`,
+                        )
+                      }
+                    />
+                  ) : (
+                    <SingleHero
+                      userName={
+                        userName
+                      }
+                    />
+                  )}
 
-              </section>
+                  <DaysTogetherCard
+                    relationship={
+                      relationship
+                    }
+                  />
 
-              {/* Нижняя часть */}
-              <section className="mt-6 grid gap-5 xl:grid-cols-[1.45fr_0.65fr]">
+                </section>
 
-                <UpcomingPlansCard
-                  relationshipExists={
-                    Boolean(
-                      relationship,
-                    )
+                {/*
+                 * Вишлист специально
+                 * шире календаря.
+                 */}
+                <section className="mt-6 grid gap-5 md:grid-cols-2 2xl:grid-cols-[0.85fr_1.3fr_1fr_1fr]">
+
+                  <CalendarDashboardCard
+                    events={
+                      previewEvents
+                    }
+                    onOpen={() =>
+                      router.push(
+                        '/calendar',
+                      )
+                    }
+                  />
+
+                  <WishlistDashboardCard
+                    entries={
+                      wishlistPreview
+                    }
+                    onOpen={() =>
+                      router.push(
+                        '/wishlists',
+                      )
+                    }
+                  />
+
+                  <MapDashboardCard />
+
+                  <DayBoardDashboardCard />
+
+                </section>
+
+                <DashboardStats
+                  eventCount={
+                    upcomingEvents.length
                   }
-                  firstUpcomingEvent={
-                    firstUpcomingEvent
-                  }
-                  moreEventsCount={
-                    moreEventsCount
-                  }
-                  onOpenCalendar={() =>
-                    router.push(
-                      '/calendar',
-                    )
-                  }
-                  onEditEvent={(
-                    eventId,
-                  ) =>
-                    router.push(
-                      `/calendar?edit=${encodeURIComponent(
-                        eventId,
-                      )}`,
-                    )
+                  wishlistCount={
+                    wishlistCount
                   }
                 />
 
-                <RelationshipSummaryCard
-                  relationship={
-                    relationship
-                  }
-                  userName={
-                    userName
-                  }
-                  partnerName={
-                    partnerName
-                  }
-                  onOpenSettings={() =>
-                    router.push(
-                      '/settings/relationship',
-                    )
-                  }
-                />
-
-              </section>
+              </div>
 
             </div>
 
@@ -884,307 +797,419 @@ function CoupleHero({
   relationship,
   partnerName,
   onPartnerClick,
-  onSettingsClick,
 }: {
   user: User;
   userName: string;
   relationship: Relationship;
   partnerName: string;
   onPartnerClick: () => void;
-  onSettingsClick: () => void;
 }) {
   return (
-    <section className="relative overflow-hidden rounded-[32px] border border-[#ecdeda] bg-gradient-to-br from-[#fff1ef] via-[#fdf6f3] to-[#f1ebf7] p-7 shadow-[0_20px_70px_rgba(91,65,59,0.06)] md:p-9">
+    <article className="relative min-h-[245px] overflow-hidden rounded-[28px] border border-[#eeded9] bg-gradient-to-r from-[#fff0ec] via-[#fff4ee] to-[#f2eaf8] px-10 py-7">
 
-      <div className="absolute -right-20 -top-24 h-64 w-64 rounded-full bg-white/40 blur-3xl" />
+      <Sparkles
+        size={18}
+        className="absolute right-12 top-8 text-[#e7bd7c]"
+      />
 
-      <div className="relative grid gap-8 lg:grid-cols-[1fr_auto] lg:items-center">
+      <div className="flex h-full items-center gap-8">
 
-        <div>
+        <div className="flex shrink-0 items-center">
 
-          <div className="flex items-center gap-2 text-sm font-medium text-[#c06f77]">
+          <Avatar
+            name={
+              userName
+            }
+            avatarUrl={
+              user.avatarUrl
+            }
+            size="large"
+          />
+
+          <div className="-mx-3 z-10 flex h-11 w-11 items-center justify-center rounded-full border-4 border-white bg-[#df818b] text-white">
 
             <Heart
-              size={15}
+              size={17}
               fill="currentColor"
             />
 
-            Ваше общее пространство
-
           </div>
 
-          <h1 className="mt-4 max-w-2xl text-3xl font-semibold leading-tight text-[#554442] md:text-[34px]">
-            Добро пожаловать,
-            {' '}
-            {userName}
-            {' ♡'}
-          </h1>
-
-          <p className="mt-3 max-w-2xl text-sm leading-7 text-[#917b75] md:text-base">
-            Здесь будут храниться
-            ваши планы, желания,
-            фотографии и маленькие
-            моменты, которые важны
-            только вам двоим.
-          </p>
-
-          <div className="mt-7 flex flex-wrap gap-3">
-
-            <button
-              type="button"
-              onClick={
-                onPartnerClick
-              }
-              className="rounded-2xl bg-[#dc8b92] px-5 py-3 text-sm font-medium text-white transition-all hover:bg-[#d17a82] active:scale-[0.97]"
-            >
-              Профиль партнёра
-            </button>
-
-            <button
-              type="button"
-              onClick={
-                onSettingsClick
-              }
-              className="flex items-center gap-2 rounded-2xl border border-[#e5ceca] bg-white/70 px-5 py-3 text-sm font-medium text-[#806964] shadow-sm transition-all hover:border-[#dc9298] hover:bg-[#fff0ef] hover:text-[#bd666e] active:scale-[0.97]"
-            >
-              <Settings2
-                size={17}
-              />
-
-              Настройки отношений
-            </button>
-
-          </div>
-
-        </div>
-
-        <div className="flex flex-col items-center">
-
-          <div className="flex items-center">
-
-            <Avatar
-              name={
-                userName
-              }
-              avatarUrl={
-                user.avatarUrl
-              }
-              size="hero"
-            />
-
-            <div className="-mx-2 z-10 flex h-11 w-11 items-center justify-center rounded-full border-4 border-[#fbf1f1] bg-white text-[#d47b83] shadow-sm">
-
-              <Heart
-                size={18}
-                fill="currentColor"
-              />
-
-            </div>
-
+          <button
+            type="button"
+            onClick={
+              onPartnerClick
+            }
+          >
             <Avatar
               name={
                 partnerName
               }
               avatarUrl={
-                relationship
-                  .partner
+                relationship.partner
                   .avatarUrl
               }
-              size="hero"
+              size="large"
             />
+          </button>
 
-          </div>
+        </div>
 
-          <p className="mt-4 text-sm text-[#9d8781]">
-            Вместе уже
+        <div>
+
+          <p className="text-sm text-[#ba737b]">
+            Ваше общее пространство
           </p>
 
-          <p className="mt-1 text-4xl font-semibold text-[#c36f77]">
-            {
-              relationship
-                .daysTogether
+          <h1 className="mt-3 text-[32px] font-medium text-[#594844]">
+            Добро пожаловать,
+            вы вдвоём! 💕
+          </h1>
+
+          <p className="mt-3 text-base text-[#907b75]">
+            Ваши планы рядом,
+            даже когда вы далеко.
+          </p>
+
+          <button
+            type="button"
+            onClick={
+              onPartnerClick
             }
-          </p>
-
-          <p className="text-sm text-[#9d8781]">
-            дней
-          </p>
-
-          <p className="mt-3 text-xs text-[#ab9791]">
-            с{' '}
-            {formatLongDate(
-              relationship
-                .startedAt,
-            )}
-          </p>
+            className="mt-5 rounded-2xl border border-[#e7d3cf] bg-white/70 px-5 py-2.5 text-sm text-[#765f5b]"
+          >
+            ♡ Профиль партнёра
+          </button>
 
         </div>
 
       </div>
 
-    </section>
+    </article>
   );
 }
 
 function SingleHero({
   userName,
-  onInvitationsClick,
 }: {
   userName: string;
-  onInvitationsClick: () => void;
 }) {
   return (
-    <section className="rounded-[32px] border border-[#ecdeda] bg-gradient-to-br from-[#fff1ef] via-[#fdf6f3] to-[#f1ebf7] p-7 md:p-9">
+    <article className="min-h-[245px] rounded-[28px] border border-[#eeded9] bg-[#fff2ef] p-8">
 
-      <div className="max-w-2xl">
+      <h1 className="text-3xl text-[#594844]">
+        Привет, {userName} ♡
+      </h1>
 
-        <div className="flex items-center gap-2 text-sm font-medium text-[#c06f77]">
-
-          <Heart
-            size={15}
-          />
-
-          Вдвоём
-
-        </div>
-
-        <h1 className="mt-4 text-3xl font-semibold text-[#554442] md:text-[34px]">
-          Привет,
-          {' '}
-          {userName}
-          {' ♡'}
-        </h1>
-
-        <p className="mt-3 leading-7 text-[#917b75]">
-          Сейчас у вас нет активных
-          отношений. Найдите человека
-          по никнейму или проверьте
-          входящие приглашения.
-        </p>
-
-        <button
-          type="button"
-          onClick={
-            onInvitationsClick
-          }
-          className="mt-6 flex items-center gap-2 rounded-2xl bg-[#dc8b92] px-5 py-3 text-sm font-medium text-white transition-all hover:bg-[#d17a82] active:scale-[0.97]"
-        >
-          Проверить приглашения
-
-          <ChevronRight
-            size={17}
-          />
-        </button>
-
-      </div>
-
-    </section>
+    </article>
   );
 }
 
-function PlansPreviewCard({
-  events,
-  onOpenCalendar,
+function DaysTogetherCard({
+  relationship,
 }: {
-  events: CalendarEvent[];
-  onOpenCalendar: () => void;
+  relationship: Relationship | null;
 }) {
   return (
-    <article className="rounded-[28px] border border-[#eee0dc] bg-white p-5 shadow-[0_10px_30px_rgba(91,65,59,0.03)]">
+    <article className="relative overflow-hidden rounded-[28px] border border-[#eeded9] bg-[#fffdfb] p-6">
 
-      <div className="flex items-center gap-3">
+      <Heart
+        size={21}
+        className="absolute right-5 top-5 text-[#df939b]"
+      />
 
-        <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#efe8f7] text-[#8d7ca4]">
-          <CalendarDays
-            size={20}
+      <p className="text-sm text-[#75615c]">
+        Дней вместе
+      </p>
+
+      {relationship && (
+        <>
+
+          <p className="mt-4 font-serif text-[54px] leading-none text-[#574642]">
+            {relationship.daysTogether}
+          </p>
+
+          <p className="mt-1 text-sm text-[#d2767f]">
+            {pluralizeDays(
+              relationship.daysTogether,
+            )}
+          </p>
+
+          <p className="mt-4 text-xs text-[#9f8a84]">
+            с{' '}
+            {formatLongDate(
+              relationship.startedAt,
+            )}
+          </p>
+
+          <Leaf
+            size={40}
+            className="absolute bottom-10 right-6 text-[#afb28d]"
           />
-        </div>
 
-        <h2 className="text-xl font-semibold text-[#554442]">
-          Планы на 30 дней
-        </h2>
+        </>
+      )}
+
+    </article>
+  );
+}
+
+function CalendarDashboardCard({
+  events,
+  onOpen,
+}: {
+  events: CalendarEvent[];
+  onOpen: () => void;
+}) {
+  return (
+    <article className="flex min-h-[390px] flex-col rounded-[24px] border border-[#eee0db] bg-white p-5">
+
+      <CardHeader
+        icon={
+          <CalendarDays
+            size={19}
+          />
+        }
+        title="Календарь"
+        action="Открыть"
+        onAction={
+          onOpen
+        }
+      />
+
+      <p className="mt-5 text-xs text-[#8d7973]">
+        Ближайшие события
+      </p>
+
+      <div className="mt-3 space-y-2">
+
+        {events.map(
+          (
+            event,
+          ) => (
+            <button
+              key={
+                event.id
+              }
+              type="button"
+              onClick={
+                onOpen
+              }
+              className="flex w-full items-center gap-3 rounded-[16px] bg-[#fffaf8] px-3 py-3 text-left"
+            >
+
+              <div className="w-10 text-center">
+
+                <p className="text-[10px] text-[#d57780]">
+                  {formatMonthShort(
+                    event.startsAt,
+                  )}
+                </p>
+
+                <p className="text-xl font-semibold text-[#cb6c76]">
+                  {formatDayNumber(
+                    event.startsAt,
+                  )}
+                </p>
+
+              </div>
+
+              <div className="min-w-0 flex-1">
+
+                <p className="truncate text-sm font-medium text-[#654f4a]">
+                  {event.title}
+                </p>
+
+                <p className="text-xs text-[#a08b85]">
+                  {event.allDay
+                    ? 'Весь день'
+                    : formatEventTime(
+                        event,
+                      )}
+                </p>
+
+              </div>
+
+            </button>
+          ),
+        )}
 
       </div>
 
+      <button
+        type="button"
+        onClick={
+          onOpen
+        }
+        className="mt-auto pt-5 text-xs text-[#d1767e]"
+      >
+        Смотреть все события →
+      </button>
+
+    </article>
+  );
+}
+
+function WishlistDashboardCard({
+  entries,
+  onOpen,
+}: {
+  entries: WishlistPreviewEntry[];
+  onOpen: () => void;
+}) {
+  return (
+    <article className="flex min-h-[390px] flex-col rounded-[24px] border border-[#eee0db] bg-white p-5">
+
+      <CardHeader
+        icon={
+          <Heart
+            size={19}
+          />
+        }
+        title="Вишлисты"
+        action="Смотреть всё"
+        onAction={
+          onOpen
+        }
+      />
+
       <div className="mt-5 space-y-3">
 
-        {events.length > 0 ? (
-          events.map(
-            (event) => (
-              <button
-                key={
-                  event.id
-                }
-                type="button"
-                onClick={
-                  onOpenCalendar
-                }
-                className="flex w-full items-center gap-4 rounded-[18px] border border-[#f0e2de] bg-[#fffaf9] px-4 py-3 text-left transition-all hover:border-[#e5c9c5] hover:bg-[#fff3f1] hover:shadow-sm active:scale-[0.99]"
-              >
+        {entries.length >
+        0 ? (
+          entries.map(
+            (
+              entry,
+            ) => {
+              const ownerName =
+                entry.owner
+                  .displayName ??
+                entry.owner
+                  .nickname;
 
-                <div className="flex w-[34px] shrink-0 flex-col items-center text-[#d47c84]">
+              return (
+                <button
+                  key={
+                    entry.item.id
+                  }
+                  type="button"
+                  onClick={
+                    onOpen
+                  }
+                  className="flex w-full items-center gap-3 rounded-[16px] p-2 text-left transition hover:bg-[#fff8f6]"
+                >
 
-                  <span className="text-[11px] font-medium uppercase leading-none">
-                    {formatWeekdayShort(
-                      event.startsAt,
-                    )}
-                  </span>
-
-                  <span className="mt-1 text-2xl font-semibold leading-none">
-                    {formatDayNumber(
-                      event.startsAt,
-                    )}
-                  </span>
-
-                </div>
-
-                <div className="min-w-0 flex-1">
-
-                  <p className="truncate font-medium text-[#594844]">
-                    {event.title}
-                  </p>
-
-                  <div className="mt-1 flex items-center gap-1.5 text-sm text-[#a18d87]">
-
-                    <Clock3
-                      size={14}
+                  {entry.item.imageUrl ? (
+                    <div
+                      role="img"
+                      aria-label={
+                        entry.item.title
+                      }
+                      className="h-[62px] w-[62px] shrink-0 rounded-[13px] border border-[#f0e5e1] bg-white bg-contain bg-center bg-no-repeat"
+                      style={{
+                        backgroundImage:
+                          `url("${entry.item.imageUrl}")`,
+                      }}
                     />
+                  ) : (
+                    <div className="flex h-[62px] w-[62px] shrink-0 items-center justify-center rounded-[13px] bg-[#f5edf7]">
 
-                    <span>
-                      {event.allDay
-                        ? 'Весь день'
-                        : formatEventTime(
-                            event,
+                      <Gift
+                        size={23}
+                        className="text-[#a895b4]"
+                      />
+
+                    </div>
+                  )}
+
+                  <div className="min-w-0 flex-1">
+
+                    <div className="flex items-start justify-between gap-3">
+
+                      <p className="truncate text-sm font-medium text-[#67514d]">
+                        {entry.item.title}
+                      </p>
+
+                      {entry.item.price !==
+                        null && (
+                        <span className="shrink-0 text-xs font-medium text-[#8e7898]">
+                          {formatPrice(
+                            entry.item.price,
                           )}
-                    </span>
+                        </span>
+                      )}
+
+                    </div>
+
+                    <p className="mt-1 truncate text-[11px] text-[#a18b86]">
+                      {ownerName}
+                      {' · '}
+                      {entry.wishlistTitle}
+                    </p>
+
+                    <div className="mt-2 flex items-center gap-2">
+
+                      <div className="flex gap-0.5">
+
+                        {[
+                          1,
+                          2,
+                          3,
+                          4,
+                          5,
+                        ].map(
+                          (
+                            value,
+                          ) => (
+                            <Heart
+                              key={
+                                value
+                              }
+                              size={12}
+                              fill={
+                                value <=
+                                  entry.item
+                                    .priority
+                                  ? 'currentColor'
+                                  : 'none'
+                              }
+                              className={
+                                value <=
+                                  entry.item
+                                    .priority
+                                  ? 'text-[#dc7d87]'
+                                  : 'text-[#ded1d3]'
+                              }
+                            />
+                          ),
+                        )}
+
+                      </div>
+
+                      <span className="text-[10px] font-medium text-[#b16b73]">
+                        {getPriorityLabel(
+                          entry.item.priority,
+                        )}
+                      </span>
+
+                    </div>
 
                   </div>
 
-                </div>
+                  <ChevronRight
+                    size={14}
+                    className="shrink-0 text-[#c3aaa5]"
+                  />
 
-                <ChevronRight
-                  size={16}
-                  className="shrink-0 text-[#baa49e]"
-                />
-
-              </button>
-            ),
+                </button>
+              );
+            },
           )
         ) : (
-          <div className="rounded-[20px] border border-dashed border-[#ebdbd7] bg-[#fffaf9] px-5 py-10 text-center">
+          <div className="flex min-h-[230px] items-center justify-center">
 
-            <CalendarDays
-              size={25}
-              className="mx-auto text-[#d2aaa7]"
-            />
-
-            <p className="mt-4 font-medium text-[#7c6660]">
-              Пока нет планов
-            </p>
-
-            <p className="mt-2 text-sm text-[#a18c86]">
-              События на ближайшие
-              30 дней появятся здесь.
+            <p className="text-sm text-[#9f8c97]">
+              Желаний пока нет
             </p>
 
           </div>
@@ -1195,632 +1220,253 @@ function PlansPreviewCard({
       <button
         type="button"
         onClick={
-          onOpenCalendar
+          onOpen
         }
-        className="mt-5 flex items-center gap-2 rounded-xl px-2 py-2 text-sm font-medium text-[#d07e85] transition hover:bg-[#fff0ef] hover:text-[#be6770] active:scale-[0.98]"
+        className="mt-auto pt-5 text-xs text-[#d1767e]"
       >
-        Открыть календарь
-
-        <ChevronRight
-          size={15}
-        />
+        Перейти к вишлистам →
       </button>
 
     </article>
   );
 }
 
-/*
- * Превью настоящих желаний
- * из backend.
- */
-function WishlistPreviewCard({
-  entries,
-  onOpenWishlists,
-}: {
-  entries: WishlistPreviewEntry[];
-  onOpenWishlists: () => void;
-}) {
+function MapDashboardCard() {
   return (
-    <article className="rounded-[28px] border border-[#eee0dc] bg-white p-5 shadow-[0_10px_30px_rgba(91,65,59,0.03)]">
+    <article className="flex min-h-[390px] flex-col rounded-[24px] border border-[#eee0db] bg-white p-5">
 
-      <div className="flex items-center justify-between gap-3">
-
-        <div className="flex items-center gap-3">
-
-          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#eee7f4] text-[#88769a]">
-            <Gift
-              size={20}
-            />
-          </div>
-
-          <h2 className="text-xl font-semibold text-[#554442]">
-            Вишлист
-          </h2>
-
-        </div>
-
-        {entries.length >
-          0 && (
-          <span className="rounded-full bg-[#f3edf6] px-2.5 py-1 text-[11px] font-medium text-[#8f7ba0]">
-            последние желания
-          </span>
-        )}
-
-      </div>
-
-      {entries.length >
-      0 ? (
-        <>
-          <div className="mt-5 grid grid-cols-3 gap-3">
-
-            {entries.map(
-              (
-                entry,
-              ) => {
-                const ownerName =
-                  entry.owner
-                    .displayName ??
-                  entry.owner
-                    .nickname;
-
-                return (
-                  <button
-                    key={
-                      entry.item.id
-                    }
-                    type="button"
-                    onClick={
-                      onOpenWishlists
-                    }
-                    className="group min-w-0 rounded-[18px] border border-[#eee3ef] bg-[#fffdfc] p-2 text-left transition-all hover:-translate-y-0.5 hover:border-[#d5c6de] hover:bg-[#fdf9ff] hover:shadow-sm active:scale-[0.98]"
-                  >
-
-                    {entry.item
-                      .imageUrl ? (
-                      <div
-                        role="img"
-                        aria-label={
-                          entry.item
-                            .title
-                        }
-                        className="aspect-square w-full rounded-[14px] bg-[#f3edf5] bg-cover bg-center"
-                        style={{
-                          backgroundImage:
-                            `url("${entry.item.imageUrl}")`,
-                        }}
-                      />
-                    ) : (
-                      <div className="flex aspect-square w-full items-center justify-center rounded-[14px] bg-gradient-to-br from-[#f2eaf6] to-[#fbf4ef] text-[#a08daf]">
-
-                        <Gift
-                          size={29}
-                        />
-
-                      </div>
-                    )}
-
-                    <p className="mt-3 line-clamp-2 min-h-[40px] text-sm font-medium leading-5 text-[#594847]">
-                      {
-                        entry.item
-                          .title
-                      }
-                    </p>
-
-                    {entry.item.price !==
-                    null ? (
-                      <p className="mt-1 truncate text-sm font-semibold text-[#89739a]">
-                        {formatPrice(
-                          entry.item
-                            .price,
-                        )}
-                      </p>
-                    ) : (
-                      <p className="mt-1 text-xs text-[#b09da8]">
-                        Цена не указана
-                      </p>
-                    )}
-
-                    <div className="mt-3 border-t border-[#f2e9f1] pt-2">
-
-                      <p className="truncate text-[10px] text-[#a4929f]">
-                        {ownerName}
-                      </p>
-
-                      <p className="mt-0.5 truncate text-[10px] text-[#baaab5]">
-                        {
-                          entry.wishlistTitle
-                        }
-                      </p>
-
-                    </div>
-
-                  </button>
-                );
-              },
-            )}
-
-          </div>
-
-          <button
-            type="button"
-            onClick={
-              onOpenWishlists
-            }
-            className="mt-5 flex items-center gap-2 rounded-xl px-2 py-2 text-sm font-medium text-[#8d779f] transition hover:bg-[#f5eff8] hover:text-[#735f85] active:scale-[0.98]"
-          >
-            Открыть вишлисты
-
-            <ChevronRight
-              size={15}
-            />
-          </button>
-        </>
-      ) : (
-        <div className="mt-5 flex min-h-[250px] items-center justify-center rounded-[20px] border border-dashed border-[#e8dfe8] bg-[#fdfafd] px-6 text-center">
-
-          <div>
-
-            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[#eee7f4] text-[#8b7b9d]">
-              <Gift
-                size={25}
-              />
-            </div>
-
-            <p className="mt-4 font-medium text-[#705e6f]">
-              Вишлисты пока пусты
-            </p>
-
-            <p className="mx-auto mt-2 max-w-[260px] text-sm leading-6 text-[#a393a2]">
-              Добавьте первое желание,
-              и оно появится здесь.
-            </p>
-
-            <button
-              type="button"
-              onClick={
-                onOpenWishlists
-              }
-              className="mt-5 inline-flex items-center gap-2 rounded-xl bg-[#eee7f4] px-4 py-2.5 text-sm font-medium text-[#806b91] transition hover:bg-[#e4d9eb] active:scale-[0.97]"
-            >
-              Открыть вишлисты
-
-              <ChevronRight
-                size={15}
-              />
-            </button>
-
-          </div>
-
-        </div>
-      )}
-
-    </article>
-  );
-}
-
-/*
- * Доска дня ещё не реализована,
- * поэтому здесь честное
- * пустое состояние.
- */
-function EmptyDayBoardPreview() {
-  return (
-    <article className="rounded-[28px] border border-[#eee0dc] bg-white p-5 shadow-[0_10px_30px_rgba(91,65,59,0.03)]">
-
-      <div className="flex items-center gap-3">
-
-        <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#f8eadc] text-[#bb8a67]">
-          <Images
-            size={20}
+      <CardHeader
+        icon={
+          <MapPin
+            size={19}
           />
-        </div>
-
-        <h2 className="text-xl font-semibold text-[#554442]">
-          Доска дня
-        </h2>
-
-      </div>
-
-      <div className="mt-5 flex min-h-[250px] items-center justify-center rounded-[20px] border border-dashed border-[#eadfd6] bg-[#fffaf6] px-6 text-center">
-
-        <div>
-
-          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[#f8eadc] text-[#b98764]">
-            <Images
-              size={25}
-            />
-          </div>
-
-          <p className="mt-4 font-medium text-[#755f51]">
-            Здесь пока тихо
-          </p>
-
-          <p className="mx-auto mt-2 max-w-[260px] text-sm leading-6 text-[#a18d80]">
-            Ваши фотографии
-            и маленькие моменты
-            появятся здесь после
-            запуска доски дня.
-          </p>
-
-          <span className="mt-4 inline-block rounded-full bg-[#f8eee5] px-3 py-1.5 text-xs font-medium text-[#ad8b72]">
-            Раздел скоро появится
-          </span>
-
-        </div>
-
-      </div>
-
-    </article>
-  );
-}
-
-function UpcomingPlansCard({
-  relationshipExists,
-  firstUpcomingEvent,
-  moreEventsCount,
-  onOpenCalendar,
-  onEditEvent,
-}: {
-  relationshipExists: boolean;
-  firstUpcomingEvent: CalendarEvent | null;
-  moreEventsCount: number;
-  onOpenCalendar: () => void;
-  onEditEvent: (
-    eventId: string,
-  ) => void;
-}) {
-  return (
-    <article className="rounded-[28px] border border-[#eee0dc] bg-white p-5 shadow-[0_10px_30px_rgba(91,65,59,0.03)] md:p-6">
-
-      <div className="flex items-center justify-between gap-4">
-
-        <div className="flex items-center gap-3">
-
-          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#f8eadc] text-[#aa7a59]">
-            <CalendarDays
-              size={20}
-            />
-          </div>
-
-          <h2 className="text-xl font-semibold text-[#554442]">
-            Ближайшие планы
-          </h2>
-
-        </div>
-
-        <button
-          type="button"
-          onClick={
-            onOpenCalendar
-          }
-          className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-[#d07e85] transition hover:bg-[#fff0ef] hover:text-[#be6770] active:scale-[0.98]"
-        >
-          Открыть календарь
-
-          <ChevronRight
-            size={15}
-          />
-        </button>
-
-      </div>
-
-      {!relationshipExists ? (
-        <div className="mt-6 rounded-[22px] border border-dashed border-[#eadbd7] bg-[#fffaf9] px-5 py-10 text-center">
-
-          <p className="font-medium text-[#765f5a]">
-            Календарь станет общим
-            после создания пары
-          </p>
-
-          <p className="mt-2 text-sm leading-6 text-[#a08b85]">
-            После создания отношений
-            здесь появятся ваши планы.
-          </p>
-
-        </div>
-      ) : firstUpcomingEvent ? (
-        <>
-          <div className="mt-6 grid gap-4 lg:grid-cols-[1.05fr_0.95fr]">
-
-            {/* Ближайшее событие */}
-            <button
-              type="button"
-              onClick={
-                onOpenCalendar
-              }
-              className="rounded-[20px] border border-[#f0e2de] bg-[#fffaf9] p-4 text-left transition-all hover:border-[#e4c7c3] hover:bg-[#fff3f1] hover:shadow-sm active:scale-[0.99]"
-            >
-
-              <div className="flex items-start gap-4">
-
-                <div className="flex h-[62px] w-[62px] shrink-0 flex-col items-center justify-center rounded-[18px] bg-[#fae3e5] text-[#bc6b72]">
-
-                  <span className="text-[10px] font-medium uppercase leading-none">
-                    {formatMonthUpper(
-                      firstUpcomingEvent
-                        .startsAt,
-                    )}
-                  </span>
-
-                  <span className="mt-1 text-3xl font-semibold leading-none">
-                    {formatDayNumber(
-                      firstUpcomingEvent
-                        .startsAt,
-                    )}
-                  </span>
-
-                </div>
-
-                <div className="min-w-0">
-
-                  <p className="text-lg font-semibold text-[#5b4946]">
-                    {
-                      firstUpcomingEvent
-                        .title
-                    }
-                  </p>
-
-                  <p className="mt-2 text-sm text-[#a18c86]">
-                    {firstUpcomingEvent
-                      .allDay
-                      ? 'Весь день'
-                      : formatEventTime(
-                          firstUpcomingEvent,
-                        )}
-
-                    {' • '}
-
-                    {formatWeekdayFull(
-                      firstUpcomingEvent
-                        .startsAt,
-                    )}
-                  </p>
-
-                  {firstUpcomingEvent
-                    .location && (
-                    <div className="mt-2 flex items-center gap-2 text-sm text-[#a18c86]">
-
-                      <MapPin
-                        size={14}
-                      />
-
-                      <span className="truncate">
-                        {
-                          firstUpcomingEvent
-                            .location
-                        }
-                      </span>
-
-                    </div>
-                  )}
-
-                </div>
-
-              </div>
-
-            </button>
-
-            {/* Заметка */}
-            <button
-              type="button"
-              onClick={() =>
-                onEditEvent(
-                  firstUpcomingEvent.id,
-                )
-              }
-              className="group rounded-[20px] border border-[#f0e2de] bg-[#fffaf9] p-4 text-left transition-all hover:border-[#dfbdb9] hover:bg-[#fff3f1] hover:shadow-sm active:scale-[0.99]"
-            >
-
-              <div className="flex items-start justify-between gap-3">
-
-                <div>
-
-                  <p className="text-sm font-medium text-[#9f8c86]">
-                    Заметка
-                  </p>
-
-                  <p className="mt-1 text-xs text-[#b8a39d]">
-                    Нажмите, чтобы
-                    отредактировать
-                  </p>
-
-                </div>
-
-                <ChevronRight
-                  size={17}
-                  className="mt-1 text-[#b9a39d] transition group-hover:translate-x-0.5 group-hover:text-[#c97880]"
-                />
-
-              </div>
-
-              {firstUpcomingEvent
-                .description
-                ?.trim() ? (
-                <p className="mt-3 whitespace-pre-line text-sm leading-7 text-[#685451]">
-                  {
-                    firstUpcomingEvent
-                      .description
-                  }
-                </p>
-              ) : (
-                <p className="mt-3 text-sm leading-7 text-[#a28e88]">
-                  К этому событию пока
-                  не добавлена заметка.
-                  Нажмите, чтобы добавить.
-                </p>
-              )}
-
-            </button>
-
-          </div>
-
-          <button
-            type="button"
-            onClick={
-              onOpenCalendar
-            }
-            className="mt-4 flex w-full items-center justify-between rounded-[18px] border border-[#f1e5e1] bg-[#fffdfc] px-4 py-3 text-left transition-all hover:border-[#e4c7c3] hover:bg-[#fff5f3] active:scale-[0.995]"
-          >
-
-            <div className="flex items-center gap-3">
-
-              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#f0d9dc] text-xs font-semibold text-[#b76c74]">
-                ♡
-              </div>
-
-              <p className="text-sm text-[#715d58]">
-
-                {moreEventsCount > 0
-                  ? `Ещё ${moreEventsCount} ${pluralizeEvents(
-                      moreEventsCount,
-                    )} в ближайшие 30 дней`
-                  : 'Это единственное событие на ближайшие 30 дней'}
-
-              </p>
-
-            </div>
-
-            <ChevronRight
-              size={18}
-              className="text-[#b9a39d]"
-            />
-
-          </button>
-        </>
-      ) : (
-        <div className="mt-6 rounded-[22px] border border-dashed border-[#eadbd7] bg-[#fffaf9] px-5 py-10 text-center">
-
-          <p className="font-medium text-[#765f5a]">
-            На ближайшие 30 дней
-            планов пока нет
-          </p>
-
-          <p className="mt-2 text-sm leading-6 text-[#a08b85]">
-            Создайте первое событие
-            в вашем общем календаре.
-          </p>
-
-          <button
-            type="button"
-            onClick={
-              onOpenCalendar
-            }
-            className="mt-5 inline-flex items-center gap-2 rounded-2xl bg-[#df8e94] px-5 py-3 text-sm font-medium text-white transition-all hover:bg-[#d37b83] active:scale-[0.97]"
-          >
-            <CalendarDays
-              size={17}
-            />
-
-            Добавить событие
-          </button>
-
-        </div>
-      )}
-
-    </article>
-  );
-}
-
-function RelationshipSummaryCard({
-  relationship,
-  userName,
-  partnerName,
-  onOpenSettings,
-}: {
-  relationship: Relationship | null;
-  userName: string;
-  partnerName: string | null;
-  onOpenSettings: () => void;
-}) {
-  return (
-    <article className="rounded-[28px] border border-[#eee0dc] bg-white p-5 shadow-[0_10px_30px_rgba(91,65,59,0.03)] md:p-6">
-
-      <div className="flex items-center gap-3">
-
-        <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#f9e2e4] text-[#c06e76]">
+        }
+        title="Карта"
+        badge="скоро"
+      />
+
+      <div className="relative mt-5 flex-1 overflow-hidden rounded-[18px] bg-[#e8eee2]">
+
+        <div
+          className="absolute inset-0 opacity-70"
+          style={{
+            backgroundImage:
+              'linear-gradient(35deg, transparent 46%, rgba(255,255,255,.8) 47%, rgba(255,255,255,.8) 51%, transparent 52%)',
+
+            backgroundSize:
+              '75px 65px',
+          }}
+        />
+
+        <div className="absolute left-[25%] top-[25%] flex h-12 w-12 items-center justify-center rounded-full border-4 border-white bg-[#e8b9a5] text-white">
           <Heart
-            size={20}
+            size={18}
+            fill="currentColor"
           />
         </div>
 
-        <h2 className="text-xl font-semibold text-[#554442]">
-          Наши отношения
-        </h2>
+        <div className="absolute bottom-[23%] right-[20%] flex h-12 w-12 items-center justify-center rounded-full border-4 border-white bg-[#e8b9a5] text-white">
+          <Heart
+            size={18}
+            fill="currentColor"
+          />
+        </div>
 
       </div>
 
-      {relationship &&
-      partnerName ? (
-        <>
-          <p className="mt-5 text-4xl font-semibold leading-none text-[#d0727a]">
-            {
-              relationship
-                .daysTogether
-            }
-          </p>
+    </article>
+  );
+}
 
-          <p className="mt-2 text-sm text-[#907c76]">
-            дней вместе
-          </p>
+function DayBoardDashboardCard() {
+  return (
+    <article className="flex min-h-[390px] flex-col rounded-[24px] border border-[#eee0db] bg-white p-5">
 
-          <div className="mt-6 border-t border-[#f2e7e3] pt-5">
+      <CardHeader
+        icon={
+          <Images
+            size={19}
+          />
+        }
+        title="Доска дня"
+        badge="скоро"
+      />
 
-            <p className="font-semibold text-[#554442]">
-              {userName}
-              {' ♡ '}
-              {partnerName}
-            </p>
+      <p className="mt-5 text-xs text-[#8d7973]">
+        Наши моменты
+      </p>
 
-            <p className="mt-4 text-sm text-[#aa958f]">
-              Наша дата
-            </p>
+      <div className="mt-4 grid flex-1 grid-cols-2 gap-3">
 
-            <p className="mt-1 font-medium text-[#6a5754]">
-              {formatLongDate(
-                relationship
-                  .startedAt,
-              )}
-            </p>
+        <PhotoPlaceholder />
 
-          </div>
+        <PhotoPlaceholder />
 
-          <div className="mt-6 rounded-[20px] bg-[#fff8f6] px-5 py-5 text-center">
+        <div className="rounded-[12px] bg-[#f6c5cc] p-4">
 
-            <p className="leading-7 text-[#6e5955]">
-              Любовь — это когда
-              каждый день выбираешь
-              друг друга снова.
-            </p>
-
-          </div>
-
-          <button
-            type="button"
-            onClick={
-              onOpenSettings
-            }
-            className="mt-5 flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-[#c36f77] transition hover:bg-[#fff0ef] active:scale-[0.97]"
-          >
-            <Settings2
-              size={16}
-            />
-
-            Настройки отношений
-          </button>
-        </>
-      ) : (
-        <div className="mt-6 rounded-[22px] border border-dashed border-[#eadbd7] bg-[#fffaf9] px-5 py-10 text-center">
-
-          <p className="font-medium text-[#765f5a]">
-            Здесь появится история
-            ваших отношений
+          <p className="font-serif text-sm text-[#805c60]">
+            Ты моё
+            <br />
+            любимое
+            <br />
+            место ♡
           </p>
 
         </div>
-      )}
+
+        <PhotoPlaceholder />
+
+      </div>
 
     </article>
+  );
+}
+
+function PhotoPlaceholder() {
+  return (
+    <div className="flex min-h-[90px] items-center justify-center rounded-[12px] bg-gradient-to-br from-[#efd9c6] to-[#969c8b]">
+
+      <Heart
+        size={22}
+        fill="currentColor"
+        className="text-white/70"
+      />
+
+    </div>
+  );
+}
+
+function DashboardStats({
+  eventCount,
+  wishlistCount,
+}: {
+  eventCount: number;
+  wishlistCount: number;
+}) {
+  return (
+    <section className="mt-6 grid overflow-hidden rounded-[24px] border border-[#eee0db] bg-white sm:grid-cols-2">
+
+      <StatItem
+        icon={
+          <Star
+            size={28}
+            fill="currentColor"
+            className="text-[#a993bb]"
+          />
+        }
+        value={
+          eventCount
+        }
+        label="Планов впереди"
+      />
+
+      <StatItem
+        icon={
+          <Heart
+            size={28}
+            fill="currentColor"
+            className="text-[#de8790]"
+          />
+        }
+        value={
+          wishlistCount
+        }
+        label="Общих желаний"
+        border
+      />
+
+    </section>
+  );
+}
+
+function StatItem({
+  icon,
+  value,
+  label,
+  border = false,
+}: {
+  icon: ReactNode;
+  value: number;
+  label: string;
+  border?: boolean;
+}) {
+  return (
+    <div
+      className={[
+        'flex min-h-[105px] items-center justify-center gap-5',
+
+        border
+          ? 'border-l border-[#f1e5e1]'
+          : '',
+      ].join(
+        ' ',
+      )}
+    >
+
+      {icon}
+
+      <div>
+
+        <p className="font-serif text-4xl text-[#594744]">
+          {value}
+        </p>
+
+        <p className="text-xs text-[#9e8983]">
+          {label}
+        </p>
+
+      </div>
+
+    </div>
+  );
+}
+
+function CardHeader({
+  icon,
+  title,
+  action,
+  badge,
+  onAction,
+}: {
+  icon: ReactNode;
+  title: string;
+  action?: string;
+  badge?: string;
+  onAction?: () => void;
+}) {
+  return (
+    <div className="flex items-center gap-3">
+
+      <span className="text-[#b19a94]">
+        {icon}
+      </span>
+
+      <h2 className="font-serif text-[18px] text-[#62504c]">
+        {title}
+      </h2>
+
+      <div className="ml-auto">
+
+        {action &&
+        onAction ? (
+          <button
+            type="button"
+            onClick={
+              onAction
+            }
+            className="rounded-full bg-[#fff0ef] px-3 py-1.5 text-[10px] text-[#cd747c]"
+          >
+            {action}
+          </button>
+        ) : badge ? (
+          <span className="rounded-full bg-[#f6eeea] px-3 py-1.5 text-[10px] text-[#aa948e]">
+            {badge}
+          </span>
+        ) : null}
+
+      </div>
+
+    </div>
   );
 }
 
@@ -1840,43 +1486,31 @@ function SidebarItem({
   return (
     <button
       type="button"
-      onClick={
-        onClick
-      }
       disabled={
         !onClick
       }
+      onClick={
+        onClick
+      }
       className={[
-        'mb-1 flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left text-sm transition-all',
+        'mb-2 flex w-full items-center gap-3 rounded-[14px] px-4 py-3 text-left text-sm',
 
         active
-          ? 'bg-[#fff0ef] font-medium text-[#c36f77]'
-          : 'text-[#846f69]',
-
-        onClick
-          ? 'hover:bg-[#fff5f2] hover:text-[#c36f77] active:scale-[0.98]'
-          : 'cursor-default',
+          ? 'bg-[#fde9e8] text-[#cb7079]'
+          : 'text-[#76625d]',
       ].join(
         ' ',
       )}
     >
 
-      <span
-        className={
-          active
-            ? 'text-[#c36f77]'
-            : 'text-[#a08b85]'
-        }
-      >
-        {icon}
-      </span>
+      {icon}
 
       <span className="flex-1">
         {label}
       </span>
 
       {badge && (
-        <span className="rounded-full bg-[#f5ece9] px-2 py-1 text-[10px] font-medium text-[#b09a94]">
+        <span className="rounded-full bg-[#f4ece8] px-2 py-1 text-[9px]">
           {badge}
         </span>
       )}
@@ -1894,20 +1528,13 @@ function Avatar({
   avatarUrl: string | null;
   size:
     | 'small'
-    | 'medium'
-    | 'hero';
+    | 'large';
 }) {
-  const initial =
-    name
-      .charAt(0)
-      .toUpperCase();
-
-  const sizeClasses =
-    size === 'hero'
-      ? 'h-20 w-20 text-2xl'
-      : size === 'medium'
-        ? 'h-11 w-11 text-base'
-        : 'h-9 w-9 text-sm';
+  const sizeClass =
+    size ===
+    'large'
+      ? 'h-[86px] w-[86px]'
+      : 'h-9 w-9';
 
   if (avatarUrl) {
     return (
@@ -1916,7 +1543,7 @@ function Avatar({
         aria-label={
           `Аватар ${name}`
         }
-        className={`${sizeClasses} shrink-0 rounded-full bg-cover bg-center shadow-sm`}
+        className={`${sizeClass} shrink-0 rounded-full bg-cover bg-center`}
         style={{
           backgroundImage:
             `url("${avatarUrl}")`,
@@ -1927,10 +1554,57 @@ function Avatar({
 
   return (
     <div
-      className={`${sizeClasses} flex shrink-0 items-center justify-center rounded-full bg-[#f4dfe0] font-semibold text-[#b66870] shadow-sm`}
+      className={`${sizeClass} flex items-center justify-center rounded-full bg-[#f3dfe0]`}
     >
-      {initial}
+      {name
+        .charAt(0)
+        .toUpperCase()}
     </div>
+  );
+}
+
+function getPriorityLabel(
+  priority: number,
+) {
+  switch (priority) {
+    case 1:
+      return 'Неплохо бы';
+
+    case 2:
+      return 'Хочу';
+
+    case 3:
+      return 'Очень хочу';
+
+    case 4:
+      return 'Очень сильно хочу';
+
+    case 5:
+      return 'Мечтаю';
+
+    default:
+      return 'Очень хочу';
+  }
+}
+
+function formatCurrentDate() {
+  return new Intl.DateTimeFormat(
+    'ru-RU',
+    {
+      weekday:
+        'long',
+
+      day:
+        'numeric',
+
+      month:
+        'long',
+
+      year:
+        'numeric',
+    },
+  ).format(
+    new Date(),
   );
 }
 
@@ -1942,8 +1616,10 @@ function formatLongDate(
     {
       day:
         'numeric',
+
       month:
         'long',
+
       year:
         'numeric',
     },
@@ -1952,28 +1628,6 @@ function formatLongDate(
       value,
     ),
   );
-}
-
-function formatMonthUpper(
-  value: string,
-) {
-  return new Intl.DateTimeFormat(
-    'ru-RU',
-    {
-      month:
-        'short',
-    },
-  )
-    .format(
-      new Date(
-        value,
-      ),
-    )
-    .replace(
-      '.',
-      '',
-    )
-    .toUpperCase();
 }
 
 function formatDayNumber(
@@ -1986,13 +1640,13 @@ function formatDayNumber(
   );
 }
 
-function formatWeekdayShort(
+function formatMonthShort(
   value: string,
 ) {
   return new Intl.DateTimeFormat(
     'ru-RU',
     {
-      weekday:
+      month:
         'short',
     },
   )
@@ -2008,60 +1662,23 @@ function formatWeekdayShort(
     .toUpperCase();
 }
 
-function formatWeekdayFull(
-  value: string,
+function formatEventTime(
+  event: CalendarEvent,
 ) {
   return new Intl.DateTimeFormat(
     'ru-RU',
     {
-      weekday:
-        'long',
+      hour:
+        '2-digit',
+
+      minute:
+        '2-digit',
     },
   ).format(
     new Date(
-      value,
+      event.startsAt,
     ),
   );
-}
-
-function formatEventTime(
-  event: CalendarEvent,
-) {
-  const start =
-    new Intl.DateTimeFormat(
-      'ru-RU',
-      {
-        hour:
-          '2-digit',
-        minute:
-          '2-digit',
-      },
-    ).format(
-      new Date(
-        event.startsAt,
-      ),
-    );
-
-  if (!event.endsAt) {
-    return start;
-  }
-
-  const end =
-    new Intl.DateTimeFormat(
-      'ru-RU',
-      {
-        hour:
-          '2-digit',
-        minute:
-          '2-digit',
-      },
-    ).format(
-      new Date(
-        event.endsAt,
-      ),
-    );
-
-  return `${start}–${end}`;
 }
 
 function formatPrice(
@@ -2072,8 +1689,10 @@ function formatPrice(
     {
       style:
         'currency',
+
       currency:
         'RUB',
+
       maximumFractionDigits:
         0,
     },
@@ -2082,7 +1701,7 @@ function formatPrice(
   );
 }
 
-function pluralizeEvents(
+function pluralizeDays(
   count: number,
 ) {
   const mod10 =
@@ -2095,7 +1714,7 @@ function pluralizeEvents(
     mod10 === 1 &&
     mod100 !== 11
   ) {
-    return 'событие';
+    return 'день';
   }
 
   if (
@@ -2106,8 +1725,8 @@ function pluralizeEvents(
       mod100 > 14
     )
   ) {
-    return 'события';
+    return 'дня';
   }
 
-  return 'событий';
+  return 'дней';
 }

@@ -99,13 +99,19 @@ export class WishlistsService {
               url: true,
               imageUrl: true,
               price: true,
+              priority: true,
               createdAt: true,
               updatedAt: true,
             },
 
-            orderBy: {
-              createdAt: 'desc',
-            },
+            orderBy: [
+              {
+                priority: 'desc',
+              },
+              {
+                createdAt: 'desc',
+              },
+            ],
           },
 
           _count: {
@@ -152,14 +158,21 @@ export class WishlistsService {
                   url: true,
                   imageUrl: true,
                   price: true,
+                  priority: true,
                   createdAt: true,
                   updatedAt: true,
                 },
 
-                orderBy: {
-                  createdAt:
-                    'desc',
-                },
+                orderBy: [
+                  {
+                    priority:
+                      'desc',
+                  },
+                  {
+                    createdAt:
+                      'desc',
+                  },
+                ],
               },
 
               _count: {
@@ -223,14 +236,21 @@ export class WishlistsService {
               url: true,
               imageUrl: true,
               price: true,
+              priority: true,
               createdAt: true,
               updatedAt: true,
             },
 
-            orderBy: {
-              createdAt:
-                'desc',
-            },
+            orderBy: [
+              {
+                priority:
+                  'desc',
+              },
+              {
+                createdAt:
+                  'desc',
+              },
+            ],
           },
         },
       });
@@ -381,9 +401,6 @@ export class WishlistsService {
 
   /*
    * Удаляем собственный вишлист.
-   *
-   * Его желания удалятся автоматически
-   * благодаря onDelete: Cascade.
    */
   async remove(
     userId: string,
@@ -450,6 +467,10 @@ export class WishlistsService {
 
         price:
           data.price,
+
+        priority:
+          data.priority ??
+          3,
       },
     });
   }
@@ -541,6 +562,9 @@ export class WishlistsService {
 
         price:
           data.price,
+
+        priority:
+          data.priority,
       },
     });
   }

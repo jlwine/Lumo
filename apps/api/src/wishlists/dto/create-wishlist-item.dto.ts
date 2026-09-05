@@ -28,14 +28,6 @@ export class CreateWishlistItemDto {
   @MaxLength(2000)
   url?: string;
 
-  /*
-   * require_tld: false нужен
-   * для локальной разработки,
-   * потому что изображение сейчас
-   * имеет адрес вида:
-   *
-   * http://localhost:3001/uploads/...
-   */
   @IsOptional()
   @IsUrl({
     require_protocol: true,
@@ -49,4 +41,14 @@ export class CreateWishlistItemDto {
   @Min(0)
   @Max(100000000)
   price?: number;
+
+  /*
+   * Приоритет желания:
+   * от 1 до 5.
+   */
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(5)
+  priority?: number;
 }

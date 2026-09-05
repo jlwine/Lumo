@@ -102,8 +102,7 @@ model CalendarEvent {
   updatedAt DateTime @updatedAt
 
   relationship Relationship @relation(fields: [relationshipId], references: [id], onDelete: Cascade)
-
-  createdBy User @relation(name: "CalendarEventCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  createdBy    User         @relation(name: "CalendarEventCreator", fields: [createdById], references: [id], onDelete: Cascade)
 
   @@index([relationshipId, startsAt])
   @@index([createdById])
@@ -134,9 +133,21 @@ model WishlistItem {
 
   title       String
   description String?
-  url         String?
-  imageUrl    String?
-  price       Int?
+
+  url      String?
+  imageUrl String?
+
+  price Int?
+
+  /**
+   * Насколько сильно пользователь
+   * хочет это желание.
+   * 1 - небольшой интерес
+   * 5 - мечта
+   * Старые желания после миграции
+   * автоматически получат 3.
+   */
+  priority Int @default(3)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

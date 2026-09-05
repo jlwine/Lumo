@@ -60,6 +60,7 @@ type WishlistItemForm = {
   url: string;
   imageUrl: string;
   price: string;
+  priority: number;
 };
 
 const emptyWishlistForm: WishlistForm = {
@@ -73,6 +74,7 @@ const emptyItemForm: WishlistItemForm = {
   url: '',
   imageUrl: '',
   price: '',
+  priority: 3,
 };
 
 const wishlistInputClass =
@@ -246,7 +248,9 @@ export default function WishlistsPage() {
           },
         );
       },
-      [router],
+      [
+        router,
+      ],
     );
 
   useEffect(() => {
@@ -302,7 +306,9 @@ export default function WishlistsPage() {
     return () => {
       cancelled = true;
     };
-  }, [fetchWishlists]);
+  }, [
+    fetchWishlists,
+  ]);
 
   useEffect(() => {
     return () => {
@@ -572,10 +578,6 @@ export default function WishlistsPage() {
         true,
       );
 
-      setError(
-        null,
-      );
-
       await apiRequest(
         `/wishlists/${deletingWishlist.id}`,
         {
@@ -622,26 +624,6 @@ export default function WishlistsPage() {
     );
 
     setImageFile(
-      null,
-    );
-  }
-
-  function closeItemForm() {
-    clearLocalImagePreview();
-
-    setShowItemForm(
-      false,
-    );
-
-    setEditingItem(
-      null,
-    );
-
-    setItemForm(
-      emptyItemForm,
-    );
-
-    setError(
       null,
     );
   }
@@ -702,6 +684,9 @@ export default function WishlistsPage() {
               item.price,
             )
           : '',
+
+      priority:
+        item.priority,
     });
 
     setError(
@@ -710,6 +695,26 @@ export default function WishlistsPage() {
 
     setShowItemForm(
       true,
+    );
+  }
+
+  function closeItemForm() {
+    clearLocalImagePreview();
+
+    setShowItemForm(
+      false,
+    );
+
+    setEditingItem(
+      null,
+    );
+
+    setItemForm(
+      emptyItemForm,
+    );
+
+    setError(
+      null,
     );
   }
 
@@ -775,10 +780,6 @@ export default function WishlistsPage() {
         ...current,
         imageUrl: '',
       }),
-    );
-
-    setError(
-      null,
     );
   }
 
@@ -871,18 +872,6 @@ export default function WishlistsPage() {
       return;
     }
 
-    if (
-      price !== undefined &&
-      price >
-        100_000_000
-    ) {
-      setError(
-        'Цена слишком большая',
-      );
-
-      return;
-    }
-
     try {
       setIsSaving(
         true,
@@ -914,6 +903,9 @@ export default function WishlistsPage() {
               undefined,
 
         price,
+
+        priority:
+          itemForm.priority,
       };
 
       if (editingItem) {
@@ -999,10 +991,6 @@ export default function WishlistsPage() {
         true,
       );
 
-      setError(
-        null,
-      );
-
       await apiRequest(
         `/wishlists/${selectedWishlist.id}/items/${deletingItem.id}`,
         {
@@ -1044,24 +1032,24 @@ export default function WishlistsPage() {
       tab,
     );
 
-    const wishlists =
+    const list =
       tab ===
       'mine'
         ? data.mine
         : data.partner;
 
     setSelectedWishlist(
-      wishlists[0] ??
+      list[0] ??
       null,
     );
   }
 
   return (
-    <main className="min-h-screen bg-[#fffaf8] px-4 py-6 md:px-8 md:py-8">
+    <main className="min-h-screen bg-[#fffaf8] px-4 py-6 md:px-8">
 
       <div className="mx-auto max-w-[1450px]">
 
-        <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
+        <div className="mb-6 flex items-center justify-between">
 
           <button
             type="button"
@@ -1070,7 +1058,7 @@ export default function WishlistsPage() {
                 '/home',
               )
             }
-            className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-[#876f6a] transition hover:bg-[#fff0ed] hover:text-[#c36f77]"
+            className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm text-[#876f6a] transition hover:bg-[#fff0ed]"
           >
             <ArrowLeft
               size={18}
@@ -1086,7 +1074,7 @@ export default function WishlistsPage() {
               onClick={
                 openCreateWishlist
               }
-              className="flex items-center gap-2 rounded-2xl bg-[#9b87ad] px-5 py-3 text-sm font-medium text-white transition hover:bg-[#8d779f]"
+              className="flex items-center gap-2 rounded-2xl bg-[#9b87ad] px-5 py-3 text-sm font-medium text-white"
             >
               <Plus
                 size={18}
@@ -1108,11 +1096,9 @@ export default function WishlistsPage() {
             Вишлисты
           </h1>
 
-          <p className="mt-3 max-w-2xl text-[#98837e]">
-            Сохраняйте вещи,
-            впечатления и идеи,
-            которые хотелось бы
-            однажды получить.
+          <p className="mt-3 text-[#98837e]">
+            Сохраняйте всё,
+            что хотелось бы однажды получить.
           </p>
 
         </header>
@@ -1132,7 +1118,7 @@ export default function WishlistsPage() {
           />
         )}
 
-        <div className="mb-6 inline-flex max-w-full overflow-x-auto rounded-2xl border border-[#e8dedf] bg-white p-1.5">
+        <div className="mb-6 inline-flex rounded-2xl border border-[#e8dedf] bg-white p-1.5">
 
           <button
             type="button"
@@ -1142,21 +1128,17 @@ export default function WishlistsPage() {
               )
             }
             className={[
-              'whitespace-nowrap rounded-xl px-5 py-2.5 text-sm font-medium transition-all',
+              'rounded-xl px-5 py-2.5 text-sm font-medium',
 
               activeTab ===
               'mine'
-                ? 'bg-[#eee7f4] text-[#79668b] shadow-sm'
-                : 'text-[#9c8983] hover:bg-[#fff7f5]',
+                ? 'bg-[#eee7f4] text-[#79668b]'
+                : 'text-[#9c8983]',
             ].join(
               ' ',
             )}
           >
             Мои вишлисты
-
-            <span className="ml-2 opacity-60">
-              {data.mine.length}
-            </span>
           </button>
 
           <button
@@ -1167,21 +1149,17 @@ export default function WishlistsPage() {
               )
             }
             className={[
-              'whitespace-nowrap rounded-xl px-5 py-2.5 text-sm font-medium transition-all',
+              'rounded-xl px-5 py-2.5 text-sm font-medium',
 
               activeTab ===
               'partner'
-                ? 'bg-[#eee7f4] text-[#79668b] shadow-sm'
-                : 'text-[#9c8983] hover:bg-[#fff7f5]',
+                ? 'bg-[#eee7f4] text-[#79668b]'
+                : 'text-[#9c8983]',
             ].join(
               ' ',
             )}
           >
             Вишлисты {partnerName}
-
-            <span className="ml-2 opacity-60">
-              {data.partner.length}
-            </span>
           </button>
 
         </div>
@@ -1198,35 +1176,14 @@ export default function WishlistsPage() {
         ) : (
           <div className="grid gap-6 xl:grid-cols-[330px_minmax(0,1fr)]">
 
-            <aside className="self-start rounded-[28px] border border-[#eee0dc] bg-white p-5 xl:sticky xl:top-6">
+            <aside className="self-start rounded-[28px] border border-[#eee0dc] bg-white p-5">
 
-              <div className="flex items-center justify-between">
-
-                <div>
-
-                  <p className="text-sm text-[#9a86aa]">
-                    {activeTab ===
-                    'mine'
-                      ? 'Ваши списки'
-                      : `Списки ${partnerName}`}
-                  </p>
-
-                  <h2 className="mt-1 text-xl font-semibold text-[#554442]">
-                    {visibleWishlists.length}{' '}
-                    {pluralizeWishlists(
-                      visibleWishlists.length,
-                    )}
-                  </h2>
-
-                </div>
-
-                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#eee7f4] text-[#88769a]">
-                  <Gift
-                    size={21}
-                  />
-                </div>
-
-              </div>
+              <p className="text-sm text-[#9a86aa]">
+                {activeTab ===
+                'mine'
+                  ? 'Ваши списки'
+                  : `Списки ${partnerName}`}
+              </p>
 
               <div className="mt-5 space-y-3">
 
@@ -1245,12 +1202,12 @@ export default function WishlistsPage() {
                         )
                       }
                       className={[
-                        'w-full rounded-[20px] border p-4 text-left transition-all',
+                        'w-full rounded-[20px] border p-4 text-left',
 
                         selectedWishlist?.id ===
                         wishlist.id
-                          ? 'border-[#cfc0db] bg-[#f7f2fa] shadow-sm'
-                          : 'border-[#eee2df] bg-[#fffaf9] hover:border-[#d9cddf] hover:bg-[#fdf8ff]',
+                          ? 'border-[#cfc0db] bg-[#f7f2fa]'
+                          : 'border-[#eee2df] bg-[#fffaf9]',
                       ].join(
                         ' ',
                       )}
@@ -1271,51 +1228,29 @@ export default function WishlistsPage() {
                   ),
                 )}
 
-                {visibleWishlists.length ===
-                  0 && (
-                  <div className="rounded-[20px] border border-dashed border-[#e4dbe7] bg-[#fdfafd] px-4 py-8 text-center">
-
-                    <Gift
-                      size={27}
-                      className="mx-auto text-[#b7a6c2]"
-                    />
-
-                    <p className="mt-4 text-sm text-[#77677f]">
-                      Пока здесь пусто
-                    </p>
-
-                  </div>
-                )}
-
               </div>
 
             </aside>
 
-            <section className="min-h-[520px] rounded-[30px] border border-[#eee0dc] bg-white p-5 md:p-7">
+            <section className="min-h-[520px] rounded-[30px] border border-[#eee0dc] bg-white p-7">
 
               {selectedWishlist ? (
                 <>
 
-                  <div className="flex flex-wrap items-start justify-between gap-4 border-b border-[#f1e6e3] pb-6">
+                  <div className="flex items-start justify-between border-b border-[#f1e6e3] pb-6">
 
                     <div>
 
-                      <p className="text-sm font-medium text-[#927ba3]">
+                      <p className="text-sm text-[#927ba3]">
                         {activeTab ===
                         'mine'
                           ? 'Мой вишлист'
                           : `Вишлист ${partnerName}`}
                       </p>
 
-                      <h2 className="mt-1 text-2xl font-semibold text-[#554442]">
+                      <h2 className="mt-1 text-3xl font-semibold text-[#554442]">
                         {selectedWishlist.title}
                       </h2>
-
-                      {selectedWishlist.description && (
-                        <p className="mt-3 text-sm text-[#99847e]">
-                          {selectedWishlist.description}
-                        </p>
-                      )}
 
                     </div>
 
@@ -1325,13 +1260,12 @@ export default function WishlistsPage() {
 
                         <button
                           type="button"
-                          title="Редактировать вишлист"
                           onClick={() =>
                             openEditWishlist(
                               selectedWishlist,
                             )
                           }
-                          className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#e8dcdf] text-[#8d7772] transition hover:bg-[#f8f3fb]"
+                          className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#e8dcdf]"
                         >
                           <Pencil
                             size={17}
@@ -1340,13 +1274,12 @@ export default function WishlistsPage() {
 
                         <button
                           type="button"
-                          title="Удалить вишлист"
                           onClick={() =>
                             setDeletingWishlist(
                               selectedWishlist,
                             )
                           }
-                          className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#efd4d4] text-[#b96569] transition hover:bg-[#fff0f0]"
+                          className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#efd4d4] text-[#b96569]"
                         >
                           <Trash2
                             size={17}
@@ -1365,7 +1298,7 @@ export default function WishlistsPage() {
                       onClick={
                         openCreateItem
                       }
-                      className="mt-6 flex items-center gap-2 rounded-2xl bg-[#9b87ad] px-5 py-3 text-sm font-medium text-white transition hover:bg-[#8d779f]"
+                      className="mt-6 flex items-center gap-2 rounded-2xl bg-[#9b87ad] px-5 py-3 text-sm font-medium text-white"
                     >
                       <Plus
                         size={18}
@@ -1410,40 +1343,24 @@ export default function WishlistsPage() {
 
                     </div>
                   ) : (
-                    <div className="mt-8 flex min-h-[330px] items-center justify-center rounded-[24px] border border-dashed border-[#e6dce9] bg-[#fdfafd] text-center">
+                    <div className="mt-8 flex min-h-[330px] items-center justify-center rounded-[24px] border border-dashed border-[#e6dce9]">
 
-                      <div>
-
-                        <ShoppingBag
-                          size={35}
-                          className="mx-auto text-[#a58fb3]"
-                        />
-
-                        <p className="mt-4 font-semibold text-[#65536d]">
-                          Здесь пока пусто
-                        </p>
-
-                      </div>
+                      <ShoppingBag
+                        size={36}
+                        className="text-[#a58fb3]"
+                      />
 
                     </div>
                   )}
 
                 </>
               ) : (
-                <div className="flex min-h-[500px] items-center justify-center text-center">
+                <div className="flex min-h-[500px] items-center justify-center">
 
-                  <div>
-
-                    <Heart
-                      size={38}
-                      className="mx-auto text-[#ad9aba]"
-                    />
-
-                    <p className="mt-4 text-[#8d7b8c]">
-                      Выберите вишлист
-                    </p>
-
-                  </div>
+                  <Heart
+                    size={38}
+                    className="text-[#ad9aba]"
+                  />
 
                 </div>
               )}
@@ -1572,31 +1489,299 @@ export default function WishlistsPage() {
   );
 }
 
-function ErrorMessage({
-  message,
-  onClose,
+function WishlistItemCard({
+  item,
+  canEdit,
+  onEdit,
+  onDelete,
 }: {
-  message: string;
-  onClose: () => void;
+  item: WishlistItem;
+  canEdit: boolean;
+  onEdit: () => void;
+  onDelete: () => void;
 }) {
   return (
-    <div className="mb-5 flex items-start justify-between gap-4 rounded-2xl border border-[#edc9ca] bg-[#fff4f3] px-4 py-3.5 text-sm leading-6 text-[#a35d61]">
+    <article className="overflow-hidden rounded-[24px] border border-[#eee1df] bg-[#fffdfc]">
 
-      <span>
-        {message}
+      {item.imageUrl ? (
+        <div
+          role="img"
+          aria-label={
+            item.title
+          }
+          className="aspect-[4/3] bg-white bg-contain bg-center bg-no-repeat"
+          style={{
+            backgroundImage:
+              `url("${item.imageUrl}")`,
+          }}
+        />
+      ) : (
+        <div className="flex aspect-[4/3] items-center justify-center bg-[#f7f1f8]">
+
+          <Gift
+            size={40}
+            className="text-[#b5a3c0]"
+          />
+
+        </div>
+      )}
+
+      <div className="p-5">
+
+        <div className="flex justify-between gap-3">
+
+          <div className="min-w-0">
+
+            <h3 className="font-semibold text-[#594744]">
+              {item.title}
+            </h3>
+
+            {item.price !==
+              null && (
+              <p className="mt-2 text-lg font-semibold text-[#8d779f]">
+                {formatPrice(
+                  item.price,
+                )}
+              </p>
+            )}
+
+          </div>
+
+          {canEdit && (
+            <div className="flex">
+
+              <button
+                type="button"
+                onClick={
+                  onEdit
+                }
+                className="flex h-8 w-8 items-center justify-center text-[#927f98]"
+              >
+                <Pencil
+                  size={15}
+                />
+              </button>
+
+              <button
+                type="button"
+                onClick={
+                  onDelete
+                }
+                className="flex h-8 w-8 items-center justify-center text-[#b46065]"
+              >
+                <Trash2
+                  size={15}
+                />
+              </button>
+
+            </div>
+          )}
+
+        </div>
+
+        <PriorityDisplay
+          priority={
+            item.priority
+          }
+        />
+
+        {item.description && (
+          <p className="mt-3 line-clamp-3 text-sm leading-6 text-[#9a8580]">
+            {item.description}
+          </p>
+        )}
+
+        {item.url && (
+          <button
+            type="button"
+            onClick={() =>
+              window.open(
+                item.url!,
+                '_blank',
+                'noopener,noreferrer',
+              )
+            }
+            className="mt-4 flex items-center gap-2 text-sm font-medium text-[#8b759c]"
+          >
+            <ExternalLink
+              size={15}
+            />
+
+            Открыть товар
+          </button>
+        )}
+
+      </div>
+
+    </article>
+  );
+}
+
+function PriorityDisplay({
+  priority,
+}: {
+  priority: number;
+}) {
+  return (
+    <div className="mt-3 flex flex-wrap items-center gap-2">
+
+      <div className="flex items-center gap-0.5">
+
+        {[
+          1,
+          2,
+          3,
+          4,
+          5,
+        ].map(
+          (
+            value,
+          ) => (
+            <Heart
+              key={
+                value
+              }
+              size={14}
+              fill={
+                value <=
+                priority
+                  ? 'currentColor'
+                  : 'none'
+              }
+              className={
+                value <=
+                priority
+                  ? 'text-[#dc7d87]'
+                  : 'text-[#dfd3d5]'
+              }
+            />
+          ),
+        )}
+
+      </div>
+
+      <span className="text-xs font-medium text-[#9b7378]">
+        {getPriorityLabel(
+          priority,
+        )}
       </span>
 
-      <button
-        type="button"
-        onClick={
-          onClose
+    </div>
+  );
+}
+
+function PriorityPicker({
+  value,
+  disabled,
+  onChange,
+}: {
+  value: number;
+  disabled: boolean;
+  onChange: (
+    priority: number,
+  ) => void;
+}) {
+  const [
+    hoveredPriority,
+    setHoveredPriority,
+  ] =
+    useState<number | null>(
+      null,
+    );
+
+  const visiblePriority =
+    hoveredPriority ??
+    value;
+
+  return (
+    <div className="rounded-[22px] border border-[#eadde7] bg-[#fdfafd] p-5">
+
+      <p className="font-medium text-[#67536b]">
+        Насколько сильно хочется?
+      </p>
+
+      <p className="mt-1 text-sm text-[#a18e9f]">
+        Приоритет поможет партнёру
+        понять, что хочется больше всего.
+      </p>
+
+      <div
+        className="mt-5 flex items-center gap-2"
+        onMouseLeave={() =>
+          setHoveredPriority(
+            null,
+          )
         }
-        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-[#b66b70] transition hover:bg-[#f8dfe0]"
       >
-        <X
-          size={15}
-        />
-      </button>
+
+        {[
+          1,
+          2,
+          3,
+          4,
+          5,
+        ].map(
+          (
+            priority,
+          ) => (
+            <button
+              key={
+                priority
+              }
+              type="button"
+              disabled={
+                disabled
+              }
+              aria-label={`Приоритет ${priority}`}
+              onMouseEnter={() =>
+                setHoveredPriority(
+                  priority,
+                )
+              }
+              onFocus={() =>
+                setHoveredPriority(
+                  priority,
+                )
+              }
+              onBlur={() =>
+                setHoveredPriority(
+                  null,
+                )
+              }
+              onClick={() =>
+                onChange(
+                  priority,
+                )
+              }
+              className="rounded-xl p-1.5 transition hover:scale-110 active:scale-95"
+            >
+              <Heart
+                size={29}
+                strokeWidth={1.7}
+                fill={
+                  priority <=
+                    visiblePriority
+                    ? 'currentColor'
+                    : 'none'
+                }
+                className={
+                  priority <=
+                    visiblePriority
+                    ? 'text-[#dc7d87]'
+                    : 'text-[#d9cdd5]'
+                }
+              />
+            </button>
+          ),
+        )}
+
+      </div>
+
+      <p className="mt-3 text-sm font-medium text-[#bb6c75]">
+        {getPriorityLabel(
+          visiblePriority,
+        )}
+      </p>
 
     </div>
   );
@@ -1683,14 +1868,14 @@ function ImageDropzone({
 
   if (previewUrl) {
     return (
-      <div className="overflow-hidden rounded-[24px] border border-[#dfd4e3] bg-[#fbf8fc]">
+      <div className="overflow-hidden rounded-[24px] border border-[#dfd4e3]">
 
         <div className="relative">
 
           <div
             role="img"
-            aria-label="Предпросмотр изображения желания"
-            className="aspect-[16/10] w-full bg-white bg-contain bg-center bg-no-repeat"
+            aria-label="Предпросмотр изображения"
+            className="aspect-[16/10] bg-white bg-contain bg-center bg-no-repeat"
             style={{
               backgroundImage:
                 `url("${previewUrl}")`,
@@ -1699,14 +1884,10 @@ function ImageDropzone({
 
           <button
             type="button"
-            disabled={
-              disabled
-            }
             onClick={
               onRemove
             }
-            title="Удалить изображение"
-            className="absolute right-3 top-3 flex h-10 w-10 items-center justify-center rounded-full border border-[#f0dddd] bg-white/95 text-[#bd6268] shadow-md transition hover:bg-[#fff0f0] hover:text-[#a94d54] active:scale-[0.94]"
+            className="absolute right-3 top-3 flex h-10 w-10 items-center justify-center rounded-full bg-white text-[#bd6268] shadow-md"
           >
             <Trash2
               size={17}
@@ -1715,22 +1896,14 @@ function ImageDropzone({
 
         </div>
 
-        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[#eee4ef] px-4 py-3">
-
-          <p className="text-xs text-[#9d8998]">
-            Изображение будет сохранено
-            вместе с желанием
-          </p>
+        <div className="flex justify-end px-4 py-3">
 
           <button
             type="button"
-            disabled={
-              disabled
-            }
             onClick={() =>
               inputRef.current?.click()
             }
-            className="rounded-lg px-2 py-1 text-sm font-medium text-[#846e95] transition hover:bg-[#f0e8f4] hover:text-[#6d5880]"
+            className="text-sm font-medium text-[#846e95]"
           >
             Заменить
           </button>
@@ -1748,8 +1921,7 @@ function ImageDropzone({
             event,
           ) => {
             const file =
-              event.target
-                .files?.[0];
+              event.target.files?.[0];
 
             if (file) {
               onSelect(
@@ -1773,15 +1945,6 @@ function ImageDropzone({
       onPaste={
         handlePaste
       }
-      onDragEnter={(
-        event,
-      ) => {
-        event.preventDefault();
-
-        setIsDragging(
-          true,
-        );
-      }}
       onDragOver={(
         event,
       ) => {
@@ -1802,77 +1965,48 @@ function ImageDropzone({
       onClick={() =>
         inputRef.current?.click()
       }
-      onKeyDown={(
-        event,
-      ) => {
-        if (
-          event.key ===
-            'Enter' ||
-          event.key ===
-            ' '
-        ) {
-          event.preventDefault();
-
-          inputRef.current?.click();
-        }
-      }}
       className={[
-        'cursor-pointer rounded-[24px] border-2 border-dashed px-6 py-10 text-center outline-none transition-all',
+        'cursor-pointer rounded-[24px] border-2 border-dashed px-6 py-9 text-center',
 
         isDragging
           ? 'border-[#a991b8] bg-[#f4edf7]'
-          : 'border-[#dfd4e3] bg-[#fdfafd] hover:border-[#bba7c7] hover:bg-[#faf5fc]',
+          : 'border-[#dfd4e3] bg-[#fdfafd]',
       ].join(
         ' ',
       )}
     >
 
-      <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-[20px] bg-[#eee6f3] text-[#8b759d]">
-
-        <ImagePlus
-          size={25}
-        />
-
-      </div>
+      <ImagePlus
+        size={27}
+        className="mx-auto text-[#8b759d]"
+      />
 
       <p className="mt-4 font-semibold text-[#69566f]">
         Добавьте изображение
       </p>
 
-      <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-[#9c8b9e]">
-        Вставьте картинку через{' '}
-        <strong>
-          Ctrl + V
-        </strong>
-        , перетащите её сюда
-        или выберите файл.
+      <p className="mt-2 text-sm text-[#9c8b9e]">
+        Ctrl + V, перетаскивание
+        или выбор файла
       </p>
 
-      <div className="mt-5 flex flex-wrap justify-center gap-2">
+      <div className="mt-4 flex justify-center gap-3 text-xs text-[#89758e]">
 
-        <span className="flex items-center gap-2 rounded-xl bg-white px-3 py-2 text-xs text-[#89758e] shadow-sm">
-
+        <span className="flex items-center gap-1">
           <Clipboard
             size={14}
           />
-
           Ctrl + V
         </span>
 
-        <span className="flex items-center gap-2 rounded-xl bg-white px-3 py-2 text-xs text-[#89758e] shadow-sm">
-
+        <span className="flex items-center gap-1">
           <Upload
             size={14}
           />
-
           Выбрать файл
         </span>
 
       </div>
-
-      <p className="mt-4 text-xs text-[#b09faf]">
-        JPG, PNG или WEBP · до 5 МБ
-      </p>
 
       <input
         ref={
@@ -1888,8 +2022,7 @@ function ImageDropzone({
           event,
         ) => {
           const file =
-            event.target
-              .files?.[0];
+            event.target.files?.[0];
 
           if (file) {
             onSelect(
@@ -1903,130 +2036,6 @@ function ImageDropzone({
       />
 
     </div>
-  );
-}
-
-function WishlistItemCard({
-  item,
-  canEdit,
-  onEdit,
-  onDelete,
-}: {
-  item: WishlistItem;
-  canEdit: boolean;
-  onEdit: () => void;
-  onDelete: () => void;
-}) {
-  return (
-    <article className="overflow-hidden rounded-[24px] border border-[#eee1df] bg-[#fffdfc] transition hover:border-[#d9cbe0] hover:shadow-sm">
-
-      {item.imageUrl ? (
-        <div
-          role="img"
-          aria-label={
-            item.title
-          }
-          className="aspect-[4/3] bg-white bg-contain bg-center bg-no-repeat"
-          style={{
-            backgroundImage:
-              `url("${item.imageUrl}")`,
-          }}
-        />
-      ) : (
-        <div className="flex aspect-[4/3] items-center justify-center bg-[#f7f1f8]">
-
-          <Gift
-            size={40}
-            className="text-[#b5a3c0]"
-          />
-
-        </div>
-      )}
-
-      <div className="p-5">
-
-        <div className="flex justify-between gap-3">
-
-          <div>
-
-            <h3 className="font-semibold text-[#594744]">
-              {item.title}
-            </h3>
-
-            {item.price !==
-              null && (
-              <p className="mt-2 text-lg font-semibold text-[#8d779f]">
-                {formatPrice(
-                  item.price,
-                )}
-              </p>
-            )}
-
-          </div>
-
-          {canEdit && (
-            <div className="flex gap-1">
-
-              <button
-                type="button"
-                title="Редактировать"
-                onClick={
-                  onEdit
-                }
-                className="flex h-8 w-8 items-center justify-center rounded-lg text-[#927f98] transition hover:bg-[#f3edf6]"
-              >
-                <Pencil
-                  size={15}
-                />
-              </button>
-
-              <button
-                type="button"
-                title="Удалить"
-                onClick={
-                  onDelete
-                }
-                className="flex h-8 w-8 items-center justify-center rounded-lg text-[#b46065] transition hover:bg-[#fff0f0]"
-              >
-                <Trash2
-                  size={15}
-                />
-              </button>
-
-            </div>
-          )}
-
-        </div>
-
-        {item.description && (
-          <p className="mt-3 line-clamp-3 text-sm leading-6 text-[#9a8580]">
-            {item.description}
-          </p>
-        )}
-
-        {item.url && (
-          <button
-            type="button"
-            onClick={() =>
-              window.open(
-                item.url!,
-                '_blank',
-                'noopener,noreferrer',
-              )
-            }
-            className="mt-4 flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm font-medium text-[#8b759c] transition hover:bg-[#f4eef7]"
-          >
-            <ExternalLink
-              size={15}
-            />
-
-            Открыть товар
-          </button>
-        )}
-
-      </div>
-
-    </article>
   );
 }
 
@@ -2054,30 +2063,17 @@ function WishlistFormDialog({
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#4d403e]/30 p-5 backdrop-blur-sm">
 
-      <div className="w-full max-w-lg rounded-[30px] border border-[#eadfe8] bg-white p-7 shadow-[0_30px_100px_rgba(73,48,45,0.22)]">
+      <div className="w-full max-w-lg rounded-[30px] bg-white p-7">
 
-        <div className="flex items-start justify-between gap-4">
+        <div className="flex justify-between">
 
-          <div>
-
-            <p className="text-sm text-[#927ba3]">
-              {editing
-                ? 'Редактирование'
-                : 'Новый список'}
-            </p>
-
-            <h2 className="mt-1 text-2xl font-semibold text-[#554442]">
-              {editing
-                ? 'Изменить вишлист'
-                : 'Создать вишлист'}
-            </h2>
-
-          </div>
+          <h2 className="text-2xl font-semibold text-[#554442]">
+            {editing
+              ? 'Изменить вишлист'
+              : 'Создать вишлист'}
+          </h2>
 
           <ModalCloseButton
-            disabled={
-              isSaving
-            }
             onClick={
               onClose
             }
@@ -2087,7 +2083,6 @@ function WishlistFormDialog({
 
         {error && (
           <div className="mt-5">
-
             <ErrorMessage
               message={
                 error
@@ -2096,7 +2091,6 @@ function WishlistFormDialog({
                 onClearError
               }
             />
-
           </div>
         )}
 
@@ -2114,6 +2108,7 @@ function WishlistFormDialog({
               ) =>
                 onChange({
                   ...form,
+
                   title:
                     event.target.value,
                 })
@@ -2128,6 +2123,7 @@ function WishlistFormDialog({
             label="Описание"
           >
             <textarea
+              rows={4}
               value={
                 form.description
               }
@@ -2136,11 +2132,11 @@ function WishlistFormDialog({
               ) =>
                 onChange({
                   ...form,
+
                   description:
                     event.target.value,
                 })
               }
-              rows={4}
               className={`${wishlistInputClass} resize-none`}
             />
           </FormField>
@@ -2155,7 +2151,7 @@ function WishlistFormDialog({
           onClick={
             onSave
           }
-          className="mt-7 w-full rounded-2xl bg-[#9b87ad] py-3.5 font-medium text-white transition hover:bg-[#8d779f] disabled:opacity-50"
+          className="mt-7 w-full rounded-2xl bg-[#9b87ad] py-3.5 font-medium text-white"
         >
           {isSaving
             ? 'Сохраняем...'
@@ -2200,9 +2196,9 @@ function ItemFormDialog({
   return (
     <div className="fixed inset-0 z-[110] flex items-center justify-center bg-[#4d403e]/30 p-4 backdrop-blur-sm">
 
-      <div className="max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-[30px] border border-[#eadfe8] bg-white p-6 shadow-[0_30px_100px_rgba(73,48,45,0.22)] md:p-7">
+      <div className="max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-[30px] bg-white p-7">
 
-        <div className="flex items-start justify-between gap-4">
+        <div className="flex justify-between">
 
           <div>
 
@@ -2221,9 +2217,6 @@ function ItemFormDialog({
           </div>
 
           <ModalCloseButton
-            disabled={
-              isSaving
-            }
             onClick={
               onClose
             }
@@ -2231,7 +2224,6 @@ function ItemFormDialog({
 
         </div>
 
-        {/* Ошибка теперь находится прямо в модальном окне */}
         {error && (
           <div className="mt-5">
 
@@ -2277,48 +2269,64 @@ function ItemFormDialog({
               ) =>
                 onChange({
                   ...form,
+
                   title:
                     event.target.value,
                 })
               }
+              placeholder="Например, наушники"
               className={
                 wishlistInputClass
               }
-              placeholder="Например, наушники"
             />
           </FormField>
 
           <FormField
             label="Цена"
           >
-            <div className="relative">
+            <input
+              type="number"
+              min="0"
+              value={
+                form.price
+              }
+              onChange={(
+                event,
+              ) =>
+                onChange({
+                  ...form,
 
-              <input
-                type="number"
-                min="0"
-                max="100000000"
-                value={
-                  form.price
-                }
-                onChange={(
-                  event,
-                ) =>
-                  onChange({
-                    ...form,
-                    price:
-                      event.target.value,
-                  })
-                }
-                className={`${wishlistInputClass} pr-12`}
-                placeholder="25000"
-              />
-
-              <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-sm text-[#a7929e]">
-                ₽
-              </span>
-
-            </div>
+                  price:
+                    event.target.value,
+                })
+              }
+              placeholder="25000"
+              className={
+                wishlistInputClass
+              }
+            />
           </FormField>
+
+          {/*
+           * Новый выбор
+           * приоритета желания.
+           */}
+          <PriorityPicker
+            value={
+              form.priority
+            }
+            disabled={
+              isSaving
+            }
+            onChange={(
+              priority,
+            ) =>
+              onChange({
+                ...form,
+                priority,
+              })
+            }
+          />
 
           <FormField
             label="Ссылка на товар"
@@ -2330,7 +2338,6 @@ function ItemFormDialog({
           >
             <input
               type="url"
-              maxLength={2000}
               value={
                 form.url
               }
@@ -2339,14 +2346,15 @@ function ItemFormDialog({
               ) =>
                 onChange({
                   ...form,
+
                   url:
                     event.target.value,
                 })
               }
+              placeholder="https://..."
               className={
                 wishlistInputClass
               }
-              placeholder="https://..."
             />
           </FormField>
 
@@ -2355,7 +2363,6 @@ function ItemFormDialog({
           >
             <textarea
               rows={5}
-              maxLength={1000}
               value={
                 form.description
               }
@@ -2364,12 +2371,13 @@ function ItemFormDialog({
               ) =>
                 onChange({
                   ...form,
+
                   description:
                     event.target.value,
                 })
               }
-              className={`${wishlistInputClass} resize-none`}
               placeholder="Размер, цвет или любые детали..."
+              className={`${wishlistInputClass} resize-none`}
             />
           </FormField>
 
@@ -2383,7 +2391,7 @@ function ItemFormDialog({
           onClick={
             onSave
           }
-          className="mt-7 w-full rounded-2xl bg-[#9b87ad] py-3.5 font-medium text-white transition hover:bg-[#8d779f] active:scale-[0.99] disabled:opacity-50"
+          className="mt-7 w-full rounded-2xl bg-[#9b87ad] py-3.5 font-medium text-white"
         >
           {isSaving
             ? 'Сохраняем...'
@@ -2398,29 +2406,48 @@ function ItemFormDialog({
   );
 }
 
+function ErrorMessage({
+  message,
+  onClose,
+}: {
+  message: string;
+  onClose: () => void;
+}) {
+  return (
+    <div className="flex justify-between gap-4 rounded-2xl border border-[#edc9ca] bg-[#fff4f3] px-4 py-3 text-sm text-[#a35d61]">
+
+      {message}
+
+      <button
+        type="button"
+        onClick={
+          onClose
+        }
+      >
+        <X
+          size={15}
+        />
+      </button>
+
+    </div>
+  );
+}
+
 function ModalCloseButton({
-  disabled,
   onClick,
 }: {
-  disabled?: boolean;
   onClick: () => void;
 }) {
   return (
     <button
       type="button"
-      title="Закрыть"
-      aria-label="Закрыть"
-      disabled={
-        disabled
-      }
       onClick={
         onClick
       }
-      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[#eadfe5] bg-[#fffafc] text-[#8f7c86] shadow-sm transition-all hover:border-[#d9c4d0] hover:bg-[#f8eff4] hover:text-[#b05e70] active:scale-[0.92] disabled:opacity-40"
+      className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#eadfe5] bg-[#fffafc] text-[#8f7c86]"
     >
       <X
         size={20}
-        strokeWidth={2.2}
       />
     </button>
   );
@@ -2466,9 +2493,9 @@ function ConfirmDialog({
   onConfirm: () => void;
 }) {
   return (
-    <div className="fixed inset-0 z-[120] flex items-center justify-center bg-[#4d403e]/35 p-5 backdrop-blur-sm">
+    <div className="fixed inset-0 z-[120] flex items-center justify-center bg-[#4d403e]/35 p-5">
 
-      <div className="w-full max-w-md rounded-[28px] border border-[#eadfdd] bg-white p-7 shadow-[0_30px_100px_rgba(73,48,45,0.22)]">
+      <div className="w-full max-w-md rounded-[28px] bg-white p-7">
 
         <Trash2
           className="text-[#c45e64]"
@@ -2478,7 +2505,7 @@ function ConfirmDialog({
           {title}
         </h2>
 
-        <p className="mt-3 text-sm leading-6 text-[#917975]">
+        <p className="mt-3 text-sm text-[#917975]">
           {description}
         </p>
 
@@ -2489,7 +2516,7 @@ function ConfirmDialog({
             onClick={
               onCancel
             }
-            className="flex-1 rounded-2xl border border-[#e7d9d5] py-3 text-[#765f5b] transition hover:bg-[#fff6f4]"
+            className="flex-1 rounded-2xl border py-3"
           >
             Отмена
           </button>
@@ -2502,7 +2529,7 @@ function ConfirmDialog({
             onClick={
               onConfirm
             }
-            className="flex-1 rounded-2xl bg-[#c86167] py-3 text-white transition hover:bg-[#b85359] disabled:opacity-50"
+            className="flex-1 rounded-2xl bg-[#c86167] py-3 text-white"
           >
             {isLoading
               ? 'Удаляем...'
@@ -2537,34 +2564,28 @@ function formatPrice(
   );
 }
 
-function pluralizeWishlists(
-  count: number,
+function getPriorityLabel(
+  priority: number,
 ) {
-  const mod10 =
-    count % 10;
+  switch (priority) {
+    case 1:
+      return 'Неплохо бы';
 
-  const mod100 =
-    count % 100;
+    case 2:
+      return 'Хочу';
 
-  if (
-    mod10 === 1 &&
-    mod100 !== 11
-  ) {
-    return 'вишлист';
+    case 3:
+      return 'Очень хочу';
+
+    case 4:
+      return 'Очень сильно хочу';
+
+    case 5:
+      return 'Мечтаю';
+
+    default:
+      return 'Очень хочу';
   }
-
-  if (
-    mod10 >= 2 &&
-    mod10 <= 4 &&
-    (
-      mod100 < 12 ||
-      mod100 > 14
-    )
-  ) {
-    return 'вишлиста';
-  }
-
-  return 'вишлистов';
 }
 
 function pluralizeItems(
