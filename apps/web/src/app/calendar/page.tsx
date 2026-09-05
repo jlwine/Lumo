@@ -14,6 +14,7 @@ import {
   ChevronRight,
   Clock,
   Heart,
+  History,
   MapPin,
   Pencil,
   Plus,
@@ -151,6 +152,34 @@ export default function CalendarPage() {
     setShowDeleteDialog,
   ] =
     useState(false);
+
+  const [
+    showHistory,
+    setShowHistory,
+  ] =
+    useState(false);
+
+  const [
+    historyEvents,
+    setHistoryEvents,
+  ] =
+    useState<CalendarEvent[]>(
+      [],
+    );
+
+  const [
+    isHistoryLoading,
+    setIsHistoryLoading,
+  ] =
+    useState(false);
+
+  const [
+    historyError,
+    setHistoryError,
+  ] =
+    useState<string | null>(
+      null,
+    );
 
   const [
     form,
@@ -456,6 +485,126 @@ export default function CalendarPage() {
         result,
       );
     }
+  }
+
+  /*
+   * Загружаем историю
+   * завершённых событий.
+   *
+   * Отдельное поле статуса
+   * для этого не требуется:
+   * завершённость определяется
+   * по дате и времени события.
+   */
+  async function loadHistoryEvents() {
+    const token =
+      getAccessToken();
+
+    if (!token) {
+      removeAccessToken();
+
+      router.replace(
+        '/login',
+      );
+
+      return;
+    }
+
+    try {
+      setIsHistoryLoading(
+        true,
+      );
+
+      setHistoryError(
+        null,
+      );
+
+      /*
+       * Запрашиваем все события
+       * до текущего момента.
+       */
+      const from =
+        new Date(
+          0,
+        ).toISOString();
+
+      const to =
+        new Date().toISOString();
+
+      const result =
+        await apiRequest<
+          CalendarEvent[]
+        >(
+          `/calendar?from=${encodeURIComponent(
+            from,
+          )}&to=${encodeURIComponent(
+            to,
+          )}`,
+          {
+            headers: {
+              Authorization:
+                `Bearer ${token}`,
+            },
+          },
+        );
+
+      const now =
+        new Date();
+
+      const completedEvents =
+        result
+          .filter(
+            (event) =>
+              isEventCompleted(
+                event,
+                now,
+              ),
+          )
+          .sort(
+            (
+              first,
+              second,
+            ) =>
+              getEventCompletionTime(
+                second,
+              ) -
+              getEventCompletionTime(
+                first,
+              ),
+          );
+
+      setHistoryEvents(
+        completedEvents,
+      );
+    } catch (error) {
+      if (
+        error instanceof Error
+      ) {
+        setHistoryError(
+          error.message,
+        );
+      } else {
+        setHistoryError(
+          'Не удалось загрузить историю событий',
+        );
+      }
+    } finally {
+      setIsHistoryLoading(
+        false,
+      );
+    }
+  }
+
+  /*
+   * При каждом открытии истории
+   * получаем свежие данные.
+   */
+  function openHistory() {
+    setShowHistory(
+      true,
+    );
+
+    void loadHistoryEvents();
   }
 
   function previousMonth() {
@@ -930,19 +1079,37 @@ export default function CalendarPage() {
             На главную
           </button>
 
-          <button
-            type="button"
-            onClick={() =>
-              openCreateEvent()
-            }
-            className="flex items-center gap-2 rounded-2xl bg-[#df8e94] px-5 py-3 text-sm font-medium text-white shadow-sm transition-all hover:bg-[#d37b83] hover:shadow-md active:scale-[0.97]"
-          >
-            <Plus
-              size={18}
-            />
+          <div className="flex flex-wrap items-center gap-3">
 
-            Новое событие
-          </button>
+            <button
+              type="button"
+              onClick={
+                openHistory
+              }
+              className="flex items-center gap-2 rounded-2xl border border-[#e8d8d4] bg-white px-5 py-3 text-sm font-medium text-[#806a65] shadow-sm transition-all hover:border-[#dca9a7] hover:bg-[#fff2f0] hover:text-[#bd666e] hover:shadow-md active:scale-[0.97]"
+            >
+              <History
+                size={18}
+              />
+
+              История
+            </button>
+
+            <button
+              type="button"
+              onClick={() =>
+                openCreateEvent()
+              }
+              className="flex items-center gap-2 rounded-2xl bg-[#df8e94] px-5 py-3 text-sm font-medium text-white shadow-sm transition-all hover:bg-[#d37b83] hover:shadow-md active:scale-[0.97]"
+            >
+              <Plus
+                size={18}
+              />
+
+              Новое событие
+            </button>
+
+          </div>
 
         </div>
 
@@ -1361,6 +1528,37 @@ export default function CalendarPage() {
 
       </div>
 
+      {/* История завершённых событий */}
+      {showHistory && (
+        <EventHistoryDialog
+          events={
+            historyEvents
+          }
+          isLoading={
+            isHistoryLoading
+          }
+          error={
+            historyError
+          }
+          onClose={() =>
+            setShowHistory(
+              false,
+            )
+          }
+          onOpenEvent={(
+            event,
+          ) => {
+            setShowHistory(
+              false,
+            );
+
+            openEvent(
+              event,
+            );
+          }}
+        />
+      )}
+
       {/* Просмотр события */}
       {selectedEvent &&
         !showEventForm && (
@@ -1432,6 +1630,304 @@ export default function CalendarPage() {
       )}
 
     </main>
+  );
+}
+
+function EventHistoryDialog({
+  events,
+  isLoading,
+  error,
+  onClose,
+  onOpenEvent,
+}: {
+  events: CalendarEvent[];
+  isLoading: boolean;
+  error: string | null;
+  onClose: () => void;
+  onOpenEvent: (
+    event: CalendarEvent,
+  ) => void;
+}) {
+  const groups =
+    useMemo(
+      () =>
+        groupHistoryEvents(
+          events,
+        ),
+      [
+        events,
+      ],
+    );
+
+  return (
+    <div className="fixed inset-0 z-[95] flex items-center justify-center bg-[#4d403e]/30 p-4 backdrop-blur-sm md:p-6">
+
+      <div className="flex max-h-[88vh] w-full max-w-3xl flex-col overflow-hidden rounded-[30px] border border-[#eadbd7] bg-white shadow-[0_30px_100px_rgba(73,48,45,0.22)]">
+
+        <div className="flex items-start justify-between gap-4 border-b border-[#f0e3df] px-6 py-6 md:px-8">
+
+          <div className="flex items-start gap-4">
+
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#f9e7e8] text-[#c8757c]">
+              <History
+                size={22}
+              />
+            </div>
+
+            <div>
+
+              <p className="text-sm font-medium text-[#c8757c]">
+                Ваши общие воспоминания
+              </p>
+
+              <h2 className="mt-1 text-2xl font-semibold text-[#554442]">
+                История событий
+              </h2>
+
+              <p className="mt-2 text-sm leading-6 text-[#9b8580]">
+                Здесь автоматически
+                появляются события,
+                которые уже завершились.
+              </p>
+
+            </div>
+
+          </div>
+
+          <button
+            type="button"
+            onClick={
+              onClose
+            }
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-[#957f79] transition hover:bg-[#fff0ef] hover:text-[#c36f77] active:scale-[0.94]"
+            aria-label="Закрыть историю"
+          >
+            <X
+              size={20}
+            />
+          </button>
+
+        </div>
+
+        <div className="min-h-0 flex-1 overflow-y-auto px-6 py-6 md:px-8">
+
+          {isLoading && (
+            <div className="flex min-h-[360px] flex-col items-center justify-center text-center">
+
+              <Heart
+                size={34}
+                className="animate-pulse text-[#d98a92]"
+              />
+
+              <p className="mt-4 text-sm text-[#9b8580]">
+                Загружаем прошлые события...
+              </p>
+
+            </div>
+          )}
+
+          {!isLoading &&
+            error && (
+            <div className="rounded-[20px] border border-[#efc9cc] bg-[#fff1f1] px-5 py-4 text-sm leading-6 text-[#a95057]">
+              {error}
+            </div>
+          )}
+
+          {!isLoading &&
+            !error &&
+            events.length ===
+              0 && (
+            <div className="flex min-h-[360px] items-center justify-center">
+
+              <div className="max-w-sm text-center">
+
+                <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[#f9e7e8] text-[#c8757c]">
+                  <History
+                    size={25}
+                  />
+                </div>
+
+                <h3 className="mt-5 text-lg font-semibold text-[#5f4b47]">
+                  История пока пуста
+                </h3>
+
+                <p className="mt-2 text-sm leading-6 text-[#a08c86]">
+                  Когда события завершатся,
+                  они автоматически
+                  появятся здесь.
+                </p>
+
+              </div>
+
+            </div>
+          )}
+
+          {!isLoading &&
+            !error &&
+            groups.map(
+              (
+                group,
+              ) => (
+                <section
+                  key={
+                    group.key
+                  }
+                  className="mb-8 last:mb-0"
+                >
+
+                  <div className="mb-3 flex items-center gap-3">
+
+                    <h3 className="text-sm font-semibold uppercase tracking-[0.08em] text-[#9b8580]">
+                      {group.label}
+                    </h3>
+
+                    <div className="h-px flex-1 bg-[#f0e3df]" />
+
+                    <span className="rounded-full bg-[#fff2f0] px-2.5 py-1 text-[10px] font-medium text-[#bd767d]">
+                      {group.events.length}
+                    </span>
+
+                  </div>
+
+                  <div className="space-y-3">
+
+                    {group.events.map(
+                      (
+                        event,
+                      ) => {
+                        const creatorName =
+                          event.createdBy
+                            .displayName ??
+                          event.createdBy
+                            .nickname;
+
+                        return (
+                          <button
+                            key={
+                              event.id
+                            }
+                            type="button"
+                            onClick={() =>
+                              onOpenEvent(
+                                event,
+                              )
+                            }
+                            className="group flex w-full items-start gap-4 rounded-[22px] border border-[#f0e1dd] bg-[#fffaf9] p-4 text-left transition-all hover:border-[#e2c2bf] hover:bg-[#fff4f2] hover:shadow-sm active:scale-[0.995] md:p-5"
+                          >
+
+                            <div className="flex w-[58px] shrink-0 flex-col items-center justify-center rounded-2xl bg-[#f9e5e6] px-2 py-3 text-[#bd6d75]">
+
+                              <span className="text-[10px] font-semibold uppercase">
+                                {formatHistoryMonthShort(
+                                  event.startsAt,
+                                )}
+                              </span>
+
+                              <span className="mt-0.5 text-2xl font-semibold leading-none">
+                                {new Date(
+                                  event.startsAt,
+                                ).getDate()}
+                              </span>
+
+                            </div>
+
+                            <div className="min-w-0 flex-1">
+
+                              <div className="flex items-start justify-between gap-3">
+
+                                <div className="min-w-0">
+
+                                  <p className="truncate font-semibold text-[#5e4a47] transition group-hover:text-[#ad6269]">
+                                    {event.title}
+                                  </p>
+
+                                  <p className="mt-1 text-xs capitalize text-[#a28d87]">
+                                    {formatHistoryDate(
+                                      event.startsAt,
+                                    )}
+                                  </p>
+
+                                </div>
+
+                                <ChevronRight
+                                  size={17}
+                                  className="mt-0.5 shrink-0 text-[#c8b2ad] transition group-hover:translate-x-0.5 group-hover:text-[#bd777d]"
+                                />
+
+                              </div>
+
+                              <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-xs text-[#907b75]">
+
+                                <span className="flex items-center gap-1.5">
+
+                                  <Clock
+                                    size={13}
+                                  />
+
+                                  {event.allDay
+                                    ? 'Весь день'
+                                    : formatEventTime(
+                                        event,
+                                      )}
+
+                                </span>
+
+                                {event.location && (
+                                  <span className="flex min-w-0 items-center gap-1.5">
+
+                                    <MapPin
+                                      size={13}
+                                      className="shrink-0"
+                                    />
+
+                                    <span className="max-w-[240px] truncate">
+                                      {event.location}
+                                    </span>
+
+                                  </span>
+                                )}
+
+                              </div>
+
+                              <p className="mt-3 text-[11px] text-[#b09b95]">
+                                Добавил(а):{' '}
+                                {creatorName}
+                              </p>
+
+                            </div>
+
+                          </button>
+                        );
+                      },
+                    )}
+
+                  </div>
+
+                </section>
+              ),
+            )}
+
+        </div>
+
+        {!isLoading &&
+          !error &&
+          events.length >
+            0 && (
+          <div className="border-t border-[#f0e3df] bg-[#fffdfb] px-6 py-4 md:px-8">
+
+            <p className="text-center text-xs text-[#a8948e]">
+              Всего завершённых событий:{' '}
+              <span className="font-semibold text-[#8c716c]">
+                {events.length}
+              </span>
+            </p>
+
+          </div>
+        )}
+
+      </div>
+
+    </div>
   );
 }
 
@@ -2192,6 +2688,208 @@ function createEventDate(
     0,
     0,
   ).toISOString();
+}
+
+/*
+ * Событие считается завершённым:
+ *
+ * - если есть время окончания —
+ *   после endsAt;
+ * - если окончания нет —
+ *   после startsAt;
+ * - событие на весь день —
+ *   только после завершения
+ *   календарного дня.
+ */
+function isEventCompleted(
+  event: CalendarEvent,
+  now: Date,
+) {
+  if (event.allDay) {
+    const eventDayEnd =
+      new Date(
+        event.startsAt,
+      );
+
+    eventDayEnd.setHours(
+      23,
+      59,
+      59,
+      999,
+    );
+
+    return (
+      eventDayEnd.getTime() <
+      now.getTime()
+    );
+  }
+
+  const completionDate =
+    event.endsAt
+      ? new Date(
+          event.endsAt,
+        )
+      : new Date(
+          event.startsAt,
+        );
+
+  return (
+    completionDate.getTime() <
+    now.getTime()
+  );
+}
+
+/*
+ * Получаем момент завершения
+ * для сортировки истории.
+ */
+function getEventCompletionTime(
+  event: CalendarEvent,
+) {
+  if (event.allDay) {
+    const eventDayEnd =
+      new Date(
+        event.startsAt,
+      );
+
+    eventDayEnd.setHours(
+      23,
+      59,
+      59,
+      999,
+    );
+
+    return eventDayEnd.getTime();
+  }
+
+  return new Date(
+    event.endsAt ??
+      event.startsAt,
+  ).getTime();
+}
+
+/*
+ * Группируем историю
+ * по месяцам.
+ */
+function groupHistoryEvents(
+  events: CalendarEvent[],
+) {
+  const groups =
+    new Map<
+      string,
+      {
+        key: string;
+        label: string;
+        events: CalendarEvent[];
+      }
+    >();
+
+  events.forEach(
+    (event) => {
+      const date =
+        new Date(
+          event.startsAt,
+        );
+
+      const key =
+        `${date.getFullYear()}-${String(
+          date.getMonth() + 1,
+        ).padStart(
+          2,
+          '0',
+        )}`;
+
+      const existing =
+        groups.get(
+          key,
+        );
+
+      if (existing) {
+        existing.events.push(
+          event,
+        );
+
+        return;
+      }
+
+      const rawLabel =
+        new Intl.DateTimeFormat(
+          'ru-RU',
+          {
+            month:
+              'long',
+            year:
+              'numeric',
+          },
+        ).format(
+          date,
+        );
+
+      groups.set(
+        key,
+        {
+          key,
+
+          label:
+            rawLabel
+              .charAt(0)
+              .toUpperCase() +
+            rawLabel.slice(1),
+
+          events: [
+            event,
+          ],
+        },
+      );
+    },
+  );
+
+  return Array.from(
+    groups.values(),
+  );
+}
+
+function formatHistoryDate(
+  value: string,
+) {
+  return new Intl.DateTimeFormat(
+    'ru-RU',
+    {
+      day:
+        'numeric',
+      month:
+        'long',
+      weekday:
+        'long',
+    },
+  ).format(
+    new Date(
+      value,
+    ),
+  );
+}
+
+function formatHistoryMonthShort(
+  value: string,
+) {
+  return new Intl.DateTimeFormat(
+    'ru-RU',
+    {
+      month:
+        'short',
+    },
+  )
+    .format(
+      new Date(
+        value,
+      ),
+    )
+    .replace(
+      '.',
+      '',
+    )
+    .toUpperCase();
 }
 
 function formatMonth(
