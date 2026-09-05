@@ -1,6 +1,14 @@
 'use client';
 
 import {
+  tr,
+} from '@/i18n/core';
+
+import {
+  useLanguageVersion,
+} from '@/i18n/use-language';
+
+import {
   type ChangeEvent,
   useEffect,
   useRef,
@@ -11,11 +19,16 @@ import {
   ArrowLeft,
   Cake,
   Camera,
+  Eye,
+  EyeOff,
   Heart,
   ImagePlus,
+  KeyRound,
+  Mail,
   Minus,
   Plus,
   Save,
+  ShieldCheck,
   UserRound,
   X,
 } from 'lucide-react';
@@ -28,7 +41,9 @@ import Cropper, {
   type Area,
 } from 'react-easy-crop';
 
-import { apiRequest } from '@/lib/api';
+import {
+  apiRequest,
+} from '@/lib/api';
 
 import {
   getAccessToken,
@@ -49,6 +64,8 @@ type CropPosition = {
 };
 
 export default function ProfileSettingsPage() {
+  useLanguageVersion();
+
   const router =
     useRouter();
 
@@ -82,6 +99,92 @@ export default function ProfileSettingsPage() {
     setBirthDate,
   ] =
     useState('');
+
+  /*
+   * Данные аккаунта
+   * и безопасности.
+   */
+  const [
+    email,
+    setEmail,
+  ] =
+    useState('');
+
+  const [
+    emailCurrentPassword,
+    setEmailCurrentPassword,
+  ] =
+    useState('');
+
+  const [
+    currentPassword,
+    setCurrentPassword,
+  ] =
+    useState('');
+
+  const [
+    newPassword,
+    setNewPassword,
+  ] =
+    useState('');
+
+  const [
+    confirmNewPassword,
+    setConfirmNewPassword,
+  ] =
+    useState('');
+
+  const [
+    isSavingEmail,
+    setIsSavingEmail,
+  ] =
+    useState(false);
+
+  const [
+    isSavingPassword,
+    setIsSavingPassword,
+  ] =
+    useState(false);
+
+  const [
+    showEmailPassword,
+    setShowEmailPassword,
+  ] =
+    useState(false);
+
+  const [
+    showCurrentPassword,
+    setShowCurrentPassword,
+  ] =
+    useState(false);
+
+  const [
+    showNewPassword,
+    setShowNewPassword,
+  ] =
+    useState(false);
+
+  const [
+    showConfirmNewPassword,
+    setShowConfirmNewPassword,
+  ] =
+    useState(false);
+
+  const [
+    accountError,
+    setAccountError,
+  ] =
+    useState<string | null>(
+      null,
+    );
+
+  const [
+    accountSuccess,
+    setAccountSuccess,
+  ] =
+    useState<string | null>(
+      null,
+    );
 
   const [
     isLoading,
@@ -198,6 +301,10 @@ export default function ProfileSettingsPage() {
           result.nickname,
         );
 
+        setEmail(
+          result.email,
+        );
+
         setBirthDate(
           result.birthDate
             ? toDateInputValue(
@@ -218,7 +325,9 @@ export default function ProfileSettingsPage() {
           );
         } else {
           setError(
-            'Не удалось загрузить профиль',
+            tr(
+              'Не удалось загрузить профиль',
+            ),
           );
         }
       } finally {
@@ -233,9 +342,12 @@ export default function ProfileSettingsPage() {
     void loadUser();
 
     return () => {
-      cancelled = true;
+      cancelled =
+        true;
     };
-  }, [router]);
+  }, [
+    router,
+  ]);
 
   /*
    * Сохраняем основные
@@ -265,22 +377,33 @@ export default function ProfileSettingsPage() {
       3
     ) {
       setError(
-        'Никнейм должен содержать минимум 3 символа',
+        tr(
+          'Никнейм должен содержать минимум 3 символа',
+        ),
       );
 
       return;
     }
 
     try {
-      setIsSaving(true);
-      setError(null);
-      setSuccess(null);
+      setIsSaving(
+        true,
+      );
+
+      setError(
+        null,
+      );
+
+      setSuccess(
+        null,
+      );
 
       const result =
         await apiRequest<User>(
           '/users/me',
           {
-            method: 'PATCH',
+            method:
+              'PATCH',
 
             headers: {
               Authorization:
@@ -304,7 +427,9 @@ export default function ProfileSettingsPage() {
           },
         );
 
-      setUser(result);
+      setUser(
+        result,
+      );
 
       setDisplayName(
         result.displayName ??
@@ -324,7 +449,9 @@ export default function ProfileSettingsPage() {
       );
 
       setSuccess(
-        'Профиль сохранён',
+        tr(
+          'Профиль сохранён',
+        ),
       );
     } catch (error) {
       if (
@@ -335,11 +462,340 @@ export default function ProfileSettingsPage() {
         );
       } else {
         setError(
-          'Не удалось сохранить профиль',
+          tr(
+            'Не удалось сохранить профиль',
+          ),
         );
       }
     } finally {
-      setIsSaving(false);
+      setIsSaving(
+        false,
+      );
+    }
+  }
+
+  /*
+   * Изменение электронной почты.
+   *
+   * Для подтверждения просим
+   * текущий пароль пользователя.
+   */
+  async function saveEmail() {
+    const token =
+      getAccessToken();
+
+    if (!token) {
+      removeAccessToken();
+
+      router.replace(
+        '/login',
+      );
+
+      return;
+    }
+
+    const normalizedEmail =
+      email
+        .trim()
+        .toLowerCase();
+
+    const emailLooksValid =
+      /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(
+        normalizedEmail,
+      );
+
+    if (
+      !emailLooksValid
+    ) {
+      setAccountError(
+        tr(
+          'Введите корректный email',
+        ),
+      );
+
+      setAccountSuccess(
+        null,
+      );
+
+      return;
+    }
+
+    if (
+      !emailCurrentPassword
+    ) {
+      setAccountError(
+        tr(
+          'Введите текущий пароль',
+        ),
+      );
+
+      setAccountSuccess(
+        null,
+      );
+
+      return;
+    }
+
+    try {
+      setIsSavingEmail(
+        true,
+      );
+
+      setAccountError(
+        null,
+      );
+
+      setAccountSuccess(
+        null,
+      );
+
+      const result =
+        await apiRequest<User>(
+          '/users/me/email',
+          {
+            method:
+              'PATCH',
+
+            headers: {
+              Authorization:
+                `Bearer ${token}`,
+            },
+
+            body:
+              JSON.stringify({
+                email:
+                  normalizedEmail,
+
+                currentPassword:
+                  emailCurrentPassword,
+              }),
+          },
+        );
+
+      setUser(
+        result,
+      );
+
+      setEmail(
+        result.email,
+      );
+
+      setEmailCurrentPassword(
+        '',
+      );
+
+      setShowEmailPassword(
+        false,
+      );
+
+      setAccountSuccess(
+        tr(
+          'Email сохранён',
+        ),
+      );
+    } catch (error) {
+      if (
+        error instanceof Error
+      ) {
+        setAccountError(
+          error.message,
+        );
+      } else {
+        setAccountError(
+          tr(
+            'Не удалось изменить email',
+          ),
+        );
+      }
+    } finally {
+      setIsSavingEmail(
+        false,
+      );
+    }
+  }
+
+  /*
+   * Изменение пароля.
+   */
+  async function savePassword() {
+    const token =
+      getAccessToken();
+
+    if (!token) {
+      removeAccessToken();
+
+      router.replace(
+        '/login',
+      );
+
+      return;
+    }
+
+    if (
+      !currentPassword
+    ) {
+      setAccountError(
+        tr(
+          'Введите текущий пароль',
+        ),
+      );
+
+      setAccountSuccess(
+        null,
+      );
+
+      return;
+    }
+
+    if (
+      newPassword.length <
+      8
+    ) {
+      setAccountError(
+        tr(
+          'Новый пароль должен содержать минимум 8 символов',
+        ),
+      );
+
+      setAccountSuccess(
+        null,
+      );
+
+      return;
+    }
+
+    if (
+      newPassword.length >
+      72
+    ) {
+      setAccountError(
+        tr(
+          'Пароль не должен быть длиннее 72 символов',
+        ),
+      );
+
+      setAccountSuccess(
+        null,
+      );
+
+      return;
+    }
+
+    if (
+      newPassword ===
+      currentPassword
+    ) {
+      setAccountError(
+        tr(
+          'Новый пароль должен отличаться от текущего',
+        ),
+      );
+
+      setAccountSuccess(
+        null,
+      );
+
+      return;
+    }
+
+    if (
+      newPassword !==
+      confirmNewPassword
+    ) {
+      setAccountError(
+        tr(
+          'Новые пароли не совпадают',
+        ),
+      );
+
+      setAccountSuccess(
+        null,
+      );
+
+      return;
+    }
+
+    try {
+      setIsSavingPassword(
+        true,
+      );
+
+      setAccountError(
+        null,
+      );
+
+      setAccountSuccess(
+        null,
+      );
+
+      await apiRequest<{
+        success: boolean;
+      }>(
+        '/users/me/password',
+        {
+          method:
+            'PATCH',
+
+          headers: {
+            Authorization:
+              `Bearer ${token}`,
+          },
+
+          body:
+            JSON.stringify({
+              currentPassword,
+              newPassword,
+            }),
+        },
+      );
+
+      setCurrentPassword(
+        '',
+      );
+
+      setNewPassword(
+        '',
+      );
+
+      setConfirmNewPassword(
+        '',
+      );
+
+      setShowCurrentPassword(
+        false,
+      );
+
+      setShowNewPassword(
+        false,
+      );
+
+      setShowConfirmNewPassword(
+        false,
+      );
+
+      setAccountSuccess(
+        tr(
+          'Пароль изменён',
+        ),
+      );
+    } catch (error) {
+      if (
+        error instanceof Error
+      ) {
+        setAccountError(
+          error.message,
+        );
+      } else {
+        setAccountError(
+          tr(
+            'Не удалось изменить пароль',
+          ),
+        );
+      }
+    } finally {
+      setIsSavingPassword(
+        false,
+      );
     }
   }
 
@@ -355,7 +811,8 @@ export default function ProfileSettingsPage() {
       ChangeEvent<HTMLInputElement>,
   ) {
     const file =
-      event.target.files?.[0];
+      event.target
+        .files?.[0];
 
     if (!file) {
       return;
@@ -373,7 +830,9 @@ export default function ProfileSettingsPage() {
       )
     ) {
       setError(
-        'Выберите изображение JPG, PNG или WEBP',
+        tr(
+          'Выберите изображение JPG, PNG или WEBP',
+        ),
       );
 
       event.target.value =
@@ -387,7 +846,9 @@ export default function ProfileSettingsPage() {
       5 * 1024 * 1024
     ) {
       setError(
-        'Размер изображения не должен превышать 5 МБ',
+        tr(
+          'Размер изображения не должен превышать 5 МБ',
+        ),
       );
 
       event.target.value =
@@ -401,7 +862,9 @@ export default function ProfileSettingsPage() {
      * уже использовался,
      * освобождаем старый URL.
      */
-    if (cropImageUrl) {
+    if (
+      cropImageUrl
+    ) {
       URL.revokeObjectURL(
         cropImageUrl,
       );
@@ -421,14 +884,21 @@ export default function ProfileSettingsPage() {
       y: 0,
     });
 
-    setZoom(1);
+    setZoom(
+      1,
+    );
 
     setCroppedAreaPixels(
       null,
     );
 
-    setError(null);
-    setSuccess(null);
+    setError(
+      null,
+    );
+
+    setSuccess(
+      null,
+    );
 
     /*
      * Позволяет потом выбрать
@@ -443,8 +913,11 @@ export default function ProfileSettingsPage() {
    * координаты выбранного участка.
    */
   function handleCropComplete(
-    _croppedArea: Area,
-    croppedPixels: Area,
+    _croppedArea:
+      Area,
+
+    croppedPixels:
+      Area,
   ) {
     setCroppedAreaPixels(
       croppedPixels,
@@ -455,13 +928,17 @@ export default function ProfileSettingsPage() {
    * Закрываем редактор.
    */
   function closeCropEditor() {
-    if (cropImageUrl) {
+    if (
+      cropImageUrl
+    ) {
       URL.revokeObjectURL(
         cropImageUrl,
       );
     }
 
-    setCropImageUrl(null);
+    setCropImageUrl(
+      null,
+    );
 
     setCroppedAreaPixels(
       null,
@@ -472,7 +949,9 @@ export default function ProfileSettingsPage() {
       y: 0,
     });
 
-    setZoom(1);
+    setZoom(
+      1,
+    );
   }
 
   /*
@@ -506,8 +985,13 @@ export default function ProfileSettingsPage() {
         true,
       );
 
-      setError(null);
-      setSuccess(null);
+      setError(
+        null,
+      );
+
+      setSuccess(
+        null,
+      );
 
       const avatarBlob =
         await getCroppedAvatar(
@@ -539,7 +1023,8 @@ export default function ProfileSettingsPage() {
         await apiRequest<User>(
           '/users/me/avatar',
           {
-            method: 'POST',
+            method:
+              'POST',
 
             headers: {
               Authorization:
@@ -551,10 +1036,14 @@ export default function ProfileSettingsPage() {
           },
         );
 
-      setUser(result);
+      setUser(
+        result,
+      );
 
       setSuccess(
-        'Аватар обновлён',
+        tr(
+          'Аватар обновлён',
+        ),
       );
 
       closeCropEditor();
@@ -567,7 +1056,9 @@ export default function ProfileSettingsPage() {
         );
       } else {
         setError(
-          'Не удалось сохранить аватар',
+          tr(
+            'Не удалось сохранить аватар',
+          ),
         );
       }
     } finally {
@@ -577,7 +1068,9 @@ export default function ProfileSettingsPage() {
     }
   }
 
-  if (isLoading) {
+  if (
+    isLoading
+  ) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-[#fffaf8]">
 
@@ -590,15 +1083,21 @@ export default function ProfileSettingsPage() {
     );
   }
 
-  if (!user) {
+  if (
+    !user
+  ) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-[#fffaf8] p-5">
 
         <div className="text-center">
 
           <p className="text-[#755f5b]">
+
             {error ??
-              'Не удалось открыть профиль'}
+              tr(
+                'Не удалось открыть профиль',
+              )}
+
           </p>
 
           <button
@@ -610,7 +1109,9 @@ export default function ProfileSettingsPage() {
             }
             className="mt-5 rounded-2xl bg-[#df8e94] px-6 py-3 font-medium text-white transition-all hover:bg-[#d57a82] active:scale-[0.97]"
           >
-            На главную
+            {tr(
+              'На главную',
+            )}
           </button>
 
         </div>
@@ -626,13 +1127,18 @@ export default function ProfileSettingsPage() {
 
   const initial =
     name
-      .charAt(0)
+      .charAt(
+        0,
+      )
       .toUpperCase();
 
   const today =
     new Date()
       .toISOString()
-      .slice(0, 10);
+      .slice(
+        0,
+        10,
+      );
 
   return (
     <main className="min-h-screen bg-[#fffaf8] px-5 py-8">
@@ -650,23 +1156,29 @@ export default function ProfileSettingsPage() {
             size={18}
           />
 
-          Назад
+          {tr(
+            'Назад',
+          )}
         </button>
 
         <header className="mb-8">
 
           <p className="text-sm font-medium text-[#c8757c]">
-            Настройки
+            {tr(
+              'Настройки',
+            )}
           </p>
 
           <h1 className="mt-1 text-3xl font-semibold text-[#554442]">
-            Ваш профиль
+            {tr(
+              'Ваш профиль',
+            )}
           </h1>
 
           <p className="mt-3 max-w-xl text-[#98837e]">
-            Здесь можно изменить
-            информацию, которую видят
-            другие пользователи.
+            {tr(
+              'Здесь можно изменить информацию, которую видят другие пользователи.',
+            )}
           </p>
 
         </header>
@@ -681,11 +1193,15 @@ export default function ProfileSettingsPage() {
             <button
               type="button"
               onClick={() =>
-                setError(null)
+                setError(
+                  null,
+                )
               }
               className="rounded-lg p-1 transition hover:bg-[#f8dddd]"
             >
-              <X size={16} />
+              <X
+                size={16}
+              />
             </button>
 
           </div>
@@ -712,7 +1228,12 @@ export default function ProfileSettingsPage() {
                   <div
                     role="img"
                     aria-label={
-                      `Аватар ${name}`
+                      tr(
+                        'Аватар {name}',
+                        {
+                          name,
+                        },
+                      )
                     }
                     className="h-28 w-28 rounded-full border-[6px] border-white bg-cover bg-center shadow-sm"
                     style={{
@@ -722,11 +1243,13 @@ export default function ProfileSettingsPage() {
                   />
                 ) : (
                   <div className="flex h-28 w-28 items-center justify-center rounded-full border-[6px] border-white bg-[#eadfcf] text-4xl font-semibold text-[#795f52] shadow-sm">
+
                     {initial || (
                       <UserRound
                         size={34}
                       />
                     )}
+
                   </div>
                 )}
 
@@ -738,7 +1261,11 @@ export default function ProfileSettingsPage() {
                   onClick={() =>
                     fileInputRef.current?.click()
                   }
-                  title="Изменить аватар"
+                  title={
+                    tr(
+                      'Изменить аватар',
+                    )
+                  }
                   className="absolute bottom-1 right-1 flex h-10 w-10 items-center justify-center rounded-full border-4 border-white bg-[#df8e94] text-white shadow-md transition-all duration-150 hover:bg-[#cf747c] hover:shadow-lg active:scale-[0.92] disabled:opacity-50"
                 >
                   <Camera
@@ -784,12 +1311,15 @@ export default function ProfileSettingsPage() {
                     size={16}
                   />
 
-                  Изменить фотографию
+                  {tr(
+                    'Изменить фотографию',
+                  )}
                 </button>
 
                 <p className="mt-1 text-xs text-[#b09b95]">
-                  JPG, PNG или WEBP,
-                  до 5 МБ
+                  {tr(
+                    'JPG, PNG или WEBP, до 5 МБ',
+                  )}
                 </p>
 
               </div>
@@ -805,13 +1335,17 @@ export default function ProfileSettingsPage() {
                   htmlFor="displayName"
                   className="mb-2 block text-sm font-medium text-[#665451]"
                 >
-                  Имя
+                  {tr(
+                    'Имя',
+                  )}
                 </label>
 
                 <input
                   id="displayName"
                   type="text"
-                  maxLength={50}
+                  maxLength={
+                    50
+                  }
                   value={
                     displayName
                   }
@@ -823,7 +1357,11 @@ export default function ProfileSettingsPage() {
                         .value,
                     )
                   }
-                  placeholder="Как вас называть?"
+                  placeholder={
+                    tr(
+                      'Как вас называть?',
+                    )
+                  }
                   className="w-full rounded-2xl border border-[#eadbd7] bg-[#fffdfc] px-4 py-3.5 text-[#554442] outline-none transition focus:border-[#df9ca1] focus:ring-4 focus:ring-[#f7e3e5]"
                 />
 
@@ -835,7 +1373,9 @@ export default function ProfileSettingsPage() {
                   htmlFor="nickname"
                   className="mb-2 block text-sm font-medium text-[#665451]"
                 >
-                  Никнейм
+                  {tr(
+                    'Никнейм',
+                  )}
                 </label>
 
                 <div className="flex rounded-2xl border border-[#eadbd7] bg-[#fffdfc] transition focus-within:border-[#df9ca1] focus-within:ring-4 focus-within:ring-[#f7e3e5]">
@@ -847,8 +1387,12 @@ export default function ProfileSettingsPage() {
                   <input
                     id="nickname"
                     type="text"
-                    minLength={3}
-                    maxLength={30}
+                    minLength={
+                      3
+                    }
+                    maxLength={
+                      30
+                    }
                     value={
                       nickname
                     }
@@ -867,9 +1411,9 @@ export default function ProfileSettingsPage() {
                 </div>
 
                 <p className="mt-2 text-xs text-[#a9948e]">
-                  Только латинские
-                  буквы, цифры и
-                  нижнее подчёркивание.
+                  {tr(
+                    'Только латинские буквы, цифры и нижнее подчёркивание.',
+                  )}
                 </p>
 
               </div>
@@ -880,7 +1424,9 @@ export default function ProfileSettingsPage() {
                   htmlFor="birthDate"
                   className="mb-2 block text-sm font-medium text-[#665451]"
                 >
-                  Дата рождения
+                  {tr(
+                    'Дата рождения',
+                  )}
                 </label>
 
                 <div className="relative">
@@ -893,7 +1439,9 @@ export default function ProfileSettingsPage() {
                   <input
                     id="birthDate"
                     type="date"
-                    max={today}
+                    max={
+                      today
+                    }
                     value={
                       birthDate
                     }
@@ -929,9 +1477,362 @@ export default function ProfileSettingsPage() {
                   />
 
                   {isSaving
-                    ? 'Сохраняем...'
-                    : 'Сохранить изменения'}
+                    ? tr(
+                        'Сохраняем...',
+                      )
+                    : tr(
+                        'Сохранить изменения',
+                      )}
                 </button>
+
+              </div>
+
+            </div>
+
+          </div>
+
+        </section>
+
+        {/* Аккаунт и безопасность */}
+        <section className="mt-7 overflow-hidden rounded-[32px] border border-[#eeddda] bg-white shadow-[0_20px_70px_rgba(91,65,59,0.07)]">
+
+          <div className="border-b border-[#f1e5e1] px-7 py-7 md:px-10">
+
+            <div className="flex items-start gap-4">
+
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#fde9e8] text-[#c8757c]">
+                <ShieldCheck
+                  size={21}
+                />
+              </div>
+
+              <div>
+
+                <p className="text-sm font-medium text-[#c8757c]">
+                  {tr(
+                    'Безопасность',
+                  )}
+                </p>
+
+                <h2 className="mt-1 text-2xl font-semibold text-[#554442]">
+                  {tr(
+                    'Аккаунт и безопасность',
+                  )}
+                </h2>
+
+                <p className="mt-2 max-w-2xl text-sm leading-6 text-[#98837e]">
+                  {tr(
+                    'Управляйте электронной почтой и паролем вашего аккаунта.',
+                  )}
+                </p>
+
+              </div>
+
+            </div>
+
+          </div>
+
+          <div className="px-7 py-7 md:px-10 md:py-9">
+
+            {accountError && (
+              <div className="mb-6 flex items-start justify-between gap-4 rounded-2xl border border-[#efc9cc] bg-[#fff1f1] px-5 py-4 text-sm text-[#a95057]">
+
+                <span>
+                  {accountError}
+                </span>
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    setAccountError(
+                      null,
+                    )
+                  }
+                  title={
+                    tr(
+                      'Закрыть',
+                    )
+                  }
+                  className="rounded-lg p-1 transition hover:bg-[#f8dddd]"
+                >
+                  <X
+                    size={16}
+                  />
+                </button>
+
+              </div>
+            )}
+
+            {accountSuccess && (
+              <div className="mb-6 rounded-2xl border border-[#eee0db] bg-[#edf3e8] px-5 py-4 text-sm text-[#75615c]">
+                {accountSuccess}
+              </div>
+            )}
+
+            <div className="grid gap-6 lg:grid-cols-2">
+
+              {/* Электронная почта */}
+              <div className="rounded-[26px] border border-[#eee0db] bg-[#fffaf9] p-5 md:p-6">
+
+                <div className="flex items-start gap-3">
+
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[#fde9e8] text-[#c8757c]">
+                    <Mail
+                      size={19}
+                    />
+                  </div>
+
+                  <div>
+
+                    <h3 className="font-semibold text-[#554442]">
+                      {tr(
+                        'Электронная почта',
+                      )}
+                    </h3>
+
+                    <p className="mt-1 text-sm leading-5 text-[#98837e]">
+                      {tr(
+                        'Она используется для входа в аккаунт.',
+                      )}
+                    </p>
+
+                  </div>
+
+                </div>
+
+                <div className="mt-6 grid gap-5">
+
+                  <div>
+
+                    <label
+                      htmlFor="accountEmail"
+                      className="mb-2 block text-sm font-medium text-[#665451]"
+                    >
+                      {tr(
+                        'Email',
+                      )}
+                    </label>
+
+                    <input
+                      id="accountEmail"
+                      type="email"
+                      autoComplete="email"
+                      maxLength={
+                        254
+                      }
+                      value={
+                        email
+                      }
+                      onChange={(
+                        event,
+                      ) =>
+                        setEmail(
+                          event.target
+                            .value,
+                        )
+                      }
+                      placeholder="name@example.com"
+                      className="w-full rounded-2xl border border-[#eadbd7] bg-[#fffdfc] px-4 py-3.5 text-[#554442] outline-none transition focus:border-[#df9ca1] focus:ring-4 focus:ring-[#f7e3e5]"
+                    />
+
+                  </div>
+
+                  <PasswordField
+                    id="emailCurrentPassword"
+                    label={
+                      tr(
+                        'Текущий пароль',
+                      )
+                    }
+                    value={
+                      emailCurrentPassword
+                    }
+                    shown={
+                      showEmailPassword
+                    }
+                    autoComplete="current-password"
+                    onChange={
+                      setEmailCurrentPassword
+                    }
+                    onToggle={() =>
+                      setShowEmailPassword(
+                        (
+                          value,
+                        ) =>
+                          !value,
+                      )
+                    }
+                  />
+
+                  <p className="-mt-2 text-xs leading-5 text-[#a9948e]">
+                    {tr(
+                      'Для изменения почты подтвердите действие текущим паролем.',
+                    )}
+                  </p>
+
+                  <button
+                    type="button"
+                    disabled={
+                      isSavingEmail
+                    }
+                    onClick={() =>
+                      void saveEmail()
+                    }
+                    className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[#df8e94] px-5 py-3.5 font-medium text-white shadow-sm transition-all duration-150 hover:bg-[#d37b83] hover:shadow-md active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50"
+                  >
+                    <Mail
+                      size={17}
+                    />
+
+                    {isSavingEmail
+                      ? tr(
+                          'Сохраняем...',
+                        )
+                      : tr(
+                          'Сохранить email',
+                        )}
+                  </button>
+
+                </div>
+
+              </div>
+
+              {/* Пароль */}
+              <div className="rounded-[26px] border border-[#eee0db] bg-[#fffaf9] p-5 md:p-6">
+
+                <div className="flex items-start gap-3">
+
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[#f2eaf8] text-[#9a7eae]">
+                    <KeyRound
+                      size={19}
+                    />
+                  </div>
+
+                  <div>
+
+                    <h3 className="font-semibold text-[#554442]">
+                      {tr(
+                        'Смена пароля',
+                      )}
+                    </h3>
+
+                    <p className="mt-1 text-sm leading-5 text-[#98837e]">
+                      {tr(
+                        'Используйте новый пароль не короче 8 символов.',
+                      )}
+                    </p>
+
+                  </div>
+
+                </div>
+
+                <div className="mt-6 grid gap-5">
+
+                  <PasswordField
+                    id="currentPassword"
+                    label={
+                      tr(
+                        'Текущий пароль',
+                      )
+                    }
+                    value={
+                      currentPassword
+                    }
+                    shown={
+                      showCurrentPassword
+                    }
+                    autoComplete="current-password"
+                    onChange={
+                      setCurrentPassword
+                    }
+                    onToggle={() =>
+                      setShowCurrentPassword(
+                        (
+                          value,
+                        ) =>
+                          !value,
+                      )
+                    }
+                  />
+
+                  <PasswordField
+                    id="newPassword"
+                    label={
+                      tr(
+                        'Новый пароль',
+                      )
+                    }
+                    value={
+                      newPassword
+                    }
+                    shown={
+                      showNewPassword
+                    }
+                    autoComplete="new-password"
+                    onChange={
+                      setNewPassword
+                    }
+                    onToggle={() =>
+                      setShowNewPassword(
+                        (
+                          value,
+                        ) =>
+                          !value,
+                      )
+                    }
+                  />
+
+                  <PasswordField
+                    id="confirmNewPassword"
+                    label={
+                      tr(
+                        'Повторите новый пароль',
+                      )
+                    }
+                    value={
+                      confirmNewPassword
+                    }
+                    shown={
+                      showConfirmNewPassword
+                    }
+                    autoComplete="new-password"
+                    onChange={
+                      setConfirmNewPassword
+                    }
+                    onToggle={() =>
+                      setShowConfirmNewPassword(
+                        (
+                          value,
+                        ) =>
+                          !value,
+                      )
+                    }
+                  />
+
+                  <button
+                    type="button"
+                    disabled={
+                      isSavingPassword
+                    }
+                    onClick={() =>
+                      void savePassword()
+                    }
+                    className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[#df8e94] px-5 py-3.5 font-medium text-white shadow-sm transition-all duration-150 hover:bg-[#d37b83] hover:shadow-md active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50"
+                  >
+                    <KeyRound
+                      size={17}
+                    />
+
+                    {isSavingPassword
+                      ? tr(
+                          'Сохраняем...',
+                        )
+                      : tr(
+                          'Изменить пароль',
+                        )}
+                  </button>
+
+                </div>
 
               </div>
 
@@ -949,8 +1850,12 @@ export default function ProfileSettingsPage() {
           imageUrl={
             cropImageUrl
           }
-          crop={crop}
-          zoom={zoom}
+          crop={
+            crop
+          }
+          zoom={
+            zoom
+          }
           isSaving={
             isUploadingAvatar
           }
@@ -976,6 +1881,117 @@ export default function ProfileSettingsPage() {
   );
 }
 
+function PasswordField({
+  id,
+  label,
+  value,
+  shown,
+  autoComplete,
+  onChange,
+  onToggle,
+}: {
+  id: string;
+
+  label: string;
+
+  value: string;
+
+  shown: boolean;
+
+  autoComplete:
+    | 'current-password'
+    | 'new-password';
+
+  onChange: (
+    value: string,
+  ) => void;
+
+  onToggle: () => void;
+}) {
+  return (
+    <div>
+
+      <label
+        htmlFor={
+          id
+        }
+        className="mb-2 block text-sm font-medium text-[#665451]"
+      >
+        {label}
+      </label>
+
+      <div className="relative">
+
+        <input
+          id={
+            id
+          }
+          type={
+            shown
+              ? 'text'
+              : 'password'
+          }
+          autoComplete={
+            autoComplete
+          }
+          value={
+            value
+          }
+          onChange={(
+            event,
+          ) =>
+            onChange(
+              event.target
+                .value,
+            )
+          }
+          className="w-full rounded-2xl border border-[#eadbd7] bg-[#fffdfc] py-3.5 pl-4 pr-12 text-[#554442] outline-none transition focus:border-[#df9ca1] focus:ring-4 focus:ring-[#f7e3e5]"
+        />
+
+        <button
+          type="button"
+          onClick={
+            onToggle
+          }
+          title={
+            shown
+              ? tr(
+                  'Скрыть пароль',
+                )
+              : tr(
+                  'Показать пароль',
+                )
+          }
+          aria-label={
+            shown
+              ? tr(
+                  'Скрыть пароль',
+                )
+              : tr(
+                  'Показать пароль',
+                )
+          }
+          className="absolute right-2 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-xl text-[#a18d87] transition-all hover:bg-[#fff0ef] hover:text-[#c36f77] active:scale-[0.94]"
+        >
+
+          {shown ? (
+            <EyeOff
+              size={17}
+            />
+          ) : (
+            <Eye
+              size={17}
+            />
+          )}
+
+        </button>
+
+      </div>
+
+    </div>
+  );
+}
+
 function AvatarCropDialog({
   imageUrl,
   crop,
@@ -989,14 +2005,16 @@ function AvatarCropDialog({
 }: {
   imageUrl: string;
 
-  crop: CropPosition;
+  crop:
+    CropPosition;
 
   zoom: number;
 
   isSaving: boolean;
 
   onCropChange: (
-    value: CropPosition,
+    value:
+      CropPosition,
   ) => void;
 
   onZoomChange: (
@@ -1004,8 +2022,11 @@ function AvatarCropDialog({
   ) => void;
 
   onCropComplete: (
-    croppedArea: Area,
-    croppedAreaPixels: Area,
+    croppedArea:
+      Area,
+
+    croppedAreaPixels:
+      Area,
   ) => void;
 
   onCancel: () => void;
@@ -1023,18 +2044,21 @@ function AvatarCropDialog({
           <div>
 
             <p className="text-sm font-medium text-[#c8757c]">
-              Фотография профиля
+              {tr(
+                'Фотография профиля',
+              )}
             </p>
 
             <h2 className="mt-1 text-2xl font-semibold text-[#554442]">
-              Выберите миниатюру
+              {tr(
+                'Выберите миниатюру',
+              )}
             </h2>
 
             <p className="mt-2 text-sm text-[#927d78]">
-              Перемещайте фотографию,
-              чтобы выбрать область,
-              которая будет видна
-              в аватаре.
+              {tr(
+                'Перемещайте фотографию, чтобы выбрать область, которая будет видна в аватаре.',
+              )}
             </p>
 
           </div>
@@ -1047,10 +2071,16 @@ function AvatarCropDialog({
             onClick={
               onCancel
             }
-            title="Закрыть"
+            title={
+              tr(
+                'Закрыть',
+              )
+            }
             className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-[#947f79] transition-all hover:bg-[#fff0ef] hover:text-[#c36f77] active:scale-[0.94] disabled:opacity-50"
           >
-            <X size={20} />
+            <X
+              size={20}
+            />
           </button>
 
         </div>
@@ -1068,9 +2098,13 @@ function AvatarCropDialog({
             zoom={
               zoom
             }
-            aspect={1}
+            aspect={
+              1
+            }
             cropShape="round"
-            showGrid={false}
+            showGrid={
+              false
+            }
             objectFit="contain"
             onCropChange={
               onCropChange
@@ -1097,9 +2131,15 @@ function AvatarCropDialog({
 
             <input
               type="range"
-              min={1}
-              max={3}
-              step={0.01}
+              min={
+                1
+              }
+              max={
+                3
+              }
+              step={
+                0.01
+              }
               value={
                 zoom
               }
@@ -1113,7 +2153,11 @@ function AvatarCropDialog({
                   ),
                 )
               }
-              aria-label="Масштаб фотографии"
+              aria-label={
+                tr(
+                  'Масштаб фотографии',
+                )
+              }
               className="w-full accent-[#d68189]"
             />
 
@@ -1125,9 +2169,9 @@ function AvatarCropDialog({
           </div>
 
           <p className="mt-3 text-center text-xs text-[#a7928c]">
-            Перетаскивайте фотографию
-            мышкой и используйте ползунок
-            для изменения масштаба.
+            {tr(
+              'Перетаскивайте фотографию мышкой и используйте ползунок для изменения масштаба.',
+            )}
           </p>
 
         </div>
@@ -1145,7 +2189,9 @@ function AvatarCropDialog({
             }
             className="flex-1 rounded-2xl border border-[#e7d8d4] px-5 py-3 font-medium text-[#79635f] transition-all hover:border-[#dbc2bd] hover:bg-[#fff3f0] active:scale-[0.97] disabled:pointer-events-none disabled:opacity-50"
           >
-            Отмена
+            {tr(
+              'Отмена',
+            )}
           </button>
 
           <button
@@ -1163,8 +2209,12 @@ function AvatarCropDialog({
             />
 
             {isSaving
-              ? 'Сохраняем...'
-              : 'Сохранить фото'}
+              ? tr(
+                  'Сохраняем...',
+                )
+              : tr(
+                  'Сохранить фото',
+                )}
           </button>
 
         </div>
@@ -1178,7 +2228,12 @@ function AvatarCropDialog({
 function toDateInputValue(
   value: string,
 ) {
-  return new Date(value)
+  return new Date(
+    value,
+  )
     .toISOString()
-    .slice(0, 10);
+    .slice(
+      0,
+      10,
+    );
 }

@@ -1,6 +1,15 @@
 'use client';
 
 import {
+  getIntlLocale,
+  tr,
+} from '@/i18n/core';
+
+import {
+  useLanguageVersion,
+} from '@/i18n/use-language';
+
+import {
   type ClipboardEvent,
   type DragEvent,
   type ReactNode,
@@ -90,6 +99,8 @@ const allowedImageTypes = [
 ];
 
 export default function WishlistsPage() {
+  useLanguageVersion();
+
   const router =
     useRouter();
 
@@ -289,7 +300,7 @@ export default function WishlistsPage() {
         setError(
           getErrorMessage(
             error,
-            'Не удалось загрузить вишлисты',
+            tr('Не удалось загрузить вишлисты'),
           ),
         );
       } finally {
@@ -390,7 +401,7 @@ export default function WishlistsPage() {
           .displayName ??
         data.partner[0].owner
           .nickname
-      : 'партнёра';
+      : tr('партнёра');
 
   function openCreateWishlist() {
     setEditingWishlist(
@@ -472,7 +483,7 @@ export default function WishlistsPage() {
 
     if (!title) {
       setError(
-        'Укажите название вишлиста',
+        tr('Укажите название вишлиста'),
       );
 
       return;
@@ -545,7 +556,7 @@ export default function WishlistsPage() {
       setError(
         getErrorMessage(
           error,
-          'Не удалось сохранить вишлист',
+          tr('Не удалось сохранить вишлист'),
         ),
       );
     } finally {
@@ -600,7 +611,7 @@ export default function WishlistsPage() {
       setError(
         getErrorMessage(
           error,
-          'Не удалось удалить вишлист',
+          tr('Не удалось удалить вишлист'),
         ),
       );
     } finally {
@@ -727,7 +738,7 @@ export default function WishlistsPage() {
       )
     ) {
       setError(
-        'Поддерживаются только JPG, PNG и WEBP',
+        tr('Поддерживаются только JPG, PNG и WEBP'),
       );
 
       return;
@@ -738,7 +749,7 @@ export default function WishlistsPage() {
       maxImageSize
     ) {
       setError(
-        'Изображение должно быть не больше 5 МБ',
+        tr('Изображение должно быть не больше 5 МБ'),
       );
 
       return;
@@ -843,7 +854,7 @@ export default function WishlistsPage() {
 
     if (!title) {
       setError(
-        'Укажите название желания',
+        tr('Укажите название желания'),
       );
 
       return;
@@ -866,7 +877,7 @@ export default function WishlistsPage() {
       )
     ) {
       setError(
-        'Цена должна быть целым положительным числом',
+        tr('Цена должна быть целым положительным числом'),
       );
 
       return;
@@ -955,7 +966,7 @@ export default function WishlistsPage() {
       setError(
         getErrorMessage(
           error,
-          'Не удалось сохранить желание',
+          tr('Не удалось сохранить желание'),
         ),
       );
     } finally {
@@ -1015,7 +1026,7 @@ export default function WishlistsPage() {
       setError(
         getErrorMessage(
           error,
-          'Не удалось удалить желание',
+          tr('Не удалось удалить желание'),
         ),
       );
     } finally {
@@ -1062,10 +1073,7 @@ export default function WishlistsPage() {
           >
             <ArrowLeft
               size={18}
-            />
-
-            На главную
-          </button>
+            />{tr('На главную')}</button>
 
           {activeTab ===
             'mine' && (
@@ -1078,28 +1086,18 @@ export default function WishlistsPage() {
             >
               <Plus
                 size={18}
-              />
-
-              Новый вишлист
-            </button>
+              />{tr('Новый вишлист')}</button>
           )}
 
         </div>
 
         <header className="mb-7">
 
-          <p className="text-sm font-medium text-[#927ba3]">
-            ♡ Желания
-          </p>
+          <p className="text-sm font-medium text-[#927ba3]">{tr('♡ Желания')}</p>
 
-          <h1 className="mt-1 text-3xl font-semibold text-[#554442]">
-            Вишлисты
-          </h1>
+          <h1 className="mt-1 text-3xl font-semibold text-[#554442]">{tr('Вишлисты')}</h1>
 
-          <p className="mt-3 text-[#98837e]">
-            Сохраняйте всё,
-            что хотелось бы однажды получить.
-          </p>
+          <p className="mt-3 text-[#98837e]">{tr('Сохраняйте всё, что хотелось бы однажды получить.')}</p>
 
         </header>
 
@@ -1137,9 +1135,7 @@ export default function WishlistsPage() {
             ].join(
               ' ',
             )}
-          >
-            Мои вишлисты
-          </button>
+          >{tr('Мои вишлисты')}</button>
 
           <button
             type="button"
@@ -1159,7 +1155,7 @@ export default function WishlistsPage() {
               ' ',
             )}
           >
-            Вишлисты {partnerName}
+            {tr('Вишлисты {name}', { name: partnerName })}
           </button>
 
         </div>
@@ -1181,8 +1177,8 @@ export default function WishlistsPage() {
               <p className="text-sm text-[#9a86aa]">
                 {activeTab ===
                 'mine'
-                  ? 'Ваши списки'
-                  : `Списки ${partnerName}`}
+                  ? tr('Ваши списки')
+                  : tr('Списки {name}', { name: partnerName })}
               </p>
 
               <div className="mt-5 space-y-3">
@@ -1244,8 +1240,8 @@ export default function WishlistsPage() {
                       <p className="text-sm text-[#927ba3]">
                         {activeTab ===
                         'mine'
-                          ? 'Мой вишлист'
-                          : `Вишлист ${partnerName}`}
+                          ? tr('Мой вишлист')
+                          : tr('Вишлист {name}', { name: partnerName })}
                       </p>
 
                       <h2 className="mt-1 text-3xl font-semibold text-[#554442]">
@@ -1302,10 +1298,7 @@ export default function WishlistsPage() {
                     >
                       <Plus
                         size={18}
-                      />
-
-                      Добавить желание
-                    </button>
+                      />{tr('Добавить желание')}</button>
                   )}
 
                   {selectedWishlist.items.length >
@@ -1451,8 +1444,10 @@ export default function WishlistsPage() {
 
       {deletingWishlist && (
         <ConfirmDialog
-          title="Удалить вишлист?"
-          description={`«${deletingWishlist.title}» и все желания внутри него будут удалены.`}
+          title={tr('Удалить вишлист?')}
+          description={tr('«{title}» и все желания внутри него будут удалены.', {
+            title: deletingWishlist.title,
+          })}
           isLoading={
             isDeleting
           }
@@ -1469,8 +1464,10 @@ export default function WishlistsPage() {
 
       {deletingItem && (
         <ConfirmDialog
-          title="Удалить желание?"
-          description={`«${deletingItem.title}» исчезнет из этого вишлиста.`}
+          title={tr('Удалить желание?')}
+          description={tr('«{title}» исчезнет из этого вишлиста.', {
+            title: deletingItem.title,
+          })}
           isLoading={
             isDeleting
           }
@@ -1605,10 +1602,7 @@ function WishlistItemCard({
           >
             <ExternalLink
               size={15}
-            />
-
-            Открыть товар
-          </button>
+            />{tr('Открыть товар')}</button>
         )}
 
       </div>
@@ -1696,14 +1690,9 @@ function PriorityPicker({
   return (
     <div className="rounded-[22px] border border-[#eadde7] bg-[#fdfafd] p-5">
 
-      <p className="font-medium text-[#67536b]">
-        Насколько сильно хочется?
-      </p>
+      <p className="font-medium text-[#67536b]">{tr('Насколько сильно хочется?')}</p>
 
-      <p className="mt-1 text-sm text-[#a18e9f]">
-        Приоритет поможет партнёру
-        понять, что хочется больше всего.
-      </p>
+      <p className="mt-1 text-sm text-[#a18e9f]">{tr('Приоритет поможет партнёру понять, что хочется больше всего.')}</p>
 
       <div
         className="mt-5 flex items-center gap-2"
@@ -1732,7 +1721,7 @@ function PriorityPicker({
               disabled={
                 disabled
               }
-              aria-label={`Приоритет ${priority}`}
+              aria-label={tr('Приоритет {priority}', { priority })}
               onMouseEnter={() =>
                 setHoveredPriority(
                   priority,
@@ -1874,7 +1863,7 @@ function ImageDropzone({
 
           <div
             role="img"
-            aria-label="Предпросмотр изображения"
+            aria-label={tr('Предпросмотр изображения')}
             className="aspect-[16/10] bg-white bg-contain bg-center bg-no-repeat"
             style={{
               backgroundImage:
@@ -1904,9 +1893,7 @@ function ImageDropzone({
               inputRef.current?.click()
             }
             className="text-sm font-medium text-[#846e95]"
-          >
-            Заменить
-          </button>
+          >{tr('Заменить')}</button>
 
         </div>
 
@@ -1981,14 +1968,9 @@ function ImageDropzone({
         className="mx-auto text-[#8b759d]"
       />
 
-      <p className="mt-4 font-semibold text-[#69566f]">
-        Добавьте изображение
-      </p>
+      <p className="mt-4 font-semibold text-[#69566f]">{tr('Добавьте изображение')}</p>
 
-      <p className="mt-2 text-sm text-[#9c8b9e]">
-        Ctrl + V, перетаскивание
-        или выбор файла
-      </p>
+      <p className="mt-2 text-sm text-[#9c8b9e]">{tr('Ctrl + V, перетаскивание или выбор файла')}</p>
 
       <div className="mt-4 flex justify-center gap-3 text-xs text-[#89758e]">
 
@@ -2002,9 +1984,7 @@ function ImageDropzone({
         <span className="flex items-center gap-1">
           <Upload
             size={14}
-          />
-          Выбрать файл
-        </span>
+          />{tr('Выбрать файл')}</span>
 
       </div>
 
@@ -2069,8 +2049,8 @@ function WishlistFormDialog({
 
           <h2 className="text-2xl font-semibold text-[#554442]">
             {editing
-              ? 'Изменить вишлист'
-              : 'Создать вишлист'}
+              ? tr('Изменить вишлист')
+              : tr('Создать вишлист')}
           </h2>
 
           <ModalCloseButton
@@ -2097,7 +2077,7 @@ function WishlistFormDialog({
         <div className="mt-6 space-y-5">
 
           <FormField
-            label="Название"
+            label={tr('Название')}
           >
             <input
               value={
@@ -2120,7 +2100,7 @@ function WishlistFormDialog({
           </FormField>
 
           <FormField
-            label="Описание"
+            label={tr('Описание')}
           >
             <textarea
               rows={4}
@@ -2154,8 +2134,8 @@ function WishlistFormDialog({
           className="mt-7 w-full rounded-2xl bg-[#9b87ad] py-3.5 font-medium text-white"
         >
           {isSaving
-            ? 'Сохраняем...'
-            : 'Сохранить'}
+            ? tr('Сохраняем...')
+            : tr('Сохранить')}
         </button>
 
       </div>
@@ -2204,14 +2184,14 @@ function ItemFormDialog({
 
             <p className="text-sm text-[#927ba3]">
               {editing
-                ? 'Редактирование'
-                : 'Новое желание'}
+                ? tr('Редактирование')
+                : tr('Новое желание')}
             </p>
 
             <h2 className="mt-1 text-2xl font-semibold text-[#554442]">
               {editing
-                ? 'Изменить желание'
-                : 'Добавить желание'}
+                ? tr('Изменить желание')
+                : tr('Добавить желание')}
             </h2>
 
           </div>
@@ -2257,7 +2237,7 @@ function ItemFormDialog({
           />
 
           <FormField
-            label="Название"
+            label={tr('Название')}
           >
             <input
               maxLength={120}
@@ -2274,7 +2254,7 @@ function ItemFormDialog({
                     event.target.value,
                 })
               }
-              placeholder="Например, наушники"
+              placeholder={tr('Например, наушники')}
               className={
                 wishlistInputClass
               }
@@ -2282,7 +2262,7 @@ function ItemFormDialog({
           </FormField>
 
           <FormField
-            label="Цена"
+            label={tr('Цена')}
           >
             <input
               type="number"
@@ -2329,7 +2309,7 @@ function ItemFormDialog({
           />
 
           <FormField
-            label="Ссылка на товар"
+            label={tr('Ссылка на товар')}
             icon={
               <LinkIcon
                 size={15}
@@ -2359,7 +2339,7 @@ function ItemFormDialog({
           </FormField>
 
           <FormField
-            label="Описание"
+            label={tr('Описание')}
           >
             <textarea
               rows={5}
@@ -2376,7 +2356,7 @@ function ItemFormDialog({
                     event.target.value,
                 })
               }
-              placeholder="Размер, цвет или любые детали..."
+              placeholder={tr('Размер, цвет или любые детали...')}
               className={`${wishlistInputClass} resize-none`}
             />
           </FormField>
@@ -2394,10 +2374,10 @@ function ItemFormDialog({
           className="mt-7 w-full rounded-2xl bg-[#9b87ad] py-3.5 font-medium text-white"
         >
           {isSaving
-            ? 'Сохраняем...'
+            ? tr('Сохраняем...')
             : editing
-              ? 'Сохранить изменения'
-              : 'Добавить желание'}
+              ? tr('Сохранить изменения')
+              : tr('Добавить желание')}
         </button>
 
       </div>
@@ -2517,9 +2497,7 @@ function ConfirmDialog({
               onCancel
             }
             className="flex-1 rounded-2xl border py-3"
-          >
-            Отмена
-          </button>
+          >{tr('Отмена')}</button>
 
           <button
             type="button"
@@ -2532,8 +2510,8 @@ function ConfirmDialog({
             className="flex-1 rounded-2xl bg-[#c86167] py-3 text-white"
           >
             {isLoading
-              ? 'Удаляем...'
-              : 'Удалить'}
+              ? tr('Удаляем...')
+              : tr('Удалить')}
           </button>
 
         </div>
@@ -2548,7 +2526,7 @@ function formatPrice(
   value: number,
 ) {
   return new Intl.NumberFormat(
-    'ru-RU',
+    getIntlLocale(),
     {
       style:
         'currency',
@@ -2569,22 +2547,22 @@ function getPriorityLabel(
 ) {
   switch (priority) {
     case 1:
-      return 'Неплохо бы';
+      return tr('Неплохо бы');
 
     case 2:
-      return 'Хочу';
+      return tr('Хочу');
 
     case 3:
-      return 'Очень хочу';
+      return tr('Очень хочу');
 
     case 4:
-      return 'Очень сильно хочу';
+      return tr('Очень сильно хочу');
 
     case 5:
-      return 'Мечтаю';
+      return tr('Мечтаю');
 
     default:
-      return 'Очень хочу';
+      return tr('Очень хочу');
   }
 }
 
@@ -2601,7 +2579,7 @@ function pluralizeItems(
     mod10 === 1 &&
     mod100 !== 11
   ) {
-    return 'желание';
+    return tr('желание');
   }
 
   if (
@@ -2612,10 +2590,10 @@ function pluralizeItems(
       mod100 > 14
     )
   ) {
-    return 'желания';
+    return tr('желания');
   }
 
-  return 'желаний';
+  return tr('желаний');
 }
 
 function getErrorMessage(

@@ -1,6 +1,15 @@
 'use client';
 
 import {
+  getIntlLocale,
+  tr,
+} from '@/i18n/core';
+
+import {
+  useLanguageVersion,
+} from '@/i18n/use-language';
+
+import {
   useCallback,
   useEffect,
   useMemo,
@@ -65,6 +74,8 @@ const emptyForm: EventForm = {
 };
 
 export default function CalendarPage() {
+  useLanguageVersion();
+
   const router =
     useRouter();
 
@@ -320,7 +331,7 @@ export default function CalendarPage() {
           );
         } else {
           setError(
-            'Не удалось загрузить календарь',
+            tr('Не удалось загрузить календарь'),
           );
         }
       } finally {
@@ -455,7 +466,7 @@ export default function CalendarPage() {
           );
         } else {
           setError(
-            'Не удалось открыть событие',
+            tr('Не удалось открыть событие'),
           );
         }
       }
@@ -585,7 +596,7 @@ export default function CalendarPage() {
         );
       } else {
         setHistoryError(
-          'Не удалось загрузить историю событий',
+          tr('Не удалось загрузить историю событий'),
         );
       }
     } finally {
@@ -793,7 +804,7 @@ export default function CalendarPage() {
       !form.title.trim()
     ) {
       setError(
-        'Укажите название события',
+        tr('Укажите название события'),
       );
 
       return;
@@ -801,7 +812,7 @@ export default function CalendarPage() {
 
     if (!form.date) {
       setError(
-        'Укажите дату события',
+        tr('Укажите дату события'),
       );
 
       return;
@@ -847,7 +858,7 @@ export default function CalendarPage() {
           )
         ) {
           setError(
-            'Время окончания не может быть раньше начала',
+            tr('Время окончания не может быть раньше начала'),
           );
 
           return;
@@ -957,7 +968,7 @@ export default function CalendarPage() {
         );
       } else {
         setError(
-          'Не удалось сохранить событие',
+          tr('Не удалось сохранить событие'),
         );
       }
     } finally {
@@ -1028,7 +1039,7 @@ export default function CalendarPage() {
         );
       } else {
         setError(
-          'Не удалось удалить событие',
+          tr('Не удалось удалить событие'),
         );
       }
     } finally {
@@ -1074,10 +1085,7 @@ export default function CalendarPage() {
           >
             <ArrowLeft
               size={18}
-            />
-
-            На главную
-          </button>
+            />{tr('На главную')}</button>
 
           <div className="flex flex-wrap items-center gap-3">
 
@@ -1090,10 +1098,7 @@ export default function CalendarPage() {
             >
               <History
                 size={18}
-              />
-
-              История
-            </button>
+              />{tr('История')}</button>
 
             <button
               type="button"
@@ -1104,10 +1109,7 @@ export default function CalendarPage() {
             >
               <Plus
                 size={18}
-              />
-
-              Новое событие
-            </button>
+              />{tr('Новое событие')}</button>
 
           </div>
 
@@ -1116,18 +1118,11 @@ export default function CalendarPage() {
         {/* Заголовок */}
         <header className="mb-7">
 
-          <p className="text-sm font-medium text-[#c8757c]">
-            ♡ Общее пространство
-          </p>
+          <p className="text-sm font-medium text-[#c8757c]">{tr('♡ Общее пространство')}</p>
 
-          <h1 className="mt-1 text-3xl font-semibold text-[#554442]">
-            Календарь
-          </h1>
+          <h1 className="mt-1 text-3xl font-semibold text-[#554442]">{tr('Календарь')}</h1>
 
-          <p className="mt-3 text-[#98837e]">
-            Ваши общие планы,
-            встречи и важные даты.
-          </p>
+          <p className="mt-3 text-[#98837e]">{tr('Ваши общие планы, встречи и важные даты.')}</p>
 
         </header>
 
@@ -1168,7 +1163,7 @@ export default function CalendarPage() {
 
                 <button
                   type="button"
-                  title="Предыдущий месяц"
+                  title={tr('Предыдущий месяц')}
                   onClick={
                     previousMonth
                   }
@@ -1181,7 +1176,7 @@ export default function CalendarPage() {
 
                 <button
                   type="button"
-                  title="Следующий месяц"
+                  title={tr('Следующий месяц')}
                   onClick={
                     nextMonth
                   }
@@ -1206,9 +1201,7 @@ export default function CalendarPage() {
                   goToToday
                 }
                 className="rounded-xl border border-[#eadbd7] px-4 py-2 text-sm font-medium text-[#806a65] transition-all hover:border-[#dcaaa6] hover:bg-[#fff0ef] hover:text-[#c36f77] active:scale-[0.97]"
-              >
-                Сегодня
-              </button>
+              >{tr('Сегодня')}</button>
 
             </div>
 
@@ -1216,13 +1209,13 @@ export default function CalendarPage() {
             <div className="grid grid-cols-7 border-b border-[#f1e5e1] bg-[#fffaf9]">
 
               {[
-                'Пн',
-                'Вт',
-                'Ср',
-                'Чт',
-                'Пт',
-                'Сб',
-                'Вс',
+                tr('Пн'),
+                tr('Вт'),
+                tr('Ср'),
+                tr('Чт'),
+                tr('Пт'),
+                tr('Сб'),
+                tr('Вс'),
               ].map(
                 (day) => (
                   <div
@@ -1313,9 +1306,11 @@ export default function CalendarPage() {
                           }
                           className="absolute inset-0 z-0 transition hover:bg-[#fff9f7]"
                           aria-label={
-                            `Выбрать ${day.date.toLocaleDateString(
-                              'ru-RU',
-                            )}`
+                            tr('Выбрать {date}', {
+                              date: day.date.toLocaleDateString(
+                                getIntlLocale(),
+                              ),
+                            })
                           }
                         />
 
@@ -1384,7 +1379,7 @@ export default function CalendarPage() {
                           {dayEvents.length >
                             3 && (
                             <p className="pl-1 text-[10px] text-[#a48f89] md:text-xs">
-                              ещё{' '}
+                              {tr('ещё')}{' '}
                               {dayEvents.length -
                                 3}
                             </p>
@@ -1409,16 +1404,14 @@ export default function CalendarPage() {
 
               <div>
 
-                <p className="text-sm text-[#c1767d]">
-                  Выбранный день
-                </p>
+                <p className="text-sm text-[#c1767d]">{tr('Выбранный день')}</p>
 
                 <h2 className="mt-1 text-xl font-semibold text-[#554442]">
                   {selectedDate
                     ? formatSelectedDate(
                         selectedDate,
                       )
-                    : 'Выберите дату'}
+                    : tr('Выберите дату')}
                 </h2>
 
               </div>
@@ -1443,10 +1436,7 @@ export default function CalendarPage() {
             >
               <Plus
                 size={17}
-              />
-
-              Добавить событие
-            </button>
+              />{tr('Добавить событие')}</button>
 
             <div className="mt-5 space-y-3">
 
@@ -1454,15 +1444,9 @@ export default function CalendarPage() {
                 0 && (
                 <div className="rounded-[20px] border border-dashed border-[#eadbd7] bg-[#fffaf9] px-4 py-8 text-center">
 
-                  <p className="text-sm font-medium text-[#876f69]">
-                    Планов пока нет
-                  </p>
+                  <p className="text-sm font-medium text-[#876f69]">{tr('Планов пока нет')}</p>
 
-                  <p className="mt-2 text-xs leading-5 text-[#ac9892]">
-                    Хороший день,
-                    чтобы что-нибудь
-                    запланировать.
-                  </p>
+                  <p className="mt-2 text-xs leading-5 text-[#ac9892]">{tr('Хороший день, чтобы что-нибудь запланировать.')}</p>
 
                 </div>
               )}
@@ -1493,7 +1477,7 @@ export default function CalendarPage() {
                       />
 
                       {event.allDay
-                        ? 'Весь день'
+                        ? tr('Весь день')
                         : formatEventTime(
                             event,
                           )}
@@ -1676,19 +1660,11 @@ function EventHistoryDialog({
 
             <div>
 
-              <p className="text-sm font-medium text-[#c8757c]">
-                Ваши общие воспоминания
-              </p>
+              <p className="text-sm font-medium text-[#c8757c]">{tr('Ваши общие воспоминания')}</p>
 
-              <h2 className="mt-1 text-2xl font-semibold text-[#554442]">
-                История событий
-              </h2>
+              <h2 className="mt-1 text-2xl font-semibold text-[#554442]">{tr('История событий')}</h2>
 
-              <p className="mt-2 text-sm leading-6 text-[#9b8580]">
-                Здесь автоматически
-                появляются события,
-                которые уже завершились.
-              </p>
+              <p className="mt-2 text-sm leading-6 text-[#9b8580]">{tr('Здесь автоматически появляются события, которые уже завершились.')}</p>
 
             </div>
 
@@ -1700,7 +1676,7 @@ function EventHistoryDialog({
               onClose
             }
             className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-[#957f79] transition hover:bg-[#fff0ef] hover:text-[#c36f77] active:scale-[0.94]"
-            aria-label="Закрыть историю"
+            aria-label={tr('Закрыть историю')}
           >
             <X
               size={20}
@@ -1719,9 +1695,7 @@ function EventHistoryDialog({
                 className="animate-pulse text-[#d98a92]"
               />
 
-              <p className="mt-4 text-sm text-[#9b8580]">
-                Загружаем прошлые события...
-              </p>
+              <p className="mt-4 text-sm text-[#9b8580]">{tr('Загружаем прошлые события...')}</p>
 
             </div>
           )}
@@ -1747,15 +1721,9 @@ function EventHistoryDialog({
                   />
                 </div>
 
-                <h3 className="mt-5 text-lg font-semibold text-[#5f4b47]">
-                  История пока пуста
-                </h3>
+                <h3 className="mt-5 text-lg font-semibold text-[#5f4b47]">{tr('История пока пуста')}</h3>
 
-                <p className="mt-2 text-sm leading-6 text-[#a08c86]">
-                  Когда события завершатся,
-                  они автоматически
-                  появятся здесь.
-                </p>
+                <p className="mt-2 text-sm leading-6 text-[#a08c86]">{tr('Когда события завершатся, они автоматически появятся здесь.')}</p>
 
               </div>
 
@@ -1865,7 +1833,7 @@ function EventHistoryDialog({
                                   />
 
                                   {event.allDay
-                                    ? 'Весь день'
+                                    ? tr('Весь день')
                                     : formatEventTime(
                                         event,
                                       )}
@@ -1890,7 +1858,7 @@ function EventHistoryDialog({
                               </div>
 
                               <p className="mt-3 text-[11px] text-[#b09b95]">
-                                Добавил(а):{' '}
+                                {tr('Добавил(а):')}{' '}
                                 {creatorName}
                               </p>
 
@@ -1916,7 +1884,7 @@ function EventHistoryDialog({
           <div className="border-t border-[#f0e3df] bg-[#fffdfb] px-6 py-4 md:px-8">
 
             <p className="text-center text-xs text-[#a8948e]">
-              Всего завершённых событий:{' '}
+              {tr('Всего завершённых событий:')}{' '}
               <span className="font-semibold text-[#8c716c]">
                 {events.length}
               </span>
@@ -1957,9 +1925,7 @@ function EventDetailsDialog({
 
           <div>
 
-            <p className="text-sm font-medium text-[#c8757c]">
-              Событие
-            </p>
+            <p className="text-sm font-medium text-[#c8757c]">{tr('Событие')}</p>
 
             <h2 className="mt-1 text-2xl font-semibold text-[#554442]">
               {event.title}
@@ -2000,7 +1966,7 @@ function EventDetailsDialog({
 
               <p className="mt-1 text-sm text-[#9a8580]">
                 {event.allDay
-                  ? 'Весь день'
+                  ? tr('Весь день')
                   : formatEventTime(
                       event,
                     )}
@@ -2034,7 +2000,7 @@ function EventDetailsDialog({
         </div>
 
         <p className="mt-5 text-xs text-[#ad9993]">
-          Добавил(а):{' '}
+          {tr('Добавил(а):')}{' '}
           {creatorName}
         </p>
 
@@ -2049,10 +2015,7 @@ function EventDetailsDialog({
           >
             <Pencil
               size={17}
-            />
-
-            Редактировать
-          </button>
+            />{tr('Редактировать')}</button>
 
           <button
             type="button"
@@ -2063,10 +2026,7 @@ function EventDetailsDialog({
           >
             <Trash2
               size={17}
-            />
-
-            Удалить
-          </button>
+            />{tr('Удалить')}</button>
 
         </div>
 
@@ -2104,14 +2064,14 @@ function EventFormDialog({
 
             <p className="text-sm font-medium text-[#c8757c]">
               {editing
-                ? 'Редактирование'
-                : 'Новый план'}
+                ? tr('Редактирование')
+                : tr('Новый план')}
             </p>
 
             <h2 className="mt-1 text-2xl font-semibold text-[#554442]">
               {editing
-                ? 'Изменить событие'
-                : 'Добавить событие'}
+                ? tr('Изменить событие')
+                : tr('Добавить событие')}
             </h2>
 
           </div>
@@ -2140,9 +2100,7 @@ function EventFormDialog({
             <label
               htmlFor="eventTitle"
               className="mb-2 block text-sm font-medium text-[#665451]"
-            >
-              Название
-            </label>
+            >{tr('Название')}</label>
 
             <input
               id="eventTitle"
@@ -2161,7 +2119,7 @@ function EventFormDialog({
                       .value,
                 })
               }
-              placeholder="Например, свидание ♡"
+              placeholder={tr('Например, свидание ♡')}
               className="w-full rounded-2xl border border-[#eadbd7] bg-[#fffdfc] px-4 py-3.5 text-[#554442] outline-none transition focus:border-[#df9ca1] focus:ring-4 focus:ring-[#f7e3e5]"
             />
 
@@ -2172,9 +2130,7 @@ function EventFormDialog({
             <label
               htmlFor="eventDate"
               className="mb-2 block text-sm font-medium text-[#665451]"
-            >
-              Дата
-            </label>
+            >{tr('Дата')}</label>
 
             <input
               id="eventDate"
@@ -2219,14 +2175,9 @@ function EventFormDialog({
 
             <div>
 
-              <p className="text-sm font-medium text-[#66514d]">
-                Весь день
-              </p>
+              <p className="text-sm font-medium text-[#66514d]">{tr('Весь день')}</p>
 
-              <p className="mt-0.5 text-xs text-[#a48f89]">
-                Время начала
-                указывать не нужно
-              </p>
+              <p className="mt-0.5 text-xs text-[#a48f89]">{tr('Время начала указывать не нужно')}</p>
 
             </div>
 
@@ -2240,9 +2191,7 @@ function EventFormDialog({
                 <label
                   htmlFor="startTime"
                   className="mb-2 block text-sm font-medium text-[#665451]"
-                >
-                  Начало
-                </label>
+                >{tr('Начало')}</label>
 
                 <input
                   id="startTime"
@@ -2270,9 +2219,7 @@ function EventFormDialog({
                 <label
                   htmlFor="endTime"
                   className="mb-2 block text-sm font-medium text-[#665451]"
-                >
-                  Окончание
-                </label>
+                >{tr('Окончание')}</label>
 
                 <input
                   id="endTime"
@@ -2303,9 +2250,7 @@ function EventFormDialog({
             <label
               htmlFor="eventLocation"
               className="mb-2 block text-sm font-medium text-[#665451]"
-            >
-              Место
-            </label>
+            >{tr('Место')}</label>
 
             <input
               id="eventLocation"
@@ -2324,7 +2269,7 @@ function EventFormDialog({
                       .value,
                 })
               }
-              placeholder="Необязательно"
+              placeholder={tr('Необязательно')}
               className="w-full rounded-2xl border border-[#eadbd7] bg-[#fffdfc] px-4 py-3.5 text-[#554442] outline-none focus:border-[#df9ca1] focus:ring-4 focus:ring-[#f7e3e5]"
             />
 
@@ -2335,9 +2280,7 @@ function EventFormDialog({
             <label
               htmlFor="eventDescription"
               className="mb-2 block text-sm font-medium text-[#665451]"
-            >
-              Заметка
-            </label>
+            >{tr('Заметка')}</label>
 
             <textarea
               id="eventDescription"
@@ -2356,7 +2299,7 @@ function EventFormDialog({
                       .value,
                 })
               }
-              placeholder="Что важно не забыть?"
+              placeholder={tr('Что важно не забыть?')}
               className="w-full resize-none rounded-2xl border border-[#eadbd7] bg-[#fffdfc] px-4 py-3.5 text-[#554442] outline-none focus:border-[#df9ca1] focus:ring-4 focus:ring-[#f7e3e5]"
             />
 
@@ -2379,10 +2322,10 @@ function EventFormDialog({
           />
 
           {isSaving
-            ? 'Сохраняем...'
+            ? tr('Сохраняем...')
             : editing
-              ? 'Сохранить изменения'
-              : 'Создать событие'}
+              ? tr('Сохранить изменения')
+              : tr('Создать событие')}
         </button>
 
       </div>
@@ -2413,14 +2356,15 @@ function DeleteEventDialog({
           />
         </div>
 
-        <h2 className="mt-5 text-xl font-semibold text-[#624b48]">
-          Удалить событие?
-        </h2>
+        <h2 className="mt-5 text-xl font-semibold text-[#624b48]">{tr('Удалить событие?')}</h2>
 
         <p className="mt-3 text-sm leading-6 text-[#917975]">
-          «{event.title}» будет
-          удалено из общего календаря
-          для вас обоих.
+          {tr(
+            '«{title}» будет удалено из общего календаря для вас обоих.',
+            {
+              title: event.title,
+            },
+          )}
         </p>
 
         <div className="mt-6 flex gap-3">
@@ -2434,9 +2378,7 @@ function DeleteEventDialog({
               onCancel
             }
             className="flex-1 rounded-2xl border border-[#e6d8d5] px-5 py-3 font-medium text-[#79635f] transition-all hover:bg-[#fff1ef] active:scale-[0.97] disabled:opacity-50"
-          >
-            Отмена
-          </button>
+          >{tr('Отмена')}</button>
 
           <button
             type="button"
@@ -2449,8 +2391,8 @@ function DeleteEventDialog({
             className="flex-1 rounded-2xl bg-[#c86167] px-5 py-3 font-medium text-white transition-all hover:bg-[#b85359] active:scale-[0.97] disabled:opacity-50"
           >
             {isDeleting
-              ? 'Удаляем...'
-              : 'Удалить'}
+              ? tr('Удаляем...')
+              : tr('Удалить')}
           </button>
 
         </div>
@@ -2815,7 +2757,7 @@ function groupHistoryEvents(
 
       const rawLabel =
         new Intl.DateTimeFormat(
-          'ru-RU',
+          getIntlLocale(),
           {
             month:
               'long',
@@ -2854,7 +2796,7 @@ function formatHistoryDate(
   value: string,
 ) {
   return new Intl.DateTimeFormat(
-    'ru-RU',
+    getIntlLocale(),
     {
       day:
         'numeric',
@@ -2874,7 +2816,7 @@ function formatHistoryMonthShort(
   value: string,
 ) {
   return new Intl.DateTimeFormat(
-    'ru-RU',
+    getIntlLocale(),
     {
       month:
         'short',
@@ -2896,7 +2838,7 @@ function formatMonth(
   value: Date,
 ) {
   return new Intl.DateTimeFormat(
-    'ru-RU',
+    getIntlLocale(),
     {
       month:
         'long',
@@ -2912,7 +2854,7 @@ function formatSelectedDate(
   value: Date,
 ) {
   return new Intl.DateTimeFormat(
-    'ru-RU',
+    getIntlLocale(),
     {
       day:
         'numeric',
@@ -2930,7 +2872,7 @@ function formatEventDate(
   value: string,
 ) {
   return new Intl.DateTimeFormat(
-    'ru-RU',
+    getIntlLocale(),
     {
       day:
         'numeric',
@@ -2952,7 +2894,7 @@ function formatTime(
   value: string,
 ) {
   return new Intl.DateTimeFormat(
-    'ru-RU',
+    getIntlLocale(),
     {
       hour:
         '2-digit',

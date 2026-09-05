@@ -1,6 +1,15 @@
 'use client';
 
 import {
+  getIntlLocale,
+  tr,
+} from '@/i18n/core';
+
+import {
+  useLanguageVersion,
+} from '@/i18n/use-language';
+
+import {
   useState,
   type FormEvent,
 } from 'react';
@@ -17,6 +26,8 @@ import type {
 } from '@/types/auth';
 
 export default function RegisterPage() {
+  useLanguageVersion();
+
   const router = useRouter();
 
   const [displayName, setDisplayName] =
@@ -50,7 +61,7 @@ export default function RegisterPage() {
     setError(null);
 
     if (password !== confirmPassword) {
-      setError('Пароли не совпадают');
+      setError(tr('Пароли не совпадают'));
       return;
     }
 
@@ -98,7 +109,7 @@ export default function RegisterPage() {
         setError(error.message);
       } else {
         setError(
-          'Не удалось зарегистрироваться',
+          tr('Не удалось зарегистрироваться'),
         );
       }
     } finally {
@@ -118,31 +129,16 @@ export default function RegisterPage() {
                 ♡
               </div>
 
-              <span className="text-3xl font-semibold text-[#574543]">
-                Вдвоём
-              </span>
+              <span className="text-3xl font-semibold text-[#574543]">{tr('Вдвоём')}</span>
             </div>
 
-            <h1 className="max-w-lg text-5xl font-semibold leading-tight text-[#554442]">
-              Создайте ваше
-              пространство для двоих.
-            </h1>
+            <h1 className="max-w-lg text-5xl font-semibold leading-tight text-[#554442]">{tr('Создайте ваше пространство для двоих.')}</h1>
 
-            <p className="mt-6 max-w-md text-lg leading-8 text-[#806c69]">
-              Зарегистрируйтесь,
-              найдите вторую половинку
-              по уникальному никнейму и
-              начните собирать ваши
-              общие моменты.
-            </p>
+            <p className="mt-6 max-w-md text-lg leading-8 text-[#806c69]">{tr('Зарегистрируйтесь, найдите вторую половинку по уникальному никнейму и начните собирать ваши общие моменты.')}</p>
           </div>
 
           <div className="rounded-[28px] bg-white/55 p-6 backdrop-blur">
-            <p className="text-sm text-[#806c69]">
-              ♡ Один аккаунт.
-              Одно общее пространство.
-              Только для вас двоих.
-            </p>
+            <p className="text-sm text-[#806c69]">{tr('♡ Один аккаунт. Одно общее пространство. Только для вас двоих.')}</p>
           </div>
 
         </section>
@@ -153,24 +149,16 @@ export default function RegisterPage() {
 
             <div className="mb-8 lg:hidden">
               <span className="text-3xl font-semibold text-[#574543]">
-                ♡ Вдвоём
+                {tr('♡ Вдвоём')}
               </span>
             </div>
 
             <div className="mb-7">
-              <p className="mb-2 text-sm font-medium text-[#d17d83]">
-                Начнём знакомство ♡
-              </p>
+              <p className="mb-2 text-sm font-medium text-[#d17d83]">{tr('Начнём знакомство ♡')}</p>
 
-              <h2 className="text-4xl font-semibold text-[#4f403e]">
-                Регистрация
-              </h2>
+              <h2 className="text-4xl font-semibold text-[#4f403e]">{tr('Регистрация')}</h2>
 
-              <p className="mt-3 text-[#96827e]">
-                Создайте аккаунт,
-                чтобы присоединиться
-                к «Вдвоём».
-              </p>
+              <p className="mt-3 text-[#96827e]">{tr('Создайте аккаунт, чтобы присоединиться к «Вдвоём».')}</p>
             </div>
 
             <form
@@ -182,9 +170,7 @@ export default function RegisterPage() {
                 <label
                   htmlFor="displayName"
                   className="mb-2 block text-sm font-medium text-[#665451]"
-                >
-                  Имя
-                </label>
+                >{tr('Имя')}</label>
 
                 <input
                   id="displayName"
@@ -195,7 +181,7 @@ export default function RegisterPage() {
                       event.target.value,
                     )
                   }
-                  placeholder="Александр"
+                  placeholder={tr('Александр')}
                   autoComplete="name"
                   className="w-full rounded-2xl border border-[#eadbd7] bg-[#fffdfc] px-4 py-3.5 text-[#4f403e] outline-none transition placeholder:text-[#c3b3af] focus:border-[#df9ca1] focus:ring-4 focus:ring-[#f7e3e5]"
                 />
@@ -229,9 +215,7 @@ export default function RegisterPage() {
                 <label
                   htmlFor="nickname"
                   className="mb-2 block text-sm font-medium text-[#665451]"
-                >
-                  Уникальный никнейм
-                </label>
+                >{tr('Уникальный никнейм')}</label>
 
                 <div className="relative">
                   <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#b69e99]">
@@ -255,19 +239,14 @@ export default function RegisterPage() {
                   />
                 </div>
 
-                <p className="mt-1.5 text-xs text-[#ae9994]">
-                  Латинские буквы,
-                  цифры и _
-                </p>
+                <p className="mt-1.5 text-xs text-[#ae9994]">{tr('Латинские буквы, цифры и _')}</p>
               </div>
 
               <div>
                 <label
                   htmlFor="password"
                   className="mb-2 block text-sm font-medium text-[#665451]"
-                >
-                  Пароль
-                </label>
+                >{tr('Пароль')}</label>
 
                 <input
                   id="password"
@@ -278,7 +257,7 @@ export default function RegisterPage() {
                       event.target.value,
                     )
                   }
-                  placeholder="Минимум 8 символов"
+                  placeholder={tr('Минимум 8 символов')}
                   autoComplete="new-password"
                   required
                   minLength={8}
@@ -290,9 +269,7 @@ export default function RegisterPage() {
                 <label
                   htmlFor="confirmPassword"
                   className="mb-2 block text-sm font-medium text-[#665451]"
-                >
-                  Повторите пароль
-                </label>
+                >{tr('Повторите пароль')}</label>
 
                 <input
                   id="confirmPassword"
@@ -323,21 +300,19 @@ export default function RegisterPage() {
                 className="mt-2 w-full rounded-2xl bg-[#df8e94] px-5 py-3.5 font-medium text-white shadow-sm transition hover:bg-[#d77c83] disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {isLoading
-                  ? 'Создаём аккаунт...'
-                  : 'Создать аккаунт'}
+                  ? tr('Создаём аккаунт...')
+                  : tr('Создать аккаунт')}
               </button>
 
             </form>
 
             <div className="mt-7 text-center text-sm text-[#998681]">
-              Уже есть аккаунт?{' '}
+              {tr('Уже есть аккаунт?')}{' '}
 
               <Link
                 href="/login"
                 className="font-medium text-[#d17d83] hover:underline"
-              >
-                Войти
-              </Link>
+              >{tr('Войти')}</Link>
             </div>
 
           </div>

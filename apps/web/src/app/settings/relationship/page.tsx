@@ -1,6 +1,15 @@
 'use client';
 
 import {
+  getIntlLocale,
+  tr,
+} from '@/i18n/core';
+
+import {
+  useLanguageVersion,
+} from '@/i18n/use-language';
+
+import {
   useCallback,
   useEffect,
   useState,
@@ -31,6 +40,8 @@ import type {
 } from '@/types/relationship';
 
 export default function RelationshipSettingsPage() {
+  useLanguageVersion();
+
   const router = useRouter();
 
   const [
@@ -160,7 +171,7 @@ export default function RelationshipSettingsPage() {
           );
         } else {
           setError(
-            'Не удалось загрузить отношения',
+            tr('Не удалось загрузить отношения'),
           );
         }
       } finally {
@@ -244,7 +255,7 @@ export default function RelationshipSettingsPage() {
       }
 
       setSuccess(
-        'Дата начала отношений обновлена',
+        tr('Дата начала отношений обновлена'),
       );
     } catch (error) {
       if (
@@ -255,7 +266,7 @@ export default function RelationshipSettingsPage() {
         );
       } else {
         setError(
-          'Не удалось изменить дату',
+          tr('Не удалось изменить дату'),
         );
       }
     } finally {
@@ -316,7 +327,7 @@ export default function RelationshipSettingsPage() {
         );
       } else {
         setError(
-          'Не удалось завершить отношения',
+          tr('Не удалось завершить отношения'),
         );
       }
     } finally {
@@ -351,15 +362,9 @@ export default function RelationshipSettingsPage() {
             />
           </div>
 
-          <h1 className="mt-5 text-2xl font-semibold text-[#554442]">
-            Нет активных отношений
-          </h1>
+          <h1 className="mt-5 text-2xl font-semibold text-[#554442]">{tr('Нет активных отношений')}</h1>
 
-          <p className="mt-3 text-sm leading-6 text-[#927d78]">
-            Когда вы создадите пару,
-            здесь появятся настройки
-            ваших отношений.
-          </p>
+          <p className="mt-3 text-sm leading-6 text-[#927d78]">{tr('Когда вы создадите пару, здесь появятся настройки ваших отношений.')}</p>
 
           {error && (
             <p className="mt-4 text-sm text-[#b6545b]">
@@ -375,9 +380,7 @@ export default function RelationshipSettingsPage() {
               )
             }
             className="mt-6 rounded-2xl bg-[#df8e94] px-6 py-3 text-sm font-medium text-white transition hover:bg-[#d57a82]"
-          >
-            На главную
-          </button>
+          >{tr('На главную')}</button>
 
         </section>
 
@@ -417,30 +420,20 @@ export default function RelationshipSettingsPage() {
         >
           <ArrowLeft
             size={18}
-          />
-
-          На главную
-        </button>
+          />{tr('На главную')}</button>
 
         <header className="mb-8">
 
           <div className="flex items-center gap-2 text-sm font-medium text-[#ca747c]">
             <Settings2
               size={17}
-            />
-
-            Настройки отношений
-          </div>
+            />{tr('Настройки отношений')}</div>
 
           <h1 className="mt-2 text-3xl font-semibold text-[#554442]">
-            Вы и {partnerName}
+            {tr('Вы и {name}', { name: partnerName })}
           </h1>
 
-          <p className="mt-3 text-[#94807b]">
-            Здесь можно изменить
-            информацию о ваших
-            отношениях.
-          </p>
+          <p className="mt-3 text-[#94807b]">{tr('Здесь можно изменить информацию о ваших отношениях.')}</p>
 
         </header>
 
@@ -480,7 +473,7 @@ export default function RelationshipSettingsPage() {
               <div
                 role="img"
                 aria-label={
-                  `Аватар ${partnerName}`
+                  tr('Аватар {name}', { name: partnerName })
                 }
                 className="h-20 w-20 shrink-0 rounded-full bg-cover bg-center"
                 style={{
@@ -496,9 +489,7 @@ export default function RelationshipSettingsPage() {
 
             <div className="min-w-0 flex-1">
 
-              <p className="text-sm text-[#a08b85]">
-                Ваш партнёр
-              </p>
+              <p className="text-sm text-[#a08b85]">{tr('Ваш партнёр')}</p>
 
               <button
                 type="button"
@@ -532,9 +523,7 @@ export default function RelationshipSettingsPage() {
                 }
               </p>
 
-              <p className="mt-1 text-xs text-[#9f8984]">
-                дней вместе
-              </p>
+              <p className="mt-1 text-xs text-[#9f8984]">{tr('дней вместе')}</p>
 
             </div>
 
@@ -554,14 +543,9 @@ export default function RelationshipSettingsPage() {
             </div>
 
             <div>
-              <h2 className="text-lg font-semibold text-[#554442]">
-                Дата начала отношений
-              </h2>
+              <h2 className="text-lg font-semibold text-[#554442]">{tr('Дата начала отношений')}</h2>
 
-              <p className="mt-1 text-sm leading-6 text-[#93807a]">
-                От этой даты считается,
-                сколько дней вы вместе.
-              </p>
+              <p className="mt-1 text-sm leading-6 text-[#93807a]">{tr('От этой даты считается, сколько дней вы вместе.')}</p>
             </div>
 
           </div>
@@ -605,14 +589,14 @@ export default function RelationshipSettingsPage() {
               <Save size={18} />
 
               {isSaving
-                ? 'Сохраняем...'
-                : 'Сохранить'}
+                ? tr('Сохраняем...')
+                : tr('Сохранить')}
             </button>
 
           </div>
 
           <p className="mt-4 text-sm text-[#9a8580]">
-            Сейчас:{' '}
+            {tr('Сейчас:')}{' '}
             <span className="font-medium text-[#6c5753]">
               {formatDate(
                 relationship
@@ -636,17 +620,9 @@ export default function RelationshipSettingsPage() {
 
             <div className="flex-1">
 
-              <h2 className="text-lg font-semibold text-[#70494a]">
-                Завершение отношений
-              </h2>
+              <h2 className="text-lg font-semibold text-[#70494a]">{tr('Завершение отношений')}</h2>
 
-              <p className="mt-2 max-w-2xl text-sm leading-6 text-[#987777]">
-                После завершения вы
-                больше не будете
-                отображаться как текущая
-                пара. История отношений
-                останется сохранена.
-              </p>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-[#987777]">{tr('После завершения вы больше не будете отображаться как текущая пара. История отношений останется сохранена.')}</p>
 
                 <button
                 type="button"
@@ -656,9 +632,7 @@ export default function RelationshipSettingsPage() {
                     )
                 }
                 className="mt-5 rounded-2xl border border-[#e5aeb1] bg-white px-5 py-3 text-sm font-medium text-[#b8555c] transition-all duration-150 hover:border-[#d96d73] hover:bg-[#c86167] hover:text-white hover:shadow-md active:scale-[0.97] active:bg-[#ae4e54]"
-                >
-                Разорвать отношения
-                </button>
+                >{tr('Разорвать отношения')}</button>
 
             </div>
 
@@ -714,16 +688,12 @@ function EndRelationshipDialog({
         </div>
 
         <h2 className="mt-5 text-2xl font-semibold text-[#624b48]">
-          Разорвать отношения
-          с {partnerName}?
+          {tr('Разорвать отношения с {name}?', {
+            name: partnerName,
+          })}
         </h2>
 
-        <p className="mt-3 text-sm leading-6 text-[#917975]">
-          Вы перестанете быть
-          текущей парой в приложении.
-          История этих отношений
-          останется сохранена.
-        </p>
+        <p className="mt-3 text-sm leading-6 text-[#917975]">{tr('Вы перестанете быть текущей парой в приложении. История этих отношений останется сохранена.')}</p>
 
         <div className="mt-7 flex flex-col-reverse gap-3 sm:flex-row">
 
@@ -736,9 +706,7 @@ function EndRelationshipDialog({
               onCancel
             }
             className="flex-1 rounded-2xl border border-[#e6d8d5] px-5 py-3 font-medium text-[#79635f] transition-all duration-150 hover:border-[#d9c1bc] hover:bg-[#fff1ef] hover:text-[#b66a6f] active:scale-[0.97] active:bg-[#f8e3e1] disabled:pointer-events-none disabled:opacity-50"
-          >
-            Отмена
-          </button>
+          >{tr('Отмена')}</button>
 
           <button
             type="button"
@@ -751,8 +719,8 @@ function EndRelationshipDialog({
             className="flex-1 rounded-2xl bg-[#c86167] px-5 py-3 font-medium text-white shadow-sm transition-all duration-150 hover:bg-[#b85359] hover:shadow-md active:scale-[0.97] active:bg-[#a8494f] disabled:pointer-events-none disabled:opacity-50"
           >
             {isEnding
-              ? 'Завершаем...'
-              : 'Разорвать'}
+              ? tr('Завершаем...')
+              : tr('Разорвать')}
           </button>
 
         </div>
@@ -775,7 +743,7 @@ function formatDate(
   value: string,
 ) {
   return new Intl.DateTimeFormat(
-    'ru-RU',
+    getIntlLocale(),
     {
       day: 'numeric',
       month: 'long',

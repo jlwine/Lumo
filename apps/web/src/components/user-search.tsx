@@ -12,6 +12,9 @@ import {
 
 import { useRouter } from 'next/navigation';
 
+import { tr } from '@/i18n/core';
+import { useLanguageVersion } from '@/i18n/use-language';
+
 import { apiRequest } from '@/lib/api';
 import { getAccessToken } from '@/lib/auth';
 
@@ -20,6 +23,8 @@ import type {
 } from '@/types/user-profile';
 
 export function UserSearch() {
+  useLanguageVersion();
+
   const router = useRouter();
 
   const [query, setQuery] =
@@ -146,7 +151,7 @@ export function UserSearch() {
               setIsOpen(false);
             }, 150);
           }}
-          placeholder="Найти человека по никнейму..."
+          placeholder={tr('Найти человека по никнейму...')}
           className="min-w-0 flex-1 bg-transparent text-sm text-[#554442] outline-none placeholder:text-[#b5a19c]"
         />
 
@@ -157,14 +162,14 @@ export function UserSearch() {
 
           {isLoading && (
             <div className="px-5 py-4 text-sm text-[#9b8782]">
-              Ищем...
+              {tr('Ищем...')}
             </div>
           )}
 
           {!isLoading &&
             users.length === 0 && (
               <div className="px-5 py-4 text-sm text-[#9b8782]">
-                Никого не нашли
+                {tr('Никого не нашли')}
               </div>
             )}
 
@@ -202,7 +207,7 @@ export function UserSearch() {
                     <div
                       role="img"
                       aria-label={
-                        `Аватар пользователя ${name}`
+                        tr('Аватар пользователя {name}', { name })
                       }
                       className="h-10 w-10 shrink-0 rounded-full bg-cover bg-center"
                       style={{

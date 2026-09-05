@@ -1,6 +1,15 @@
 'use client';
 
 import {
+  getIntlLocale,
+  tr,
+} from '@/i18n/core';
+
+import {
+  useLanguageVersion,
+} from '@/i18n/use-language';
+
+import {
   useState,
   type FormEvent,
 } from 'react';
@@ -13,6 +22,8 @@ import { saveAccessToken } from '@/lib/auth';
 import type { LoginResponse } from '@/types/auth';
 
 export default function LoginPage() {
+  useLanguageVersion();
+
   const router = useRouter();
 
   const [login, setLogin] = useState('');
@@ -57,7 +68,7 @@ export default function LoginPage() {
         setError(error.message);
       } else {
         setError(
-          'Не удалось выполнить вход',
+          tr('Не удалось выполнить вход'),
         );
       }
     } finally {
@@ -76,30 +87,16 @@ export default function LoginPage() {
                 ♡
               </div>
 
-              <span className="text-3xl font-semibold text-[#574543]">
-                Вдвоём
-              </span>
+              <span className="text-3xl font-semibold text-[#574543]">{tr('Вдвоём')}</span>
             </div>
 
-            <h1 className="max-w-lg text-5xl font-semibold leading-tight text-[#554442]">
-              Ваши планы рядом,
-              даже когда вы далеко.
-            </h1>
+            <h1 className="max-w-lg text-5xl font-semibold leading-tight text-[#554442]">{tr('Ваши планы рядом, даже когда вы далеко.')}</h1>
 
-            <p className="mt-6 max-w-md text-lg leading-8 text-[#806c69]">
-              Совместный календарь,
-              желания, фотографии и
-              маленькие моменты,
-              которые принадлежат только
-              вам двоим.
-            </p>
+            <p className="mt-6 max-w-md text-lg leading-8 text-[#806c69]">{tr('Совместный календарь, желания, фотографии и маленькие моменты, которые принадлежат только вам двоим.')}</p>
           </div>
 
           <div className="rounded-[28px] bg-white/55 p-6 backdrop-blur">
-            <p className="text-sm text-[#806c69]">
-              ♡ Здесь будет ваше общее
-              пространство
-            </p>
+            <p className="text-sm text-[#806c69]">{tr('♡ Здесь будет ваше общее пространство')}</p>
           </div>
         </section>
 
@@ -108,24 +105,16 @@ export default function LoginPage() {
 
             <div className="mb-10 lg:hidden">
               <span className="text-3xl font-semibold text-[#574543]">
-                ♡ Вдвоём
+                {tr('♡ Вдвоём')}
               </span>
             </div>
 
             <div className="mb-8">
-              <p className="mb-2 text-sm font-medium text-[#d17d83]">
-                С возвращением ♡
-              </p>
+              <p className="mb-2 text-sm font-medium text-[#d17d83]">{tr('С возвращением ♡')}</p>
 
-              <h2 className="text-4xl font-semibold text-[#4f403e]">
-                Войти
-              </h2>
+              <h2 className="text-4xl font-semibold text-[#4f403e]">{tr('Войти')}</h2>
 
-              <p className="mt-3 text-[#96827e]">
-                Введите email или
-                никнейм, чтобы
-                продолжить.
-              </p>
+              <p className="mt-3 text-[#96827e]">{tr('Введите email или никнейм, чтобы продолжить.')}</p>
             </div>
 
             <form
@@ -136,9 +125,7 @@ export default function LoginPage() {
                 <label
                   htmlFor="login"
                   className="mb-2 block text-sm font-medium text-[#665451]"
-                >
-                  Email или никнейм
-                </label>
+                >{tr('Email или никнейм')}</label>
 
                 <input
                   id="login"
@@ -160,9 +147,7 @@ export default function LoginPage() {
                 <label
                   htmlFor="password"
                   className="mb-2 block text-sm font-medium text-[#665451]"
-                >
-                  Пароль
-                </label>
+                >{tr('Пароль')}</label>
 
                 <input
                   id="password"
@@ -192,20 +177,18 @@ export default function LoginPage() {
                 className="w-full rounded-2xl bg-[#df8e94] px-5 py-3.5 font-medium text-white shadow-sm transition hover:bg-[#d77c83] disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {isLoading
-                  ? 'Входим...'
-                  : 'Войти'}
+                  ? tr('Входим...')
+                  : tr('Войти')}
               </button>
             </form>
 
             <div className="mt-8 text-center text-sm text-[#998681]">
-              Ещё нет аккаунта?{' '}
+              {tr('Ещё нет аккаунта?')}{' '}
 
               <a
                 href="/register"
                 className="font-medium text-[#d17d83] hover:underline"
-              >
-                Зарегистрироваться
-              </a>
+              >{tr('Зарегистрироваться')}</a>
             </div>
           </div>
         </section>

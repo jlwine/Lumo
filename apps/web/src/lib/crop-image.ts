@@ -1,3 +1,5 @@
+import { tr } from '@/i18n/core';
+
 import type {
   Area,
 } from 'react-easy-crop';
@@ -59,7 +61,7 @@ export async function getCroppedAvatar(
 
   if (!context) {
     throw new Error(
-      'Не удалось подготовить изображение',
+      tr('Не удалось подготовить изображение'),
     );
   }
 
@@ -111,7 +113,7 @@ export async function getCroppedAvatar(
           if (!blob) {
             reject(
               new Error(
-                'Не удалось создать аватар',
+                tr('Не удалось создать аватар'),
               ),
             );
 

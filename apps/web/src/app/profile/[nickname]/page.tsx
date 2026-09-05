@@ -1,6 +1,15 @@
 'use client';
 
 import {
+  getIntlLocale,
+  tr,
+} from '@/i18n/core';
+
+import {
+  useLanguageVersion,
+} from '@/i18n/use-language';
+
+import {
   useCallback,
   useEffect,
   useState,
@@ -36,6 +45,8 @@ import type {
 } from '@/types/user-profile';
 
 export default function ProfilePage() {
+  useLanguageVersion();
+
   const router =
     useRouter();
 
@@ -177,7 +188,7 @@ export default function ProfilePage() {
           );
         } else {
           setError(
-            'Не удалось загрузить профиль',
+            tr('Не удалось загрузить профиль'),
           );
         }
       } finally {
@@ -247,7 +258,7 @@ export default function ProfilePage() {
         );
       } else {
         setError(
-          'Не удалось отправить приглашение',
+          tr('Не удалось отправить приглашение'),
         );
       }
     } finally {
@@ -274,7 +285,7 @@ export default function ProfilePage() {
 
           <p className="text-[#755f5b]">
             {error ??
-              'Пользователь не найден'}
+              tr('Пользователь не найден')}
           </p>
 
           <button
@@ -285,9 +296,7 @@ export default function ProfilePage() {
               )
             }
             className="mt-5 rounded-xl bg-[#df8e94] px-5 py-3 text-white transition-all hover:bg-[#d77c83] active:scale-[0.97]"
-          >
-            На главную
-          </button>
+          >{tr('На главную')}</button>
 
         </div>
 
@@ -326,10 +335,7 @@ export default function ProfilePage() {
         >
           <ArrowLeft
             size={18}
-          />
-
-          Назад
-        </button>
+          />{tr('Назад')}</button>
 
         <section className="overflow-hidden rounded-[32px] border border-[#eeddda] bg-white shadow-[0_20px_70px_rgba(91,65,59,0.07)]">
 
@@ -345,7 +351,7 @@ export default function ProfilePage() {
                   <div
                     role="img"
                     aria-label={
-                      `Аватар пользователя ${name}`
+                      tr('Аватар пользователя {name}', { name })
                     }
                     className="h-28 w-28 rounded-full border-[6px] border-white bg-cover bg-center shadow-sm"
                     style={{
@@ -385,10 +391,7 @@ export default function ProfilePage() {
                 >
                   <Pencil
                     size={17}
-                  />
-
-                  Редактировать профиль
-                </button>
+                  />{tr('Редактировать профиль')}</button>
               ) : (
                 <ProfileAction
                   profile={
@@ -424,9 +427,7 @@ export default function ProfilePage() {
                     />
                   </div>
 
-                  <h2 className="font-semibold text-[#554442]">
-                    Отношения
-                  </h2>
+                  <h2 className="font-semibold text-[#554442]">{tr('Отношения')}</h2>
 
                 </div>
 
@@ -436,9 +437,7 @@ export default function ProfilePage() {
                 partner ? (
                   <div className="mt-5">
 
-                    <p className="text-sm text-[#9b8580]">
-                      В отношениях с
-                    </p>
+                    <p className="text-sm text-[#9b8580]">{tr('В отношениях с')}</p>
 
                     <button
                       type="button"
@@ -457,21 +456,17 @@ export default function ProfilePage() {
                       .relationship
                       .startedAt && (
                       <p className="mt-3 text-sm text-[#99847f]">
-                        с{' '}
-                        {formatDate(
-                          profile
-                            .relationship
-                            .startedAt,
-                        )}
+                        {tr('с {date}', {
+                          date: formatDate(
+                            profile.relationship.startedAt,
+                          ),
+                        })}
                       </p>
                     )}
 
                   </div>
                 ) : (
-                  <p className="mt-5 text-[#8f7974]">
-                    Сейчас не состоит
-                    в отношениях.
-                  </p>
+                  <p className="mt-5 text-[#8f7974]">{tr('Сейчас не состоит в отношениях.')}</p>
                 )}
 
               </div>
@@ -487,9 +482,7 @@ export default function ProfilePage() {
                     />
                   </div>
 
-                  <h2 className="font-semibold text-[#554442]">
-                    О пользователе
-                  </h2>
+                  <h2 className="font-semibold text-[#554442]">{tr('О пользователе')}</h2>
 
                 </div>
 
@@ -504,16 +497,14 @@ export default function ProfilePage() {
 
                     <div>
 
-                      <p className="text-sm text-[#9b8580]">
-                        День рождения
-                      </p>
+                      <p className="text-sm text-[#9b8580]">{tr('День рождения')}</p>
 
                       <p className="mt-1 font-medium text-[#65514d]">
                         {profile.birthDate
                           ? formatDate(
                               profile.birthDate,
                             )
-                          : 'Не указан'}
+                          : tr('Не указан')}
                       </p>
 
                     </div>
@@ -529,9 +520,7 @@ export default function ProfilePage() {
 
                     <div>
 
-                      <p className="text-sm text-[#9b8580]">
-                        В приложении с
-                      </p>
+                      <p className="text-sm text-[#9b8580]">{tr('В приложении с')}</p>
 
                       <p className="mt-1 font-medium text-[#65514d]">
                         {formatDate(
@@ -587,8 +576,8 @@ function ProfileAction({
         />
 
         {isInviting
-          ? 'Отправляем...'
-          : 'Пригласить в отношения'}
+          ? tr('Отправляем...')
+          : tr('Пригласить в отношения')}
       </button>
     );
   }
@@ -599,9 +588,7 @@ function ProfileAction({
     'SENT'
   ) {
     return (
-      <div className="rounded-2xl bg-[#fff0ef] px-5 py-3 text-sm font-medium text-[#b76870]">
-        ♡ Приглашение отправлено
-      </div>
+      <div className="rounded-2xl bg-[#fff0ef] px-5 py-3 text-sm font-medium text-[#b76870]">{tr('♡ Приглашение отправлено')}</div>
     );
   }
 
@@ -611,24 +598,22 @@ function ProfileAction({
     'RECEIVED'
   ) {
     return (
-      <div className="rounded-2xl bg-[#eee8f5] px-5 py-3 text-sm font-medium text-[#786a90]">
-        Вам отправлено приглашение
-      </div>
+      <div className="rounded-2xl bg-[#eee8f5] px-5 py-3 text-sm font-medium text-[#786a90]">{tr('Вам отправлено приглашение')}</div>
     );
   }
 
   const messages = {
     SELF:
-      'Это ваш профиль',
+      tr('Это ваш профиль'),
 
     CURRENT_USER_IN_RELATIONSHIP:
-      'Вы уже состоите в отношениях',
+      tr('Вы уже состоите в отношениях'),
 
     USER_IN_RELATIONSHIP:
-      'Пользователь уже состоит в отношениях',
+      tr('Пользователь уже состоит в отношениях'),
 
     INVITATION_ALREADY_EXISTS:
-      'Между вами уже есть приглашение',
+      tr('Между вами уже есть приглашение'),
   };
 
   const reason =
@@ -644,7 +629,7 @@ function ProfileAction({
 
       {reason
         ? messages[reason]
-        : 'Приглашение недоступно'}
+        : tr('Приглашение недоступно')}
 
     </div>
   );
@@ -654,7 +639,7 @@ function formatDate(
   value: string,
 ) {
   return new Intl.DateTimeFormat(
-    'ru-RU',
+    getIntlLocale(),
     {
       day: 'numeric',
       month: 'long',

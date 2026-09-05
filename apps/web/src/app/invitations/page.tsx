@@ -1,6 +1,15 @@
 'use client';
 
 import {
+  getIntlLocale,
+  tr,
+} from '@/i18n/core';
+
+import {
+  useLanguageVersion,
+} from '@/i18n/use-language';
+
+import {
   useCallback,
   useEffect,
   useState,
@@ -33,6 +42,8 @@ import type {
 } from '@/types/relationship-invitation';
 
 export default function InvitationsPage() {
+  useLanguageVersion();
+
   const router = useRouter();
 
   const [invitations, setInvitations] =
@@ -102,7 +113,7 @@ export default function InvitationsPage() {
           setError(error.message);
         } else {
           setError(
-            'Не удалось загрузить приглашения',
+            tr('Не удалось загрузить приглашения'),
           );
         }
       } finally {
@@ -190,7 +201,7 @@ export default function InvitationsPage() {
         setError(error.message);
       } else {
         setError(
-          'Не удалось принять приглашение',
+          tr('Не удалось принять приглашение'),
         );
       }
     } finally {
@@ -292,24 +303,14 @@ export default function InvitationsPage() {
           }
           className="mb-6 flex items-center gap-2 rounded-xl px-3 py-2 text-sm text-[#876f6a] transition hover:bg-[#fff0ed]"
         >
-          <ArrowLeft size={18} />
-          На главную
-        </button>
+          <ArrowLeft size={18} />{tr('На главную')}</button>
 
         <header className="mb-8">
-          <p className="text-sm font-medium text-[#ca747c]">
-            ♡ Отношения
-          </p>
+          <p className="text-sm font-medium text-[#ca747c]">{tr('♡ Отношения')}</p>
 
-          <h1 className="mt-1 text-3xl font-semibold text-[#554442]">
-            Приглашения
-          </h1>
+          <h1 className="mt-1 text-3xl font-semibold text-[#554442]">{tr('Приглашения')}</h1>
 
-          <p className="mt-3 text-[#98837e]">
-            Здесь можно принять,
-            отклонить или отменить
-            приглашение в отношения.
-          </p>
+          <p className="mt-3 text-[#98837e]">{tr('Здесь можно принять, отклонить или отменить приглашение в отношения.')}</p>
         </header>
 
         {error && (
@@ -324,13 +325,9 @@ export default function InvitationsPage() {
 
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-[#c36f77]">
-                  Входящие
-                </p>
+                <p className="text-sm text-[#c36f77]">{tr('Входящие')}</p>
 
-                <h2 className="mt-1 text-xl font-semibold text-[#554442]">
-                  Вас приглашают
-                </h2>
+                <h2 className="mt-1 text-xl font-semibold text-[#554442]">{tr('Вас приглашают')}</h2>
               </div>
 
               <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#fae3e5] text-[#c36f77]">
@@ -341,7 +338,7 @@ export default function InvitationsPage() {
             <div className="mt-6 space-y-4">
               {invitations.received.length ===
                 0 && (
-                <EmptyState text="Новых приглашений пока нет" />
+                <EmptyState text={tr('Новых приглашений пока нет')} />
               )}
 
               {invitations.received.map(
@@ -374,13 +371,9 @@ export default function InvitationsPage() {
 
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-[#84739a]">
-                  Исходящие
-                </p>
+                <p className="text-sm text-[#84739a]">{tr('Исходящие')}</p>
 
-                <h2 className="mt-1 text-xl font-semibold text-[#554442]">
-                  Вы пригласили
-                </h2>
+                <h2 className="mt-1 text-xl font-semibold text-[#554442]">{tr('Вы пригласили')}</h2>
               </div>
 
               <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#eee8f5] text-[#84739a]">
@@ -391,7 +384,7 @@ export default function InvitationsPage() {
             <div className="mt-6 space-y-4">
               {invitations.sent.length ===
                 0 && (
-                <EmptyState text="Отправленных приглашений нет" />
+                <EmptyState text={tr('Отправленных приглашений нет')} />
               )}
 
               {invitations.sent.map(
@@ -476,10 +469,7 @@ function ReceivedInvitationCard({
         @{invitation.sender.nickname}
       </p>
 
-      <p className="mt-4 text-sm leading-6 text-[#806b67]">
-        Хочет создать с вами общее
-        пространство ♡
-      </p>
+      <p className="mt-4 text-sm leading-6 text-[#806b67]">{tr('Хочет создать с вами общее пространство ♡')}</p>
 
       <div className="mt-5 flex gap-3">
 
@@ -489,9 +479,7 @@ function ReceivedInvitationCard({
           onClick={onAccept}
           className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-[#df8e94] px-4 py-2.5 text-sm font-medium text-white transition hover:bg-[#d57a82] disabled:opacity-50"
         >
-          <Check size={17} />
-          Принять
-        </button>
+          <Check size={17} />{tr('Принять')}</button>
 
         <button
           type="button"
@@ -499,9 +487,7 @@ function ReceivedInvitationCard({
           onClick={onDecline}
           className="flex items-center justify-center gap-2 rounded-xl border border-[#eadbd7] px-4 py-2.5 text-sm text-[#866f6a] transition hover:bg-[#fff1ef] disabled:opacity-50"
         >
-          <X size={17} />
-          Отклонить
-        </button>
+          <X size={17} />{tr('Отклонить')}</button>
 
       </div>
     </article>
@@ -544,9 +530,7 @@ function SentInvitationCard({
         </div>
 
         <div className="flex items-center gap-1 text-xs text-[#ae9994]">
-          <Clock size={14} />
-          Ожидает
-        </div>
+          <Clock size={14} />{tr('Ожидает')}</div>
 
       </div>
 
@@ -556,9 +540,7 @@ function SentInvitationCard({
         onClick={onCancel}
         className="mt-5 flex items-center gap-2 text-sm text-[#aa7776] transition hover:text-[#cf676c] disabled:opacity-50"
       >
-        <Trash2 size={16} />
-        Отменить приглашение
-      </button>
+        <Trash2 size={16} />{tr('Отменить приглашение')}</button>
 
     </article>
   );
@@ -593,12 +575,10 @@ function AcceptDialog({
         <div className="flex items-start justify-between">
 
           <div>
-            <p className="text-sm font-medium text-[#ca747c]">
-              ♡ Начало истории
-            </p>
+            <p className="text-sm font-medium text-[#ca747c]">{tr('♡ Начало истории')}</p>
 
             <h2 className="mt-1 text-2xl font-semibold text-[#554442]">
-              Вы и {name}
+              {tr('Вы и {name}', { name })}
             </h2>
           </div>
 
@@ -612,19 +592,14 @@ function AcceptDialog({
 
         </div>
 
-        <p className="mt-4 text-sm leading-6 text-[#8f7974]">
-          Укажите день начала ваших
-          отношений.
-        </p>
+        <p className="mt-4 text-sm leading-6 text-[#8f7974]">{tr('Укажите день начала ваших отношений.')}</p>
 
         <div className="mt-6">
 
           <label
             htmlFor="startedAt"
             className="mb-2 block text-sm font-medium text-[#665451]"
-          >
-            Дата начала отношений
-          </label>
+          >{tr('Дата начала отношений')}</label>
 
           <div className="relative">
 
@@ -665,8 +640,8 @@ function AcceptDialog({
           <Heart size={18} />
 
           {processing
-            ? 'Создаём пространство...'
-            : 'Начать отношения'}
+            ? tr('Создаём пространство...')
+            : tr('Начать отношения')}
         </button>
 
       </div>
@@ -688,7 +663,7 @@ function Avatar({
     return (
       <div
         role="img"
-        aria-label={`Аватар ${name}`}
+        aria-label={tr('Аватар {name}', { name })}
         className="h-11 w-11 shrink-0 rounded-full bg-cover bg-center"
         style={{
           backgroundImage:

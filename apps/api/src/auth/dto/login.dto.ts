@@ -1,22 +1,22 @@
 import {
   IsString,
+  MaxLength,
   MinLength,
 } from 'class-validator';
 
 export class LoginDto {
-  @IsString({
-    message: 'Email или никнейм должен быть строкой',
-  })
-  @MinLength(1, {
-    message: 'Введите email или никнейм',
-  })
-  login: string;
+  /*
+   * Здесь намеренно НЕ используем @IsEmail(),
+   * потому что поле принимает как email,
+   * так и никнейм пользователя.
+   */
+  @IsString()
+  @MinLength(3)
+  @MaxLength(254)
+  login!: string;
 
-  @IsString({
-    message: 'Пароль должен быть строкой',
-  })
-  @MinLength(1, {
-    message: 'Введите пароль',
-  })
-  password: string;
+  @IsString()
+  @MinLength(8)
+  @MaxLength(72)
+  password!: string;
 }

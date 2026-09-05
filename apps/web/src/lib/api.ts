@@ -1,3 +1,5 @@
+import { tr } from '@/i18n/core';
+
 const API_URL =
   process.env.NEXT_PUBLIC_API_URL ??
   'http://localhost:3001';
@@ -75,7 +77,7 @@ export async function apiRequest<T>(
       data as ApiErrorResponse;
 
     let message =
-      'Произошла ошибка при обращении к серверу';
+      tr('Произошла ошибка при обращении к серверу');
 
     if (
       Array.isArray(
@@ -83,14 +85,14 @@ export async function apiRequest<T>(
       )
     ) {
       message =
-        errorData.message.join(
-          ', ',
-        );
+        errorData.message
+          .map((item) => tr(item))
+          .join(', ');
     } else if (
       errorData?.message
     ) {
       message =
-        errorData.message;
+        tr(errorData.message);
     }
 
     throw new Error(

@@ -17,7 +17,9 @@ import {
   FileInterceptor,
 } from '@nestjs/platform-express';
 
-import { randomUUID } from 'node:crypto';
+import {
+  randomUUID,
+} from 'node:crypto';
 
 import {
   mkdirSync,
@@ -32,20 +34,36 @@ import {
   diskStorage,
 } from 'multer';
 
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard.js';
+import {
+  JwtAuthGuard,
+} from '../auth/guards/jwt-auth.guard.js';
 
-import { UpdateProfileDto } from './dto/update-profile.dto.js';
-import { UsersService } from './users.service.js';
+import {
+  UpdateEmailDto,
+} from './dto/update-email.dto.js';
+
+import {
+  UpdatePasswordDto,
+} from './dto/update-password.dto.js';
+
+import {
+  UpdateProfileDto,
+} from './dto/update-profile.dto.js';
+
+import {
+  UsersService,
+} from './users.service.js';
 
 /*
  * Папка, в которой во время разработки
  * будут храниться аватары пользователей.
  */
-const avatarDirectory = join(
-  process.cwd(),
-  'uploads',
-  'avatars',
-);
+const avatarDirectory =
+  join(
+    process.cwd(),
+    'uploads',
+    'avatars',
+  );
 
 /*
  * Создаём папку автоматически,
@@ -59,7 +77,9 @@ mkdirSync(
 );
 
 @Controller('users')
-@UseGuards(JwtAuthGuard)
+@UseGuards(
+  JwtAuthGuard,
+)
 export class UsersController {
   constructor(
     private readonly usersService:
@@ -99,12 +119,57 @@ export class UsersController {
   @Patch('me')
   async updateProfile(
     @Body()
-    data: UpdateProfileDto,
+    data:
+      UpdateProfileDto,
 
     @Req()
     request: any,
   ) {
     return this.usersService.updateProfile(
+      request.user.sub,
+      data,
+    );
+  }
+
+  /*
+   * Изменение электронной почты
+   * текущего пользователя.
+   *
+   * Для подтверждения операции
+   * требуется текущий пароль.
+   */
+  @Patch('me/email')
+  async updateEmail(
+    @Body()
+    data:
+      UpdateEmailDto,
+
+    @Req()
+    request: any,
+  ) {
+    return this.usersService.updateEmail(
+      request.user.sub,
+      data,
+    );
+  }
+
+  /*
+   * Изменение пароля
+   * текущего пользователя.
+   *
+   * Пользователь должен знать
+   * свой действующий пароль.
+   */
+  @Patch('me/password')
+  async updatePassword(
+    @Body()
+    data:
+      UpdatePasswordDto,
+
+    @Req()
+    request: any,
+  ) {
+    return this.usersService.updatePassword(
       request.user.sub,
       data,
     );
@@ -122,30 +187,31 @@ export class UsersController {
          * Сохраняем файлы
          * на диск во время разработки.
          */
-        storage: diskStorage({
-          destination:
-            avatarDirectory,
+        storage:
+          diskStorage({
+            destination:
+              avatarDirectory,
 
-          /*
-           * Для каждого аватара создаём
-           * уникальное имя файла.
-           */
-          filename: (
-            _request,
-            file,
-            callback,
-          ) => {
-            const extension =
-              extname(
-                file.originalname,
-              ).toLowerCase();
+            /*
+             * Для каждого аватара создаём
+             * уникальное имя файла.
+             */
+            filename: (
+              _request,
+              file,
+              callback,
+            ) => {
+              const extension =
+                extname(
+                  file.originalname,
+                ).toLowerCase();
 
-            callback(
-              null,
-              `${randomUUID()}${extension}`,
-            );
-          },
-        }),
+              callback(
+                null,
+                `${randomUUID()}${extension}`,
+              );
+            },
+          }),
 
         /*
          * Ограничиваем размер
@@ -153,7 +219,9 @@ export class UsersController {
          */
         limits: {
           fileSize:
-            5 * 1024 * 1024,
+            5 *
+            1024 *
+            1024,
         },
 
         /*
@@ -235,12 +303,13 @@ export class UsersController {
    *
    * Динамический маршрут оставляем
    * последним, чтобы он не мешал
-   * маршрутам /me и /search.
+   * остальным маршрутам.
    */
   @Get(':nickname')
   async findByNickname(
     @Param('nickname')
-    nickname: string,
+    nickname:
+      string,
 
     @Req()
     request: any,

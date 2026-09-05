@@ -7,6 +7,12 @@ import {
   Geist_Mono,
 } from 'next/font/google';
 
+import Script from 'next/script';
+
+import {
+  LanguageToggle,
+} from '../components/language-toggle';
+
 import {
   ThemeToggle,
 } from '../components/theme-toggle';
@@ -43,15 +49,22 @@ export const metadata:
   };
 
 /*
- * Этот скрипт выполняется
- * до загрузки React.
+ * Начальные пользовательские настройки.
  *
- * Поэтому при обновлении страницы
- * браузер сразу применяет нужную тему
- * и не показывает белую вспышку.
+ * Скрипт запускается до гидрации React через next/script.
+ * Это позволяет заранее применить тёмную тему и выставить
+ * корректный lang/data-locale у документа без обычного <script>
+ * внутри React-дерева.
+ *
+ * Важно: сами React-компоненты языка начинают с русского
+ * серверного snapshot и синхронизируются с этим значением
+ * сразу после гидрации. Так сервер и первый клиентский рендер
+ * всегда совпадают и не вызывают hydration mismatch.
  */
-const themeScript = `
+const preferencesScript = `
 (function () {
+  var root = document.documentElement;
+
   try {
     var savedTheme =
       localStorage.getItem(
@@ -67,9 +80,6 @@ const themeScript = `
           '(prefers-color-scheme: dark)'
         ).matches
       );
-
-    var root =
-      document.documentElement;
 
     if (shouldUseDark) {
       root.classList.add(
@@ -87,8 +97,43 @@ const themeScript = `
         'light';
     }
   } catch (error) {
-    document.documentElement.dataset.theme =
+    root.dataset.theme =
       'light';
+  }
+
+  try {
+    var savedLanguage =
+      localStorage.getItem(
+        'vdvoem_language'
+      );
+
+    var browserLanguage =
+      navigator.languages &&
+      navigator.languages.length > 0
+        ? navigator.languages[0]
+        : navigator.language || 'ru';
+
+    var language =
+      savedLanguage === 'en' ||
+      savedLanguage === 'ru'
+        ? savedLanguage
+        : browserLanguage
+            .toLowerCase()
+            .startsWith('en')
+          ? 'en'
+          : 'ru';
+
+    root.dataset.locale =
+      language;
+
+    root.lang =
+      language;
+  } catch (error) {
+    root.dataset.locale =
+      'ru';
+
+    root.lang =
+      'ru';
   }
 })();
 `;
@@ -103,21 +148,20 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
 
-      <head>
+      <body className="flex min-h-full flex-col">
 
-        <script
+        <Script
+          id="vdvoem-preferences"
+          strategy="beforeInteractive"
           dangerouslySetInnerHTML={{
             __html:
-              themeScript,
+              preferencesScript,
           }}
         />
 
-      </head>
-
-      <body className="flex min-h-full flex-col">
-
         {children}
 
+        <LanguageToggle />
         <ThemeToggle />
 
       </body>

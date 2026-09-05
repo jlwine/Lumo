@@ -8,6 +8,9 @@ import {
 import { Bell } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
+import { tr } from '@/i18n/core';
+import { useLanguageVersion } from '@/i18n/use-language';
+
 import { apiRequest } from '@/lib/api';
 import { getAccessToken } from '@/lib/auth';
 
@@ -16,6 +19,8 @@ import type {
 } from '@/types/relationship-invitation';
 
 export function InvitationsButton() {
+  useLanguageVersion();
+
   const router = useRouter();
 
   const [count, setCount] =
@@ -64,7 +69,7 @@ export function InvitationsButton() {
   return (
     <button
       type="button"
-      title="Приглашения"
+      title={tr('Приглашения')}
       onClick={() =>
         router.push('/invitations')
       }

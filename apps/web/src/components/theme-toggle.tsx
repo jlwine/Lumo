@@ -5,10 +5,20 @@ import {
   Sun,
 } from 'lucide-react';
 
+import {
+  tr,
+} from '@/i18n/core';
+
+import {
+  useLanguageVersion,
+} from '@/i18n/use-language';
+
 const STORAGE_KEY =
   'vdvoem_theme';
 
 export function ThemeToggle() {
+  useLanguageVersion();
+
   function toggleTheme() {
     const root =
       document.documentElement;
@@ -51,8 +61,8 @@ export function ThemeToggle() {
       onClick={
         toggleTheme
       }
-      title="Переключить тему"
-      aria-label="Переключить тему"
+      title={tr('Переключить тему')}
+      aria-label={tr('Переключить тему')}
       className="group fixed bottom-5 right-5 z-[500] flex h-12 w-12 items-center justify-center rounded-full border border-[#eadbd7] bg-white/90 text-[#806a65] shadow-[0_12px_40px_rgba(73,48,45,0.16)] backdrop-blur-xl transition-all duration-200 hover:-translate-y-0.5 hover:border-[#dca9ad] hover:bg-[#fff4f2] hover:text-[#c36f77] hover:shadow-[0_16px_45px_rgba(73,48,45,0.22)] active:scale-[0.94] dark:border-[#4b3c40] dark:bg-[#2a2325]/95 dark:text-[#e4b9c0] dark:shadow-[0_14px_45px_rgba(0,0,0,0.30)] dark:hover:border-[#73565d] dark:hover:bg-[#382b2e] dark:hover:text-[#f1c4ca]"
     >
 
