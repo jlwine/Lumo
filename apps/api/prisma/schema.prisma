@@ -28,6 +28,14 @@ model User {
   avatarUrl    String?
   birthDate    DateTime? @db.Date
 
+  /*
+   * Дата подтверждения email.
+   *
+   * null означает, что адрес
+   * ещё не подтверждён.
+   */
+  emailVerifiedAt DateTime?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -46,6 +54,93 @@ model User {
    * на доске дня.
    */
   dayBoardEntries DayBoardEntry[] @relation("DayBoardEntryAuthor")
+
+  /*
+   * Текущий токен подтверждения email.
+   *
+   * Для одного пользователя одновременно
+   * существует максимум один актуальный токен.
+   */
+  emailVerificationToken EmailVerificationToken?
+
+  /*
+   * Текущий токен восстановления пароля.
+   */
+  passwordResetToken PasswordResetToken?
+}
+
+/*
+ * ---------------------------------------------------------
+ * Подтверждение email
+ * ---------------------------------------------------------
+ *
+ * В базе никогда не храним исходный токен,
+ * отправленный пользователю.
+ *
+ * Храним только SHA-256 хэш.
+ */
+model EmailVerificationToken {
+  id String @id @default(uuid())
+
+  /*
+   * Один действующий токен
+   * подтверждения на пользователя.
+   */
+  userId String @unique
+
+  /*
+   * SHA-256 хэш случайного токена.
+   */
+  tokenHash String @unique
+
+  /*
+   * После этой даты ссылка
+   * становится недействительной.
+   */
+  expiresAt DateTime
+
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([expiresAt])
+}
+
+/*
+ * ---------------------------------------------------------
+ * Восстановление пароля
+ * ---------------------------------------------------------
+ *
+ * Здесь применяется та же схема:
+ * пользователю отправляется исходный токен,
+ * а в PostgreSQL сохраняется только его хэш.
+ */
+model PasswordResetToken {
+  id String @id @default(uuid())
+
+  /*
+   * Одновременно существует максимум
+   * один актуальный reset-токен
+   * для конкретного пользователя.
+   */
+  userId String @unique
+
+  /*
+   * SHA-256 хэш исходного токена.
+   */
+  tokenHash String @unique
+
+  /*
+   * Срок действия ссылки
+   * восстановления пароля.
+   */
+  expiresAt DateTime
+
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([expiresAt])
 }
 
 model RelationshipInvitation {
@@ -151,13 +246,15 @@ model WishlistItem {
 
   price Int?
 
-  /**
+  /*
    * Насколько сильно пользователь
    * хочет это желание.
+   *
    * 1 - небольшой интерес
    * 5 - мечта
+   *
    * Старые желания после миграции
-   * автоматически получат 3.
+   * автоматически получают 3.
    */
   priority Int @default(3)
 

@@ -114,6 +114,16 @@ export default function RegisterPage() {
       true,
     );
 
+    const normalizedEmail =
+      email
+        .trim()
+        .toLowerCase();
+
+    const normalizedNickname =
+      nickname
+        .trim()
+        .toLowerCase();
+
     try {
       await apiRequest<RegisterResponse>(
         '/auth/register',
@@ -124,14 +134,10 @@ export default function RegisterPage() {
           body:
             JSON.stringify({
               email:
-                email
-                  .trim()
-                  .toLowerCase(),
+                normalizedEmail,
 
               nickname:
-                nickname
-                  .trim()
-                  .toLowerCase(),
+                normalizedNickname,
 
               password,
 
@@ -144,9 +150,10 @@ export default function RegisterPage() {
       );
 
       /*
-       * После регистрации сразу
-       * выполняем вход, чтобы пользователь
-       * не вводил данные повторно.
+       * Сразу авторизуем пользователя.
+       *
+       * Благодаря этому на следующем экране
+       * он сможет повторно отправить письмо.
        */
       const loginResponse =
         await apiRequest<LoginResponse>(
@@ -158,9 +165,7 @@ export default function RegisterPage() {
             body:
               JSON.stringify({
                 login:
-                  nickname
-                    .trim()
-                    .toLowerCase(),
+                  normalizedNickname,
 
                 password,
               }),
@@ -172,7 +177,9 @@ export default function RegisterPage() {
       );
 
       router.push(
-        '/home',
+        `/verify-email?sent=1&email=${encodeURIComponent(
+          normalizedEmail,
+        )}`,
       );
     } catch (error) {
       if (
@@ -200,13 +207,6 @@ export default function RegisterPage() {
 
       <div className="mx-auto flex min-h-[calc(100vh-4rem)] max-w-6xl overflow-hidden rounded-[32px] border border-[var(--border)] bg-[var(--surface)] shadow-[0_30px_100px_rgba(115,75,70,0.10)]">
 
-        {/*
-         * Левая брендовая часть.
-         *
-         * Цвета строятся через переменные темы,
-         * поэтому отдельные dark:-классы
-         * здесь больше не нужны.
-         */}
         <section
           className="relative hidden w-1/2 flex-col justify-between overflow-hidden p-12 lg:flex"
           style={{
@@ -230,19 +230,15 @@ export default function RegisterPage() {
             </div>
 
             <h1 className="max-w-lg text-5xl font-semibold leading-tight text-[var(--text-primary)]">
-
               {tr(
                 'Создайте ваше пространство для двоих.',
               )}
-
             </h1>
 
             <p className="mt-6 max-w-md text-lg leading-8 text-[var(--text-secondary)]">
-
               {tr(
                 'Зарегистрируйтесь, найдите вторую половинку по уникальному никнейму и начните собирать ваши общие моменты.',
               )}
-
             </p>
 
           </div>
@@ -256,14 +252,12 @@ export default function RegisterPage() {
               />
 
               <p className="text-sm leading-6 text-[var(--text-secondary)]">
-
                 {tr(
                   '♡ Один аккаунт. Одно общее пространство. Только для вас двоих.',
                 ).replace(
                   '♡ ',
                   '',
                 )}
-
               </p>
 
             </div>
@@ -272,9 +266,6 @@ export default function RegisterPage() {
 
         </section>
 
-        {/*
-         * Правая часть с регистрацией.
-         */}
         <section className="flex w-full items-center justify-center bg-[var(--surface)] px-6 py-10 lg:w-1/2 lg:px-16">
 
           <div className="w-full max-w-md">
@@ -292,27 +283,21 @@ export default function RegisterPage() {
             <div className="mb-7">
 
               <p className="mb-2 text-sm font-medium text-[var(--accent)]">
-
                 {tr(
                   'Начнём знакомство ♡',
                 )}
-
               </p>
 
               <h2 className="text-4xl font-semibold text-[var(--text-primary)]">
-
                 {tr(
                   'Регистрация',
                 )}
-
               </h2>
 
               <p className="mt-3 text-[var(--text-muted)]">
-
                 {tr(
                   'Создайте ваше пространство для двоих.',
                 )}
-
               </p>
 
             </div>
@@ -324,20 +309,15 @@ export default function RegisterPage() {
               className="space-y-4"
             >
 
-              {/*
-               * Имя.
-               */}
               <div>
 
                 <label
                   htmlFor="displayName"
                   className="mb-2 block text-sm font-medium text-[var(--text-secondary)]"
                 >
-
                   {tr(
                     'Имя',
                   )}
-
                 </label>
 
                 <input
@@ -350,8 +330,7 @@ export default function RegisterPage() {
                     event,
                   ) =>
                     setDisplayName(
-                      event.target
-                        .value,
+                      event.target.value,
                     )
                   }
                   placeholder={
@@ -368,9 +347,6 @@ export default function RegisterPage() {
 
               </div>
 
-              {/*
-               * Email.
-               */}
               <div>
 
                 <label
@@ -390,8 +366,7 @@ export default function RegisterPage() {
                     event,
                   ) =>
                     setEmail(
-                      event.target
-                        .value,
+                      event.target.value,
                     )
                   }
                   placeholder="you@example.com"
@@ -405,24 +380,15 @@ export default function RegisterPage() {
 
               </div>
 
-              {/*
-               * Никнейм.
-               *
-               * Здесь сохраняем увеличенный
-               * отступ слева, потому что
-               * внутри поля находится @.
-               */}
               <div>
 
                 <label
                   htmlFor="nickname"
                   className="mb-2 block text-sm font-medium text-[var(--text-secondary)]"
                 >
-
                   {tr(
                     'Уникальный никнейм',
                   )}
-
                 </label>
 
                 <div className="relative">
@@ -464,29 +430,22 @@ export default function RegisterPage() {
                 </div>
 
                 <p className="mt-1.5 text-xs text-[var(--text-muted)]">
-
                   {tr(
                     'Латинские буквы, цифры и _',
                   )}
-
                 </p>
 
               </div>
 
-              {/*
-               * Пароль.
-               */}
               <div>
 
                 <label
                   htmlFor="password"
                   className="mb-2 block text-sm font-medium text-[var(--text-secondary)]"
                 >
-
                   {tr(
                     'Пароль',
                   )}
-
                 </label>
 
                 <input
@@ -499,8 +458,7 @@ export default function RegisterPage() {
                     event,
                   ) =>
                     setPassword(
-                      event.target
-                        .value,
+                      event.target.value,
                     )
                   }
                   placeholder={
@@ -521,20 +479,15 @@ export default function RegisterPage() {
 
               </div>
 
-              {/*
-               * Повтор пароля.
-               */}
               <div>
 
                 <label
                   htmlFor="confirmPassword"
                   className="mb-2 block text-sm font-medium text-[var(--text-secondary)]"
                 >
-
                   {tr(
                     'Повторите пароль',
                   )}
-
                 </label>
 
                 <input
@@ -547,8 +500,7 @@ export default function RegisterPage() {
                     event,
                   ) =>
                     setConfirmPassword(
-                      event.target
-                        .value,
+                      event.target.value,
                     )
                   }
                   placeholder="••••••••"
@@ -602,11 +554,9 @@ export default function RegisterPage() {
                 href="/login"
                 className="font-medium text-[var(--accent)] transition hover:brightness-110 hover:underline"
               >
-
                 {tr(
                   'Войти',
                 )}
-
               </Link>
 
             </div>

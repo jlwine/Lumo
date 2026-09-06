@@ -371,6 +371,114 @@ const english: Record<string, string> = {
   'Фото дня: {name}': "{name}'s photo of the day",
   'с {date}': 'since {date}',
   'Произошла ошибка при обращении к серверу': 'An error occurred while contacting the server',
+
+  'Ваше пространство': 'Your space',
+
+'Пока здесь только вы. Найдите партнёра по никнейму через поиск сверху или проверьте приглашения.':
+  'For now, this space is just yours. Find your partner by nickname using the search above or check your invitations.',
+
+'Открыть приглашения':
+  'Open invitations',
+
+'Пара не создана':
+  'No partner yet',
+
+'После создания пары здесь появится количество дней вместе.':
+  'Once you create a couple, your days together will appear here.',
+
+  'нужна пара':
+  'couple required',
+
+'Календарь недоступен':
+  'Calendar unavailable',
+
+'Общий календарь появится после создания пары.':
+  'Your shared calendar will appear after you create a couple.',
+
+'Доска дня недоступна':
+  'Daily Board unavailable',
+
+'Доска дня появится после создания пары.':
+  'Daily Board will appear after you create a couple.',
+
+'Календарь пока недоступен':
+  'Calendar is not available yet',
+
+'Общий календарь станет доступен после того, как вы создадите пару в Lumo.':
+  'The shared calendar will become available after you create a couple in Lumo.',
+
+'Найдите партнёра по никнейму или проверьте входящие приглашения.':
+  'Find your partner by nickname or check your incoming invitations.',
+
+'Не удалось проверить доступ к календарю':
+  'Failed to check calendar access',
+
+    /*
+   * Подтверждение email
+   * и восстановление пароля.
+   */
+  'Забыли пароль?': 'Forgot password?',
+  'Восстановление пароля': 'Password recovery',
+  'Введите email, указанный при регистрации. Мы отправим ссылку для создания нового пароля.':
+    'Enter the email you used when signing up. We will send you a link to create a new password.',
+  'Отправить ссылку': 'Send link',
+  'Отправляем ссылку...': 'Sending link...',
+  'Проверьте почту': 'Check your email',
+  'Если аккаунт с таким email существует, мы отправили ссылку для восстановления пароля.':
+    'If an account with this email exists, we sent a password recovery link.',
+  'Отправить ещё раз': 'Send again',
+  'Вернуться ко входу': 'Back to sign in',
+  'Не удалось отправить ссылку восстановления':
+    'Failed to send password recovery link',
+
+  'Подтверждение email': 'Email verification',
+  'Подтверждаем email...': 'Verifying email...',
+  'Email подтверждён': 'Email verified',
+  'Email успешно подтверждён': 'Email verified successfully',
+  'Email успешно подтверждён. Теперь все функции аккаунта доступны.':
+    'Your email has been verified. All account features are now available.',
+  'Мы отправили ссылку для подтверждения на {email}.':
+    'We sent a verification link to {email}.',
+  'Мы отправили ссылку для подтверждения email.':
+    'We sent an email verification link.',
+  'Перейдите по ссылке в письме, чтобы подтвердить адрес.':
+    'Follow the link in the email to verify your address.',
+  'Отправить письмо ещё раз': 'Send email again',
+  'Отправляем повторно...': 'Sending again...',
+  'Письмо отправлено повторно': 'Email sent again',
+  'Письмо подтверждения отправлено повторно':
+    'Verification email sent again',
+  'Перейти в Lumo': 'Go to Lumo',
+  'Не удалось подтвердить email': 'Failed to verify email',
+  'Не удалось отправить письмо повторно':
+    'Failed to resend email',
+  'Email уже подтверждён': 'Email is already verified',
+
+  'Ссылка подтверждения недействительна или уже была использована':
+    'The verification link is invalid or has already been used',
+  'Срок действия ссылки подтверждения истёк':
+    'The verification link has expired',
+
+  'Придумайте новый пароль для вашего аккаунта.':
+    'Create a new password for your account.',
+  'Сохранить новый пароль': 'Save new password',
+  'Сохраняем пароль...': 'Saving password...',
+  'Пароль успешно изменён': 'Password changed successfully',
+  'Теперь можно войти в Lumo с новым паролем.':
+    'You can now sign in to Lumo with your new password.',
+  'Ссылка недействительна или устарела':
+    'This link is invalid or has expired.',
+  'Запросите новую ссылку для восстановления пароля.':
+    'Request a new password recovery link.',
+  'Запросить новую ссылку': 'Request a new link',
+
+  'Ссылка восстановления недействительна или уже была использована':
+    'The password recovery link is invalid or has already been used',
+  'Срок действия ссылки восстановления пароля истёк':
+    'The password recovery link has expired',
+
+  'Если аккаунт с таким email существует, мы отправили ссылку для восстановления пароля':
+    'If an account with this email exists, we sent a password recovery link',
 };
 
 let currentLocale: AppLocale = 'ru';

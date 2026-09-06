@@ -129,17 +129,8 @@ export default function LoginPage() {
   return (
     <main className="min-h-screen bg-[var(--background)] px-4 py-8">
 
-      <div
-        className="mx-auto flex min-h-[calc(100vh-4rem)] max-w-6xl overflow-hidden rounded-[32px] border border-[var(--border)] bg-[var(--surface)] shadow-[0_30px_100px_rgba(115,75,70,0.10)]"
-      >
+      <div className="mx-auto flex min-h-[calc(100vh-4rem)] max-w-6xl overflow-hidden rounded-[32px] border border-[var(--border)] bg-[var(--surface)] shadow-[0_30px_100px_rgba(115,75,70,0.10)]">
 
-        {/*
-         * Левая брендовая часть.
-         *
-         * Градиент использует переменные темы,
-         * поэтому автоматически становится
-         * тёмным без отдельных dark:-классов.
-         */}
         <section
           className="relative hidden w-1/2 flex-col justify-between overflow-hidden p-12 lg:flex"
           style={{
@@ -205,9 +196,6 @@ export default function LoginPage() {
 
         </section>
 
-        {/*
-         * Правая часть с формой.
-         */}
         <section className="flex w-full items-center justify-center bg-[var(--surface)] px-6 py-12 lg:w-1/2 lg:px-16">
 
           <div className="w-full max-w-md">
@@ -257,20 +245,15 @@ export default function LoginPage() {
               className="space-y-5"
             >
 
-              {/*
-               * Email / nickname.
-               */}
               <div>
 
                 <label
                   htmlFor="login"
                   className="mb-2 block text-sm font-medium text-[var(--text-secondary)]"
                 >
-
                   {tr(
                     'Email или никнейм',
                   )}
-
                 </label>
 
                 <input
@@ -283,8 +266,7 @@ export default function LoginPage() {
                     event,
                   ) =>
                     setLogin(
-                      event.target
-                        .value,
+                      event.target.value,
                     )
                   }
                   placeholder="chervy4k"
@@ -295,21 +277,29 @@ export default function LoginPage() {
 
               </div>
 
-              {/*
-               * Пароль.
-               */}
               <div>
 
-                <label
-                  htmlFor="password"
-                  className="mb-2 block text-sm font-medium text-[var(--text-secondary)]"
-                >
+                <div className="mb-2 flex items-center justify-between gap-4">
 
-                  {tr(
-                    'Пароль',
-                  )}
+                  <label
+                    htmlFor="password"
+                    className="block text-sm font-medium text-[var(--text-secondary)]"
+                  >
+                    {tr(
+                      'Пароль',
+                    )}
+                  </label>
 
-                </label>
+                  <Link
+                    href="/forgot-password"
+                    className="text-xs font-medium text-[var(--accent)] transition hover:brightness-110 hover:underline"
+                  >
+                    {tr(
+                      'Забыли пароль?',
+                    )}
+                  </Link>
+
+                </div>
 
                 <input
                   id="password"
@@ -321,8 +311,7 @@ export default function LoginPage() {
                     event,
                   ) =>
                     setPassword(
-                      event.target
-                        .value,
+                      event.target.value,
                     )
                   }
                   placeholder="••••••••"
@@ -370,11 +359,9 @@ export default function LoginPage() {
                 href="/register"
                 className="font-medium text-[var(--accent)] transition hover:brightness-110 hover:underline"
               >
-
                 {tr(
                   'Зарегистрироваться',
                 )}
-
               </Link>
 
             </div>

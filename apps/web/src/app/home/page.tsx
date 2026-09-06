@@ -587,10 +587,20 @@ export default function HomePage() {
                 label={tr(
                   'Календарь',
                 )}
-                onClick={() =>
-                  router.push(
-                    '/calendar',
-                  )
+                badge={
+                  !relationship
+                    ? tr(
+                        'нужна пара',
+                      )
+                    : undefined
+                }
+                onClick={
+                  relationship
+                    ? () =>
+                        router.push(
+                          '/calendar',
+                        )
+                    : undefined
                 }
               />
 
@@ -633,10 +643,20 @@ export default function HomePage() {
                 label={tr(
                   'Доска дня',
                 )}
-                onClick={() =>
-                  router.push(
-                    '/day-board',
-                  )
+                badge={
+                  !relationship
+                    ? tr(
+                        'нужна пара',
+                      )
+                    : undefined
+                }
+                onClick={
+                  relationship
+                    ? () =>
+                        router.push(
+                          '/day-board',
+                        )
+                    : undefined
                 }
               />
 
@@ -812,14 +832,19 @@ export default function HomePage() {
                       userName={
                         userName
                       }
+                      onOpenInvitations={() =>
+                        router.push(
+                          '/invitations',
+                        )
+                      }
                     />
                   )}
 
-                  <DaysTogetherCard
-                    relationship={
-                      relationship
-                    }
-                  />
+                    <DaysTogetherCard
+                      relationship={
+                        relationship
+                      }
+                    />
 
                 </section>
 
@@ -828,6 +853,9 @@ export default function HomePage() {
                   <CalendarDashboardCard
                     events={
                       previewEvents
+                    }
+                    locked={
+                      !relationship
                     }
                     onOpen={() =>
                       router.push(
@@ -852,6 +880,9 @@ export default function HomePage() {
                   <DayBoardDashboardCard
                     dayBoard={
                       dayBoard
+                    }
+                    locked={
+                      !relationship
                     }
                     onOpen={() =>
                       router.push(
@@ -987,21 +1018,62 @@ function CoupleHero({
 
 function SingleHero({
   userName,
+  onOpenInvitations,
 }: {
   userName: string;
+  onOpenInvitations: () => void;
 }) {
   return (
-    <article className="min-h-[245px] rounded-[28px] border border-[#eeded9] bg-[#fff2ef] p-8">
+    <article
+      className="relative min-h-[245px] overflow-hidden rounded-[28px] border border-[var(--border)] px-10 py-8"
+      style={{
+        background:
+          'linear-gradient(135deg, var(--accent-soft) 0%, var(--surface-soft) 55%, var(--lavender-soft) 100%)',
+      }}
+    >
 
-      <h1 className="text-3xl text-[#594844]">
-        {tr(
-          'Привет, {name} ♡',
-          {
-            name:
-              userName,
-          },
-        )}
-      </h1>
+      <Sparkles
+        size={18}
+        className="absolute right-10 top-8 text-[#d8a96a]"
+      />
+
+      <div className="flex h-full max-w-[720px] flex-col justify-center">
+
+        <p className="text-sm font-medium text-[var(--accent)]">
+          {tr(
+            'Ваше пространство',
+          )}
+        </p>
+
+        <h1 className="mt-3 text-3xl font-semibold text-[var(--text-primary)]">
+          {tr(
+            'Привет, {name} ♡',
+            {
+              name:
+                userName,
+            },
+          )}
+        </h1>
+
+        <p className="mt-4 max-w-xl text-base leading-7 text-[var(--text-secondary)]">
+          {tr(
+            'Пока здесь только вы. Найдите партнёра по никнейму через поиск сверху или проверьте приглашения.',
+          )}
+        </p>
+
+        <button
+          type="button"
+          onClick={
+            onOpenInvitations
+          }
+          className="mt-6 w-fit cursor-pointer rounded-2xl border border-[var(--border)] bg-[var(--surface)] px-5 py-2.5 text-sm font-medium text-[var(--text-primary)] shadow-sm transition-all duration-200 hover:-translate-y-[1px] hover:border-[var(--accent)] hover:text-[var(--accent)] hover:shadow-md active:translate-y-0 active:scale-[0.97]"
+        >
+          {tr(
+            'Открыть приглашения',
+          )}
+        </button>
+
+      </div>
 
     </article>
   );
@@ -1012,6 +1084,40 @@ function DaysTogetherCard({
 }: {
   relationship: Relationship | null;
 }) {
+  if (!relationship) {
+    return (
+      <article className="relative flex min-h-[245px] flex-col overflow-hidden rounded-[28px] border border-[var(--border)] bg-[var(--surface)] p-6">
+
+        <Heart
+          size={21}
+          className="absolute right-5 top-5 text-[var(--accent)]"
+        />
+
+        <div className="flex flex-1 flex-col justify-center">
+
+          <p className="text-base font-medium text-[var(--text-primary)]">
+            {tr(
+              'Пара не создана',
+            )}
+          </p>
+
+          <p className="mt-2 max-w-[190px] text-xs leading-5 text-[var(--text-muted)]">
+            {tr(
+              'После создания пары здесь появится количество дней вместе.',
+            )}
+          </p>
+
+        </div>
+
+        <Leaf
+          size={38}
+          className="absolute bottom-7 right-6 text-[#afb28d]"
+        />
+
+      </article>
+    );
+  }
+
   return (
     <article className="relative overflow-hidden rounded-[28px] border border-[#eeded9] bg-[#fffdfb] p-6">
 
@@ -1026,38 +1132,32 @@ function DaysTogetherCard({
         )}
       </p>
 
-      {relationship && (
-        <>
+      <p className="mt-4 font-serif text-[54px] leading-none text-[#574642]">
+        {relationship.daysTogether}
+      </p>
 
-          <p className="mt-4 font-serif text-[54px] leading-none text-[#574642]">
-            {relationship.daysTogether}
-          </p>
+      <p className="mt-1 text-sm text-[#d2767f]">
+        {pluralizeDays(
+          relationship.daysTogether,
+        )}
+      </p>
 
-          <p className="mt-1 text-sm text-[#d2767f]">
-            {pluralizeDays(
-              relationship.daysTogether,
-            )}
-          </p>
+      <p className="mt-4 text-xs text-[#9f8a84]">
+        {tr(
+          'с {date}',
+          {
+            date:
+              formatLongDate(
+                relationship.startedAt,
+              ),
+          },
+        )}
+      </p>
 
-          <p className="mt-4 text-xs text-[#9f8a84]">
-            {tr(
-              'с {date}',
-              {
-                date:
-                  formatLongDate(
-                    relationship.startedAt,
-                  ),
-              },
-            )}
-          </p>
-
-          <Leaf
-            size={40}
-            className="absolute bottom-10 right-6 text-[#afb28d]"
-          />
-
-        </>
-      )}
+      <Leaf
+        size={40}
+        className="absolute bottom-10 right-6 text-[#afb28d]"
+      />
 
     </article>
   );
@@ -1065,11 +1165,56 @@ function DaysTogetherCard({
 
 function CalendarDashboardCard({
   events,
+  locked,
   onOpen,
 }: {
   events: CalendarEvent[];
+  locked: boolean;
   onOpen: () => void;
 }) {
+  if (locked) {
+    return (
+      <article className="flex min-h-[390px] flex-col rounded-[24px] border border-[#eee0db] bg-white p-5">
+
+        <CardHeader
+          icon={
+            <CalendarDays
+              size={19}
+            />
+          }
+          title={tr(
+            'Календарь',
+          )}
+          badge={tr(
+            'нужна пара',
+          )}
+        />
+
+        <div className="flex flex-1 flex-col items-center justify-center px-5 text-center">
+
+          <CalendarDays
+            size={30}
+            className="text-[#c6b3b1]"
+          />
+
+          <p className="mt-4 text-sm font-medium text-[#75615c]">
+            {tr(
+              'Календарь недоступен',
+            )}
+          </p>
+
+          <p className="mt-2 max-w-[210px] text-xs leading-5 text-[#a18d87]">
+            {tr(
+              'Общий календарь появится после создания пары.',
+            )}
+          </p>
+
+        </div>
+
+      </article>
+    );
+  }
+
   return (
     <article className="flex min-h-[390px] flex-col rounded-[24px] border border-[#eee0db] bg-white p-5">
 
@@ -1437,11 +1582,56 @@ function MapDashboardCard() {
 
 function DayBoardDashboardCard({
   dayBoard,
+  locked,
   onOpen,
 }: {
   dayBoard: DayBoardTodayResponse | null;
+  locked: boolean;
   onOpen: () => void;
 }) {
+  if (locked) {
+    return (
+      <article className="flex min-h-[390px] flex-col rounded-[24px] border border-[#eee0db] bg-white p-5">
+
+        <CardHeader
+          icon={
+            <Images
+              size={19}
+            />
+          }
+          title={tr(
+            'Доска дня',
+          )}
+          badge={tr(
+            'нужна пара',
+          )}
+        />
+
+        <div className="flex flex-1 flex-col items-center justify-center px-5 text-center">
+
+          <Images
+            size={30}
+            className="text-[#c7b2bd]"
+          />
+
+          <p className="mt-4 text-sm font-medium text-[#75615c]">
+            {tr(
+              'Доска дня недоступна',
+            )}
+          </p>
+
+          <p className="mt-2 max-w-[210px] text-xs leading-5 text-[#a18d87]">
+            {tr(
+              'Доска дня появится после создания пары.',
+            )}
+          </p>
+
+        </div>
+
+      </article>
+    );
+  }
+
   const entries = [
     {
       label:

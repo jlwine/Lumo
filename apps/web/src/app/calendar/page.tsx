@@ -48,6 +48,10 @@ import type {
   CalendarEvent,
 } from '@/types/calendar';
 
+import type {
+  RelationshipResponse,
+} from '@/types/relationship';
+
 type CalendarDay = {
   date: Date;
   isCurrentMonth: boolean;
@@ -119,6 +123,34 @@ export default function CalendarPage() {
   const [
     error,
     setError,
+  ] =
+    useState<string | null>(
+      null,
+    );
+
+  /*
+   * Сначала проверяем, есть ли у пользователя
+   * активная пара.
+   *
+   * Календарь является общей функцией,
+   * поэтому без отношений он недоступен.
+   */
+  const [
+    accessState,
+    setAccessState,
+  ] =
+    useState<
+      | 'loading'
+      | 'available'
+      | 'unavailable'
+      | 'error'
+    >(
+      'loading',
+    );
+
+  const [
+    accessError,
+    setAccessError,
   ] =
     useState<string | null>(
       null,
@@ -201,6 +233,79 @@ export default function CalendarPage() {
     );
 
   /*
+   * Проверяем доступ к общему календарю.
+   */
+  useEffect(() => {
+    let cancelled =
+      false;
+
+    async function checkCalendarAccess() {
+      const token =
+        getAccessToken();
+
+      if (!token) {
+        removeAccessToken();
+
+        router.replace(
+          '/login',
+        );
+
+        return;
+      }
+
+      try {
+        const response =
+          await apiRequest<
+            RelationshipResponse
+          >(
+            '/relationships/me',
+            {
+              headers: {
+                Authorization:
+                  `Bearer ${token}`,
+              },
+            },
+          );
+
+        if (cancelled) {
+          return;
+        }
+
+        setAccessState(
+          response.relationship
+            ? 'available'
+            : 'unavailable',
+        );
+      } catch (error) {
+        if (cancelled) {
+          return;
+        }
+
+        setAccessError(
+          error instanceof Error
+            ? error.message
+            : tr(
+                'Не удалось загрузить отношения',
+              ),
+        );
+
+        setAccessState(
+          'error',
+        );
+      }
+    }
+
+    void checkCalendarAccess();
+
+    return () => {
+      cancelled =
+        true;
+    };
+  }, [
+    router,
+  ]);
+
+  /*
    * Формируем дни,
    * отображаемые в календаре.
    */
@@ -228,6 +333,13 @@ export default function CalendarPage() {
   const fetchEvents =
     useCallback(
       async () => {
+        if (
+          accessState !==
+          'available'
+        ) {
+          return [];
+        }
+
         const token =
           getAccessToken();
 
@@ -284,6 +396,7 @@ export default function CalendarPage() {
         );
       },
       [
+        accessState,
         firstVisibleDay,
         lastVisibleDay,
         router,
@@ -296,6 +409,13 @@ export default function CalendarPage() {
    * или смене месяца.
    */
   useEffect(() => {
+    if (
+      accessState !==
+      'available'
+    ) {
+      return;
+    }
+
     let cancelled =
       false;
 
@@ -348,7 +468,10 @@ export default function CalendarPage() {
     return () => {
       cancelled = true;
     };
-  }, [fetchEvents]);
+  }, [
+    accessState,
+    fetchEvents,
+  ]);
 
   /*
    * Если календарь открыт через:
@@ -360,7 +483,11 @@ export default function CalendarPage() {
    * в режиме редактирования.
    */
   useEffect(() => {
-    if (!editEventId) {
+    if (
+      accessState !==
+      'available' ||
+      !editEventId
+    ) {
       return;
     }
 
@@ -478,6 +605,7 @@ export default function CalendarPage() {
       cancelled = true;
     };
   }, [
+    accessState,
     editEventId,
     router,
   ]);
@@ -1050,6 +1178,65 @@ export default function CalendarPage() {
   }
 
   /*
+   * Пока проверяем отношения,
+   * не показываем календарь даже на мгновение.
+   */
+  if (
+    accessState ===
+    'loading'
+  ) {
+    return (
+      <CalendarAccessLoading />
+    );
+  }
+
+  /*
+   * Без пары общий календарь
+   * полностью закрыт.
+   */
+  if (
+    accessState ===
+    'unavailable'
+  ) {
+    return (
+      <CalendarUnavailableScreen
+        onBack={() =>
+          router.push(
+            '/home',
+          )
+        }
+        onInvitations={() =>
+          router.push(
+            '/invitations',
+          )
+        }
+      />
+    );
+  }
+
+  /*
+   * Если не удалось проверить отношения,
+   * не пытаемся открывать календарь вслепую.
+   */
+  if (
+    accessState ===
+    'error'
+  ) {
+    return (
+      <CalendarAccessErrorScreen
+        message={
+          accessError
+        }
+        onBack={() =>
+          router.push(
+            '/home',
+          )
+        }
+      />
+    );
+  }
+
+  /*
    * События выбранного дня
    * для правой панели.
    */
@@ -1612,6 +1799,175 @@ export default function CalendarPage() {
           }
         />
       )}
+
+    </main>
+  );
+}
+
+function CalendarAccessLoading() {
+  return (
+    <main className="flex min-h-screen items-center justify-center bg-[var(--background)]">
+
+      <Heart
+        size={34}
+        className="animate-pulse text-[var(--accent)]"
+      />
+
+    </main>
+  );
+}
+
+function CalendarUnavailableScreen({
+  onBack,
+  onInvitations,
+}: {
+  onBack: () => void;
+  onInvitations: () => void;
+}) {
+  return (
+    <main className="min-h-screen bg-[var(--background)] px-4 py-6 md:px-8 md:py-8">
+
+      <div className="mx-auto max-w-[1100px]">
+
+        <button
+          type="button"
+          onClick={
+            onBack
+          }
+          className="flex items-center gap-2 rounded-xl border border-transparent px-3 py-2 text-sm font-medium text-[var(--text-secondary)] transition-all duration-150 hover:border-[var(--border)] hover:bg-[var(--surface-soft)] hover:text-[var(--accent)] active:scale-[0.96]"
+        >
+          <ArrowLeft
+            size={18}
+          />
+
+          {tr(
+            'На главную',
+          )}
+        </button>
+
+        <section
+          className="mt-8 overflow-hidden rounded-[32px] border border-[var(--border)] px-8 py-12 md:px-12 md:py-16"
+          style={{
+            background:
+              'linear-gradient(135deg, var(--accent-soft) 0%, var(--surface-soft) 58%, var(--lavender-soft) 100%)',
+          }}
+        >
+
+          <div className="max-w-[680px]">
+
+            <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-[var(--border)] bg-[var(--surface)] text-[var(--accent)] shadow-sm">
+
+              <CalendarDays
+                size={25}
+              />
+
+            </div>
+
+            <p className="mt-8 text-sm font-medium text-[var(--accent)]">
+              {tr(
+                'Общее пространство',
+              )}
+            </p>
+
+            <h1 className="mt-2 text-3xl font-semibold text-[var(--text-primary)] md:text-4xl">
+              {tr(
+                'Календарь пока недоступен',
+              )}
+            </h1>
+
+            <p className="mt-4 max-w-[620px] text-base leading-7 text-[var(--text-secondary)]">
+              {tr(
+                'Общий календарь станет доступен после того, как вы создадите пару в Lumo.',
+              )}
+            </p>
+
+            <p className="mt-3 max-w-[620px] text-sm leading-6 text-[var(--text-muted)]">
+              {tr(
+                'Найдите партнёра по никнейму или проверьте входящие приглашения.',
+              )}
+            </p>
+
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+
+              <button
+                type="button"
+                onClick={
+                  onInvitations
+                }
+                className="cursor-pointer rounded-2xl bg-[var(--accent)] px-5 py-3 font-medium text-white shadow-sm transition-all duration-200 hover:-translate-y-[1px] hover:brightness-105 hover:shadow-md active:translate-y-0 active:scale-[0.98]"
+              >
+                {tr(
+                  'Открыть приглашения',
+                )}
+              </button>
+
+              <button
+                type="button"
+                onClick={
+                  onBack
+                }
+                className="cursor-pointer rounded-2xl border border-[var(--border)] bg-[var(--surface)] px-5 py-3 font-medium text-[var(--text-primary)] transition-all duration-200 hover:-translate-y-[1px] hover:border-[var(--accent)] hover:text-[var(--accent)] active:translate-y-0 active:scale-[0.98]"
+              >
+                {tr(
+                  'На главную',
+                )}
+              </button>
+
+            </div>
+
+          </div>
+
+        </section>
+
+      </div>
+
+    </main>
+  );
+}
+
+function CalendarAccessErrorScreen({
+  message,
+  onBack,
+}: {
+  message: string | null;
+  onBack: () => void;
+}) {
+  return (
+    <main className="flex min-h-screen items-center justify-center bg-[var(--background)] px-4 py-8">
+
+      <div className="w-full max-w-[560px] rounded-[30px] border border-[var(--border)] bg-[var(--surface)] p-8 text-center shadow-[0_20px_70px_rgba(91,65,59,0.08)]">
+
+        <CalendarDays
+          size={30}
+          className="mx-auto text-[var(--accent)]"
+        />
+
+        <h1 className="mt-5 text-2xl font-semibold text-[var(--text-primary)]">
+          {tr(
+            'Не удалось открыть календарь',
+          )}
+        </h1>
+
+        <p className="mt-3 text-sm leading-6 text-[var(--text-secondary)]">
+          {message ??
+            tr(
+              'Не удалось проверить доступ к календарю',
+            )}
+        </p>
+
+        <button
+          type="button"
+          onClick={
+            onBack
+          }
+          className="mt-7 cursor-pointer rounded-2xl bg-[var(--accent)] px-5 py-3 font-medium text-white transition-all duration-200 hover:brightness-105 active:scale-[0.98]"
+        >
+          {tr(
+            'На главную',
+          )}
+        </button>
+
+      </div>
 
     </main>
   );
