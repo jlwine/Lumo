@@ -8,6 +8,20 @@ import {
 } from 'react';
 
 import {
+  LumoBrand,
+  LumoMark,
+} from '@/components/lumo-brand';
+
+import {
+  getIntlLocale,
+  tr,
+} from '@/i18n/core';
+
+import {
+  useLanguageVersion,
+} from '@/i18n/use-language';
+
+import {
   CalendarDays,
   ChevronRight,
   Gift,
@@ -33,7 +47,9 @@ import {
   UserSearch,
 } from '@/components/user-search';
 
-import { apiRequest } from '@/lib/api';
+import {
+  apiRequest,
+} from '@/lib/api';
 
 import {
   getAccessToken,
@@ -70,6 +86,12 @@ type WishlistPreviewEntry = {
 };
 
 export default function HomePage() {
+  /*
+   * Подписываем главную страницу
+   * на изменение языка.
+   */
+  useLanguageVersion();
+
   const router =
     useRouter();
 
@@ -318,7 +340,9 @@ export default function HomePage() {
         setError(
           error instanceof Error
             ? error.message
-            : 'Не удалось загрузить данные',
+            : tr(
+                'Не удалось загрузить данные',
+              ),
         );
       } finally {
         if (!cancelled) {
@@ -349,7 +373,9 @@ export default function HomePage() {
   const userName =
     user?.displayName ??
     user?.nickname ??
-    'Пользователь';
+    tr(
+      'Пользователь',
+    );
 
   const partner =
     relationship?.partner ??
@@ -467,10 +493,9 @@ export default function HomePage() {
     return (
       <main className="flex min-h-screen items-center justify-center bg-[#fffaf7]">
 
-        <Heart
-          size={38}
-          fill="currentColor"
-          className="animate-pulse text-[#df8993]"
+        <LumoMark
+          size={46}
+          className="animate-pulse"
         />
 
       </main>
@@ -483,7 +508,9 @@ export default function HomePage() {
 
         <p className="text-[#927d78]">
           {error ??
-            'Не удалось открыть страницу'}
+            tr(
+              'Не удалось открыть страницу',
+            )}
         </p>
 
       </main>
@@ -517,26 +544,15 @@ export default function HomePage() {
                     '/home',
                   )
                 }
-                className="flex items-center gap-3"
+                aria-label="Lumo"
+                className="rounded-2xl px-1 py-1 text-left transition-all duration-200 hover:opacity-80 active:scale-[0.98]"
               >
 
-                <div className="flex h-11 w-11 items-center justify-center rounded-full border border-[#eabdc2] text-[#dc7d87]">
-                  <Heart
-                    size={24}
-                  />
-                </div>
-
-                <div className="text-left">
-
-                  <p className="text-[24px] font-medium text-[#554442]">
-                    Вдвоём
-                  </p>
-
-                  <p className="text-[10px] text-[#b29e98]">
-                    пространство для двоих
-                  </p>
-
-                </div>
+                <LumoBrand
+                  markSize={46}
+                  showTagline
+                  wordmarkClassName="text-[27px]"
+                />
 
               </button>
 
@@ -551,7 +567,9 @@ export default function HomePage() {
                     fill="currentColor"
                   />
                 }
-                label="Главная"
+                label={tr(
+                  'Главная',
+                )}
                 active
                 onClick={() =>
                   router.push(
@@ -566,7 +584,9 @@ export default function HomePage() {
                     size={18}
                   />
                 }
-                label="Календарь"
+                label={tr(
+                  'Календарь',
+                )}
                 onClick={() =>
                   router.push(
                     '/calendar',
@@ -580,7 +600,9 @@ export default function HomePage() {
                     size={18}
                   />
                 }
-                label="Вишлисты"
+                label={tr(
+                  'Вишлисты',
+                )}
                 onClick={() =>
                   router.push(
                     '/wishlists',
@@ -594,8 +616,12 @@ export default function HomePage() {
                     size={18}
                   />
                 }
-                label="Карта"
-                badge="скоро"
+                label={tr(
+                  'Карта',
+                )}
+                badge={tr(
+                  'скоро',
+                )}
               />
 
               <SidebarItem
@@ -604,7 +630,9 @@ export default function HomePage() {
                     size={18}
                   />
                 }
-                label="Доска дня"
+                label={tr(
+                  'Доска дня',
+                )}
                 onClick={() =>
                   router.push(
                     '/day-board',
@@ -618,7 +646,9 @@ export default function HomePage() {
                     size={18}
                   />
                 }
-                label="Настройки"
+                label={tr(
+                  'Настройки',
+                )}
                 onClick={() =>
                   router.push(
                     '/settings/profile',
@@ -657,9 +687,6 @@ export default function HomePage() {
 
             <header className="sticky top-0 z-30 border-b border-[#f0e5e0] bg-[#fffaf7]/95 px-6 py-4 backdrop-blur-xl">
 
-              {/*
-               * Рабочая ширина 1360px.
-               */}
               <div className="mx-auto flex w-full max-w-[1360px] items-center gap-5">
 
                 <div className="hidden min-w-[185px] items-center gap-2 text-sm text-[#846f69] xl:flex">
@@ -796,10 +823,6 @@ export default function HomePage() {
 
                 </section>
 
-                {/*
-                 * Вишлист специально
-                 * шире календаря.
-                 */}
                 <section className="mt-6 grid gap-5 md:grid-cols-2 2xl:grid-cols-[0.85fr_1.3fr_1fr_1fr]">
 
                   <CalendarDashboardCard
@@ -912,6 +935,7 @@ function CoupleHero({
               onPartnerClick
             }
           >
+
             <Avatar
               name={
                 partnerName
@@ -922,6 +946,7 @@ function CoupleHero({
               }
               size="large"
             />
+
           </button>
 
         </div>
@@ -929,17 +954,15 @@ function CoupleHero({
         <div>
 
           <p className="text-sm text-[#ba737b]">
-            Ваше общее пространство
+            {tr(
+              'Ваше общее пространство',
+            )}
           </p>
 
-          <h1 className="mt-3 text-[32px] font-medium text-[#594844]">
-            Добро пожаловать,
-            вы вдвоём! 💕
-          </h1>
-
-          <p className="mt-3 text-base text-[#907b75]">
-            Ваши планы рядом,
-            даже когда вы далеко.
+          <p className="mt-3 text-lg text-[#907b75]">
+            {tr(
+              'Планы, желания и моменты, которые вы создаёте вместе.',
+            )}
           </p>
 
           <button
@@ -947,9 +970,11 @@ function CoupleHero({
             onClick={
               onPartnerClick
             }
-            className="mt-5 rounded-2xl border border-[#e7d3cf] bg-white/70 px-5 py-2.5 text-sm text-[#765f5b]"
+            className="mt-5 cursor-pointer rounded-2xl border border-[#e7d3cf] bg-white/70 px-5 py-2.5 text-sm font-medium text-[#765f5b] shadow-sm backdrop-blur transition-all duration-200 hover:-translate-y-[1px] hover:border-[#dfb5b5] hover:bg-white/90 hover:text-[#bd656e] hover:shadow-md active:translate-y-0 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#df8e94]/40"
           >
-            ♡ Профиль партнёра
+            {tr(
+              'Профиль партнёра',
+            )}
           </button>
 
         </div>
@@ -969,7 +994,13 @@ function SingleHero({
     <article className="min-h-[245px] rounded-[28px] border border-[#eeded9] bg-[#fff2ef] p-8">
 
       <h1 className="text-3xl text-[#594844]">
-        Привет, {userName} ♡
+        {tr(
+          'Привет, {name} ♡',
+          {
+            name:
+              userName,
+          },
+        )}
       </h1>
 
     </article>
@@ -990,7 +1021,9 @@ function DaysTogetherCard({
       />
 
       <p className="text-sm text-[#75615c]">
-        Дней вместе
+        {tr(
+          'Дней вместе',
+        )}
       </p>
 
       {relationship && (
@@ -1007,9 +1040,14 @@ function DaysTogetherCard({
           </p>
 
           <p className="mt-4 text-xs text-[#9f8a84]">
-            с{' '}
-            {formatLongDate(
-              relationship.startedAt,
+            {tr(
+              'с {date}',
+              {
+                date:
+                  formatLongDate(
+                    relationship.startedAt,
+                  ),
+              },
             )}
           </p>
 
@@ -1041,15 +1079,21 @@ function CalendarDashboardCard({
             size={19}
           />
         }
-        title="Календарь"
-        action="Открыть"
+        title={tr(
+          'Календарь',
+        )}
+        action={tr(
+          'Открыть',
+        )}
         onAction={
           onOpen
         }
       />
 
       <p className="mt-5 text-xs text-[#8d7973]">
-        Ближайшие события
+        {tr(
+          'Ближайшие события',
+        )}
       </p>
 
       <div className="mt-3 space-y-2">
@@ -1093,7 +1137,9 @@ function CalendarDashboardCard({
 
                 <p className="text-xs text-[#a08b85]">
                   {event.allDay
-                    ? 'Весь день'
+                    ? tr(
+                        'Весь день',
+                      )
                     : formatEventTime(
                         event,
                       )}
@@ -1112,9 +1158,22 @@ function CalendarDashboardCard({
         onClick={
           onOpen
         }
-        className="mt-auto pt-5 text-xs text-[#d1767e]"
+        className="group mt-auto flex cursor-pointer items-center gap-1 self-start rounded-xl px-2 py-2 text-xs font-medium text-[#d1767e] transition-all duration-200 hover:bg-[#fff0ef] hover:px-3 hover:text-[#ba6069] active:scale-[0.97]"
       >
-        Смотреть все события →
+
+        {tr(
+          'Смотреть все события →',
+        )
+          .replace(
+            '→',
+            '',
+          )
+          .trim()}
+
+        <span className="transition-transform duration-200 group-hover:translate-x-1">
+          →
+        </span>
+
       </button>
 
     </article>
@@ -1137,8 +1196,12 @@ function WishlistDashboardCard({
             size={19}
           />
         }
-        title="Вишлисты"
-        action="Смотреть всё"
+        title={tr(
+          'Вишлисты',
+        )}
+        action={tr(
+          'Смотреть всё',
+        )}
         onAction={
           onOpen
         }
@@ -1280,7 +1343,9 @@ function WishlistDashboardCard({
           <div className="flex min-h-[230px] items-center justify-center">
 
             <p className="text-sm text-[#9f8c97]">
-              Желаний пока нет
+              {tr(
+                'Желаний пока нет',
+              )}
             </p>
 
           </div>
@@ -1293,9 +1358,22 @@ function WishlistDashboardCard({
         onClick={
           onOpen
         }
-        className="mt-auto pt-5 text-xs text-[#d1767e]"
+        className="group mt-auto flex cursor-pointer items-center gap-1 self-end rounded-xl px-2 py-2 text-xs font-medium text-[#d1767e] transition-all duration-200 hover:bg-[#fff0ef] hover:px-3 hover:text-[#ba6069] active:scale-[0.97]"
       >
-        Перейти к вишлистам →
+
+        {tr(
+          'Перейти к вишлистам →',
+        )
+          .replace(
+            '→',
+            '',
+          )
+          .trim()}
+
+        <span className="transition-transform duration-200 group-hover:translate-x-1">
+          →
+        </span>
+
       </button>
 
     </article>
@@ -1312,8 +1390,12 @@ function MapDashboardCard() {
             size={19}
           />
         }
-        title="Карта"
-        badge="скоро"
+        title={tr(
+          'Карта',
+        )}
+        badge={tr(
+          'скоро',
+        )}
       />
 
       <div className="relative mt-5 flex-1 overflow-hidden rounded-[18px] bg-[#e8eee2]">
@@ -1330,17 +1412,21 @@ function MapDashboardCard() {
         />
 
         <div className="absolute left-[25%] top-[25%] flex h-12 w-12 items-center justify-center rounded-full border-4 border-white bg-[#e8b9a5] text-white">
+
           <Heart
             size={18}
             fill="currentColor"
           />
+
         </div>
 
         <div className="absolute bottom-[23%] right-[20%] flex h-12 w-12 items-center justify-center rounded-full border-4 border-white bg-[#e8b9a5] text-white">
+
           <Heart
             size={18}
             fill="currentColor"
           />
+
         </div>
 
       </div>
@@ -1361,7 +1447,9 @@ function DayBoardDashboardCard({
       label:
         dayBoard?.me.displayName ??
         dayBoard?.me.nickname ??
-        'Вы',
+        tr(
+          'Вы',
+        ),
 
       entry:
         dayBoard?.mine ??
@@ -1371,7 +1459,9 @@ function DayBoardDashboardCard({
       label:
         dayBoard?.partnerUser.displayName ??
         dayBoard?.partnerUser.nickname ??
-        'Партнёр',
+        tr(
+          'Партнёр',
+        ),
 
       entry:
         dayBoard?.partner ??
@@ -1388,15 +1478,21 @@ function DayBoardDashboardCard({
             size={19}
           />
         }
-        title="Доска дня"
-        action="Открыть"
+        title={tr(
+          'Доска дня',
+        )}
+        action={tr(
+          'Открыть',
+        )}
         onAction={
           onOpen
         }
       />
 
       <p className="mt-5 text-xs text-[#8d7973]">
-        Сегодняшние моменты
+        {tr(
+          'Сегодняшние моменты',
+        )}
       </p>
 
       <div className="mt-4 grid flex-1 grid-cols-2 gap-3">
@@ -1422,9 +1518,13 @@ function DayBoardDashboardCard({
 
                   <div
                     role="img"
-                    aria-label={
-                      `Фото дня: ${label}`
-                    }
+                    aria-label={tr(
+                      'Фото дня: {name}',
+                      {
+                        name:
+                          label,
+                      },
+                    )}
                     className="absolute inset-0 bg-cover bg-center transition duration-300 group-hover:scale-[1.03]"
                     style={{
                       backgroundImage:
@@ -1446,7 +1546,9 @@ function DayBoardDashboardCard({
                       </p>
                     ) : (
                       <p className="mt-1 text-xs text-white/75">
-                        Фото сегодня
+                        {tr(
+                          'Фото сегодня',
+                        )}
                       </p>
                     )}
 
@@ -1466,7 +1568,9 @@ function DayBoardDashboardCard({
                   </p>
 
                   <p className="mt-1 text-[10px] leading-4 text-[#aa9599]">
-                    Фото пока нет
+                    {tr(
+                      'Фото пока нет',
+                    )}
                   </p>
 
                 </div>
@@ -1483,13 +1587,18 @@ function DayBoardDashboardCard({
         onClick={
           onOpen
         }
-        className="mt-4 flex items-center justify-center gap-1 text-xs font-medium text-[#d1767e] transition hover:text-[#bb626a]"
+        className="group mt-4 flex cursor-pointer items-center justify-center gap-1 rounded-xl px-3 py-2 text-xs font-medium text-[#d1767e] transition-all duration-200 hover:bg-[#fff0ef] hover:text-[#bb626a] hover:shadow-sm active:scale-[0.97]"
       >
-        Открыть доску дня
+
+        {tr(
+          'Открыть доску дня',
+        )}
 
         <ChevronRight
           size={13}
+          className="transition-transform duration-200 group-hover:translate-x-1"
         />
+
       </button>
 
     </article>
@@ -1517,7 +1626,9 @@ function DashboardStats({
         value={
           eventCount
         }
-        label="Планов впереди"
+        label={tr(
+          'Планов впереди',
+        )}
       />
 
       <StatItem
@@ -1531,7 +1642,9 @@ function DashboardStats({
         value={
           wishlistCount
         }
-        label="Общих желаний"
+        label={tr(
+          'Общих желаний',
+        )}
         border
       />
 
@@ -1614,7 +1727,7 @@ function CardHeader({
             onClick={
               onAction
             }
-            className="rounded-full bg-[#fff0ef] px-3 py-1.5 text-[10px] text-[#cd747c]"
+            className="cursor-pointer rounded-full bg-[#fff0ef] px-3 py-1.5 text-[10px] font-medium text-[#cd747c] shadow-sm transition-all duration-200 hover:-translate-y-[1px] hover:bg-[#f9dcde] hover:text-[#b95e68] hover:shadow-md active:translate-y-0 active:scale-[0.95] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#df8e94]/40"
           >
             {action}
           </button>
@@ -1643,34 +1756,90 @@ function SidebarItem({
   badge?: string;
   onClick?: () => void;
 }) {
+  const isClickable =
+    Boolean(
+      onClick,
+    );
+
   return (
     <button
       type="button"
       disabled={
-        !onClick
+        !isClickable
       }
       onClick={
         onClick
       }
       className={[
-        'mb-2 flex w-full items-center gap-3 rounded-[14px] px-4 py-3 text-left text-sm',
+        'group mb-2 flex w-full items-center gap-3 rounded-[14px] px-4 py-3 text-left text-sm transition-all duration-200',
+
+        isClickable
+          ? 'cursor-pointer active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#df8e94]/40'
+          : 'cursor-default',
 
         active
-          ? 'bg-[#fde9e8] text-[#cb7079]'
-          : 'text-[#76625d]',
+          ? [
+              'bg-[#fde9e8] text-[#cb7079]',
+
+              'dark:!bg-[#55373b] dark:!text-[#f29ca6]',
+
+              isClickable
+                ? [
+                    'hover:bg-[#f9dcde] hover:text-[#bf626d]',
+                    'hover:shadow-[0_5px_16px_rgba(126,76,79,0.08)]',
+
+                    'dark:hover:!bg-[#5d3b40]',
+                    'dark:hover:!text-[#ffabb4]',
+                    'dark:hover:shadow-[0_6px_18px_rgba(0,0,0,0.18)]',
+                  ].join(
+                    ' ',
+                  )
+                : '',
+            ].join(
+              ' ',
+            )
+          : [
+              'text-[#76625d]',
+
+              'dark:!text-[#d7c7c4]',
+
+              isClickable
+                ? [
+                    'hover:bg-[#fff0ef]',
+                    'hover:text-[#c66f78]',
+
+                    'dark:hover:!bg-[#55373b]',
+                    'dark:hover:!text-[#f29ca6]',
+
+                    'hover:shadow-[0_5px_16px_rgba(126,76,79,0.07)]',
+                    'dark:hover:shadow-[0_6px_18px_rgba(0,0,0,0.18)]',
+                  ].join(
+                    ' ',
+                  )
+                : [
+                    'opacity-80',
+                    'dark:!text-[#998987]',
+                  ].join(
+                    ' ',
+                  ),
+            ].join(
+              ' ',
+            ),
       ].join(
         ' ',
       )}
     >
 
-      {icon}
+      <span className="shrink-0 transition-transform duration-200 group-hover:scale-105">
+        {icon}
+      </span>
 
       <span className="flex-1">
         {label}
       </span>
 
       {badge && (
-        <span className="rounded-full bg-[#f4ece8] px-2 py-1 text-[9px]">
+        <span className="rounded-full bg-[#f4ece8] px-2 py-1 text-[9px] dark:!bg-[#443538] dark:!text-[#cdbab7]">
           {badge}
         </span>
       )}
@@ -1700,9 +1869,12 @@ function Avatar({
     return (
       <div
         role="img"
-        aria-label={
-          `Аватар ${name}`
-        }
+        aria-label={tr(
+          'Аватар {name}',
+          {
+            name,
+          },
+        )}
         className={`${sizeClass} shrink-0 rounded-full bg-cover bg-center`}
         style={{
           backgroundImage:
@@ -1728,43 +1900,61 @@ function getPriorityLabel(
 ) {
   switch (priority) {
     case 1:
-      return 'Неплохо бы';
+      return tr(
+        'Неплохо бы',
+      );
 
     case 2:
-      return 'Хочу';
+      return tr(
+        'Хочу',
+      );
 
     case 3:
-      return 'Очень хочу';
+      return tr(
+        'Очень хочу',
+      );
 
     case 4:
-      return 'Очень сильно хочу';
+      return tr(
+        'Очень сильно хочу',
+      );
 
     case 5:
-      return 'Мечтаю';
+      return tr(
+        'Мечтаю',
+      );
 
     default:
-      return 'Очень хочу';
+      return tr(
+        'Очень хочу',
+      );
   }
 }
 
 function formatCurrentDate() {
-  return new Intl.DateTimeFormat(
-    'ru-RU',
-    {
-      weekday:
-        'long',
+  const value =
+    new Intl.DateTimeFormat(
+      getIntlLocale(),
+      {
+        weekday:
+          'long',
 
-      day:
-        'numeric',
+        day:
+          'numeric',
 
-      month:
-        'long',
+        month:
+          'long',
 
-      year:
-        'numeric',
-    },
-  ).format(
-    new Date(),
+        year:
+          'numeric',
+      },
+    ).format(
+      new Date(),
+    );
+
+  return (
+    value.charAt(0).toUpperCase() +
+    value.slice(1)
   );
 }
 
@@ -1772,7 +1962,7 @@ function formatLongDate(
   value: string,
 ) {
   return new Intl.DateTimeFormat(
-    'ru-RU',
+    getIntlLocale(),
     {
       day:
         'numeric',
@@ -1804,7 +1994,7 @@ function formatMonthShort(
   value: string,
 ) {
   return new Intl.DateTimeFormat(
-    'ru-RU',
+    getIntlLocale(),
     {
       month:
         'short',
@@ -1815,7 +2005,7 @@ function formatMonthShort(
         value,
       ),
     )
-    .replace(
+    .replaceAll(
       '.',
       '',
     )
@@ -1826,7 +2016,7 @@ function formatEventTime(
   event: CalendarEvent,
 ) {
   return new Intl.DateTimeFormat(
-    'ru-RU',
+    getIntlLocale(),
     {
       hour:
         '2-digit',
@@ -1845,7 +2035,7 @@ function formatPrice(
   value: number,
 ) {
   return new Intl.NumberFormat(
-    'ru-RU',
+    getIntlLocale(),
     {
       style:
         'currency',
@@ -1889,6 +2079,26 @@ function toLocalDateValue(
 function pluralizeDays(
   count: number,
 ) {
+  /*
+   * Для английского достаточно
+   * единственного и множественного числа.
+   */
+  if (
+    getIntlLocale() ===
+    'en-US'
+  ) {
+    return count === 1
+      ? tr(
+          'день',
+        )
+      : tr(
+          'дней',
+        );
+  }
+
+  /*
+   * Русское склонение.
+   */
   const mod10 =
     count % 10;
 
@@ -1899,7 +2109,9 @@ function pluralizeDays(
     mod10 === 1 &&
     mod100 !== 11
   ) {
-    return 'день';
+    return tr(
+      'день',
+    );
   }
 
   if (
@@ -1910,8 +2122,12 @@ function pluralizeDays(
       mod100 > 14
     )
   ) {
-    return 'дня';
+    return tr(
+      'дня',
+    );
   }
 
-  return 'дней';
+  return tr(
+    'дней',
+  );
 }

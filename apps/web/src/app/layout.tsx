@@ -41,25 +41,39 @@ const geistMono =
 
 export const metadata:
   Metadata = {
-    title:
-      'Вдвоём',
+    title: {
+      default:
+        'Lumo',
+
+      template:
+        '%s · Lumo',
+    },
 
     description:
-      'Общее пространство для двоих',
+      'Lumo — ваше пространство для двоих',
+
+    applicationName:
+      'Lumo',
+
+    icons: {
+      icon:
+        '/icon.svg',
+
+      shortcut:
+        '/icon.svg',
+    },
   };
 
 /*
  * Начальные пользовательские настройки.
  *
- * Скрипт запускается до гидрации React через next/script.
- * Это позволяет заранее применить тёмную тему и выставить
- * корректный lang/data-locale у документа без обычного <script>
- * внутри React-дерева.
+ * В localStorage пока сохраняем старые ключи vdvoem_*.
+ * Это сделано намеренно, чтобы после ребрендинга
+ * у существующих пользователей не сбросились
+ * выбранные язык и тема.
  *
- * Важно: сами React-компоненты языка начинают с русского
- * серверного snapshot и синхронизируются с этим значением
- * сразу после гидрации. Так сервер и первый клиентский рендер
- * всегда совпадают и не вызывают hydration mismatch.
+ * Позже можно сделать бесшовную миграцию
+ * на ключи lumo_*.
  */
 const preferencesScript = `
 (function () {
@@ -151,7 +165,7 @@ export default function RootLayout({
       <body className="flex min-h-full flex-col">
 
         <Script
-          id="vdvoem-preferences"
+          id="lumo-preferences"
           strategy="beforeInteractive"
           dangerouslySetInnerHTML={{
             __html:

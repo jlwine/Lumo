@@ -3,12 +3,16 @@
 /*
  * Ручная тёмная тема.
  *
- * Мы не используем prefers-color-scheme напрямую
- * для цветов приложения, потому что пользователь
- * может выбрать тему вручную.
+ * Класс .dark устанавливается на <html>
+ * переключателем темы.
  */
 @custom-variant dark (&:where(.dark, .dark *));
 
+/*
+ * ---------------------------------------------------------
+ * Светлая тема Lumo
+ * ---------------------------------------------------------
+ */
 :root {
   color-scheme: light;
 
@@ -23,7 +27,7 @@
   --border-soft: #f1e5e1;
 
   --text-primary: #554442;
-  --text-secondary: #876f6a;
+  --text-secondary: #806c67;
   --text-muted: #a18d87;
 
   --accent: #df8e94;
@@ -35,9 +39,21 @@
 
   --success-soft: #edf3e8;
 
-  --shadow-soft: 0 14px 45px rgba(91, 65, 59, 0.05);
+  --shadow-soft:
+    0 14px 45px
+    rgba(
+      91,
+      65,
+      59,
+      0.05
+    );
 }
 
+/*
+ * ---------------------------------------------------------
+ * Тёмная тема Lumo
+ * ---------------------------------------------------------
+ */
 html.dark {
   color-scheme: dark;
 
@@ -64,41 +80,87 @@ html.dark {
 
   --success-soft: #2d352d;
 
-  --shadow-soft: 0 18px 50px rgba(0, 0, 0, 0.22);
+  --shadow-soft:
+    0 18px 50px
+    rgba(
+      0,
+      0,
+      0,
+      0.22
+    );
 }
 
+/*
+ * Позволяем Tailwind использовать
+ * базовые цвета темы.
+ */
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  --color-background:
+    var(--background);
 
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-foreground:
+    var(--foreground);
+
+  --font-sans:
+    var(--font-geist-sans);
+
+  --font-mono:
+    var(--font-geist-mono);
 }
 
+/*
+ * ---------------------------------------------------------
+ * Базовые стили
+ * ---------------------------------------------------------
+ */
 html {
   min-height: 100%;
-  background: var(--background);
+
+  background:
+    var(--background);
+
+  scrollbar-color:
+    #d7bbb9
+    transparent;
+}
+
+html.dark {
+  scrollbar-color:
+    #675156
+    #1c1819;
 }
 
 body {
   min-height: 100%;
+
   margin: 0;
 
-  background: var(--background);
-  color: var(--foreground);
+  background:
+    var(--background);
 
-  font-family: Arial, Helvetica, sans-serif;
+  color:
+    var(--foreground);
+
+  font-family:
+    Arial,
+    Helvetica,
+    sans-serif;
 
   transition:
-    background-color 260ms ease,
-    color 260ms ease;
+    background-color
+      260ms
+      ease,
+    color
+      260ms
+      ease;
 }
 
 /*
- * Плавный переход между темами.
+ * Плавная смена темы.
  *
- * Не применяем transition вообще ко всему через "*",
- * чтобы не испортить существующие hover/transform-анимации.
+ * Не применяем transition через *,
+ * чтобы не поломать существующие
+ * transform-анимации.
  */
 body,
 header,
@@ -116,33 +178,51 @@ select {
     border-color,
     color,
     box-shadow;
-  transition-duration: 260ms;
-  transition-timing-function: ease;
+
+  transition-duration:
+    260ms;
+
+  transition-timing-function:
+    ease;
 }
 
 /*
- * ------------------------------------------------------------------
- * Переходный слой для существующего интерфейса.
- * ------------------------------------------------------------------
+ * ---------------------------------------------------------
+ * Старые страницы Lumo
+ * ---------------------------------------------------------
  *
- * Сейчас значительная часть приложения использует Tailwind-классы
- * с жёстко заданными hex-цветами:
+ * В старом интерфейсе ещё много
+ * Tailwind-классов с hardcoded hex.
  *
- * bg-[#fffaf7]
- * text-[#554442]
- * border-[#eee0db]
+ * Этот блок временно адаптирует их
+ * к тёмной теме.
  *
- * Чтобы тёмная тема заработала сразу на уже написанных страницах,
- * здесь переопределяем наиболее частые текущие цвета.
+ * Новые страницы лучше писать через:
  *
- * По мере дальнейшей разработки эти цвета можно постепенно
- * заменять на семантические переменные.
+ * var(--surface)
+ * var(--text-primary)
+ * var(--accent)
  */
 
-/* Основные светлые фоны -> тёмные поверхности. */
+/*
+ * Основные фоны.
+ */
 html.dark [class~="bg-[#fffaf7]"],
 html.dark [class~="bg-[#fffaf8]"] {
-  background-color: var(--background) !important;
+  background-color:
+    var(--background)
+    !important;
+}
+
+html.dark [class~="bg-[#fffaf7]/95"] {
+  background-color:
+    rgba(
+      28,
+      24,
+      25,
+      0.95
+    )
+    !important;
 }
 
 html.dark [class~="bg-white"],
@@ -150,13 +230,17 @@ html.dark [class~="bg-[#ffffff]"],
 html.dark [class~="bg-[#fffdf9]"],
 html.dark [class~="bg-[#fffdfb]"],
 html.dark [class~="bg-[#fffdfc]"] {
-  background-color: var(--surface) !important;
+  background-color:
+    var(--surface)
+    !important;
 }
 
 html.dark [class~="bg-[#fffaf9]"],
 html.dark [class~="bg-[#fff8f6]"],
 html.dark [class~="bg-[#fff9f7]"] {
-  background-color: var(--surface-soft) !important;
+  background-color:
+    var(--surface-soft)
+    !important;
 }
 
 html.dark [class~="bg-[#fff4f2]"],
@@ -166,40 +250,118 @@ html.dark [class~="bg-[#fff0ec]"],
 html.dark [class~="bg-[#fff1ef]"],
 html.dark [class~="bg-[#fff1f1]"],
 html.dark [class~="bg-[#fff4f3]"] {
-  background-color: var(--surface-muted) !important;
+  background-color:
+    var(--surface-muted)
+    !important;
 }
 
-/* Розовые мягкие состояния и активные элементы. */
+/*
+ * Полупрозрачные белые поверхности.
+ */
+html.dark [class~="bg-white/95"] {
+  background-color:
+    rgba(
+      40,
+      34,
+      36,
+      0.95
+    )
+    !important;
+}
+
+html.dark [class~="bg-white/90"] {
+  background-color:
+    rgba(
+      40,
+      34,
+      36,
+      0.90
+    )
+    !important;
+}
+
+html.dark [class~="bg-white/70"] {
+  background-color:
+    rgba(
+      40,
+      34,
+      36,
+      0.70
+    )
+    !important;
+}
+
+html.dark [class~="bg-white/60"] {
+  background-color:
+    rgba(
+      40,
+      34,
+      36,
+      0.60
+    )
+    !important;
+}
+
+html.dark [class~="bg-white/55"] {
+  background-color:
+    rgba(
+      40,
+      34,
+      36,
+      0.55
+    )
+    !important;
+}
+
+/*
+ * Розовые поверхности.
+ */
 html.dark [class~="bg-[#fde9e8]"],
 html.dark [class~="bg-[#fae5e6]"],
 html.dark [class~="bg-[#f9e4e4]"],
 html.dark [class~="bg-[#fdeaea]"],
 html.dark [class~="bg-[#fff0f0]"],
 html.dark [class~="bg-[#fdeff1]"] {
-  background-color: var(--accent-soft) !important;
+  background-color:
+    var(--accent-soft)
+    !important;
 }
 
 html.dark [class~="bg-[#f6d7da]"],
 html.dark [class~="bg-[#f7e3e5]"] {
-  background-color: #52353a !important;
+  background-color:
+    #52353a
+    !important;
 }
 
-/* Лавандовые поверхности. */
+/*
+ * Лавандовые поверхности.
+ */
 html.dark [class~="bg-[#f5edf7]"],
 html.dark [class~="bg-[#f2eaf8]"],
 html.dark [class~="bg-[#f7f2fa]"],
 html.dark [class~="bg-[#eee7f4]"] {
-  background-color: var(--lavender-soft) !important;
+  background-color:
+    var(--lavender-soft)
+    !important;
 }
 
-/* Зелёные декоративные поверхности. */
+/*
+ * Зелёные поверхности.
+ */
 html.dark [class~="bg-[#e8eee2]"],
 html.dark [class~="bg-[#eef1e8]"],
 html.dark [class~="bg-[#edf3e8]"] {
-  background-color: var(--success-soft) !important;
+  background-color:
+    var(--success-soft)
+    !important;
 }
 
-/* Основные границы. */
+/*
+ * ---------------------------------------------------------
+ * Borders
+ * ---------------------------------------------------------
+ */
 html.dark [class~="border-[#efe2dc]"],
 html.dark [class~="border-[#f0e5e0]"],
 html.dark [class~="border-[#eeded9]"],
@@ -214,7 +376,9 @@ html.dark [class~="border-[#e8dcdf]"],
 html.dark [class~="border-[#e7d3cf]"],
 html.dark [class~="border-[#eadfe5]"],
 html.dark [class~="border-[#e5dce5]"] {
-  border-color: var(--border) !important;
+  border-color:
+    var(--border)
+    !important;
 }
 
 html.dark [class~="border-[#f1e5e1]"],
@@ -222,18 +386,40 @@ html.dark [class~="border-[#f1e7e3]"],
 html.dark [class~="border-[#f0e1dd]"],
 html.dark [class~="border-[#f0e5e1]"],
 html.dark [class~="border-[#f2e6e2]"] {
-  border-color: var(--border-soft) !important;
+  border-color:
+    var(--border-soft)
+    !important;
 }
 
-/* Ошибки и опасные действия оставляем различимыми, но темнее. */
+html.dark [class~="border-white/70"] {
+  border-color:
+    rgba(
+      90,
+      72,
+      77,
+      0.75
+    )
+    !important;
+}
+
+/*
+ * Красные / опасные границы.
+ */
 html.dark [class~="border-[#efc9cc]"],
 html.dark [class~="border-[#efd3d4]"],
 html.dark [class~="border-[#efd4d4]"],
 html.dark [class~="border-[#efc7c9]"] {
-  border-color: #694348 !important;
+  border-color:
+    #694348
+    !important;
 }
 
-/* Основной текст. */
+/*
+ * ---------------------------------------------------------
+ * Основной текст
+ * ---------------------------------------------------------
+ */
+html.dark [class~="text-[#4f403e]"],
 html.dark [class~="text-[#554442]"],
 html.dark [class~="text-[#594844]"],
 html.dark [class~="text-[#584642]"],
@@ -257,16 +443,23 @@ html.dark [class~="text-[#79635f]"],
 html.dark [class~="text-[#79645f]"],
 html.dark [class~="text-[#806a65]"],
 html.dark [class~="text-[#806c67]"],
+html.dark [class~="text-[#806c69]"],
 html.dark [class~="text-[#876f69]"],
+html.dark [class~="text-[#876f6a]"],
 html.dark [class~="text-[#896f69]"],
 html.dark [class~="text-[#8e7771]"] {
-  color: var(--text-primary) !important;
+  color:
+    var(--text-primary)
+    !important;
 }
 
-/* Вторичный текст. */
+/*
+ * Вторичный / приглушённый текст.
+ */
 html.dark [class~="text-[#907b75]"],
 html.dark [class~="text-[#917975]"],
 html.dark [class~="text-[#927d78]"],
+html.dark [class~="text-[#96827e]"],
 html.dark [class~="text-[#98837e]"],
 html.dark [class~="text-[#9a8580]"],
 html.dark [class~="text-[#9a8588]"],
@@ -274,6 +467,7 @@ html.dark [class~="text-[#9b8580]"],
 html.dark [class~="text-[#9c8882]"],
 html.dark [class~="text-[#9e8983]"],
 html.dark [class~="text-[#9f8a84]"],
+html.dark [class~="text-[#a08b85]"],
 html.dark [class~="text-[#a18b86]"],
 html.dark [class~="text-[#a18d87]"],
 html.dark [class~="text-[#a38f89]"],
@@ -283,13 +477,18 @@ html.dark [class~="text-[#aa948e]"],
 html.dark [class~="text-[#ac9892]"],
 html.dark [class~="text-[#ad948d]"],
 html.dark [class~="text-[#ad9993]"],
+html.dark [class~="text-[#ae9994]"],
 html.dark [class~="text-[#b09b95]"],
 html.dark [class~="text-[#b29e98]"],
 html.dark [class~="text-[#baa7a1]"] {
-  color: var(--text-muted) !important;
+  color:
+    var(--text-muted)
+    !important;
 }
 
-/* Акцентные розовые цвета оставляем яркими в тёмной теме. */
+/*
+ * Розовый акцентный текст.
+ */
 html.dark [class~="text-[#c16b74]"],
 html.dark [class~="text-[#c36f77]"],
 html.dark [class~="text-[#c8757c]"],
@@ -302,147 +501,153 @@ html.dark [class~="text-[#dc7d87]"],
 html.dark [class~="text-[#df8993]"],
 html.dark [class~="text-[#df8e94]"],
 html.dark [class~="text-[#df939b]"] {
-  color: var(--accent) !important;
+  color:
+    var(--accent)
+    !important;
 }
 
-/* Основные розовые кнопки. */
+/*
+ * Розовые кнопки.
+ */
 html.dark [class~="bg-[#df8e94]"],
 html.dark [class~="bg-[#df858e]"],
 html.dark [class~="bg-[#df818b]"] {
-  background-color: var(--accent) !important;
+  background-color:
+    var(--accent)
+    !important;
 }
 
-/* Градиент приветственного блока. */
+/*
+ * ---------------------------------------------------------
+ * Градиенты
+ * ---------------------------------------------------------
+ */
 html.dark [class~="from-[#fff0ec]"] {
-  --tw-gradient-from: #38282b !important;
+  --tw-gradient-from:
+    #38282b
+    !important;
 }
 
 html.dark [class~="via-[#fff4ee]"] {
-  --tw-gradient-via: #34292a !important;
+  --tw-gradient-via:
+    #34292a
+    !important;
+}
+
+html.dark [class~="via-[#fff5ef]"] {
+  --tw-gradient-via:
+    #34292a
+    !important;
 }
 
 html.dark [class~="to-[#f2eaf8]"] {
-  --tw-gradient-to: #302a38 !important;
+  --tw-gradient-to:
+    #302a38
+    !important;
 }
 
-/* Поля ввода. */
+html.dark [class~="to-[#f1ebf8]"] {
+  --tw-gradient-to:
+    #302a38
+    !important;
+}
+
+html.dark [class~="from-[#fffaf8]"] {
+  --tw-gradient-from:
+    #2a2325
+    !important;
+}
+
+html.dark [class~="to-[#f7f0f6]"] {
+  --tw-gradient-to:
+    #312a35
+    !important;
+}
+
+/*
+ * ---------------------------------------------------------
+ * Формы
+ * ---------------------------------------------------------
+ */
 html.dark input,
 html.dark textarea,
 html.dark select {
-  caret-color: var(--accent);
+  caret-color:
+    var(--accent);
 }
 
 html.dark input::placeholder,
 html.dark textarea::placeholder {
-  color: #857377;
+  color:
+    #857377;
 }
 
-/*
- * Нативные элементы браузера тоже должны
- * соответствовать выбранной теме.
- */
 html.dark input[type="date"],
 html.dark input[type="time"] {
-  color-scheme: dark;
+  color-scheme:
+    dark;
 }
 
 /*
- * Небольшое улучшение скроллбаров.
- */
-html {
-  scrollbar-color: #d7bbb9 transparent;
-}
-
-html.dark {
-  scrollbar-color: #675156 #1c1819;
-}
-
-
-/*
- * ------------------------------------------------------------------
- * Дополнительные исправления тёмной темы.
- * ------------------------------------------------------------------
+ * ---------------------------------------------------------
+ * Autofill браузера
+ * ---------------------------------------------------------
  *
- * Некоторые страницы используют прозрачные светлые фоны
- * и немного другие цвета градиентов.
- * Без этих правил они выглядят как белый "засвет"
- * поверх тёмной темы.
+ * Chrome любит самостоятельно
+ * красить сохранённые поля.
+ * Здесь принудительно приводим
+ * autofill к теме Lumo.
  */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+  -webkit-text-fill-color:
+    var(--text-primary)
+    !important;
 
-/* Верхняя панель главной страницы. */
-html.dark [class~="bg-[#fffaf7]/95"] {
-  background-color: rgba(28, 24, 25, 0.95) !important;
+  -webkit-box-shadow:
+    0 0 0 1000px
+    var(--surface-soft)
+    inset
+    !important;
+
+  box-shadow:
+    0 0 0 1000px
+    var(--surface-soft)
+    inset
+    !important;
+
+  caret-color:
+    var(--text-primary);
+
+  transition:
+    background-color
+      9999s
+      ease-in-out
+      0s;
 }
 
-/* Полупрозрачные белые поверхности. */
-html.dark [class~="bg-white/95"] {
-  background-color: rgba(40, 34, 36, 0.95) !important;
-}
+html.dark input:-webkit-autofill,
+html.dark input:-webkit-autofill:hover,
+html.dark input:-webkit-autofill:focus,
+html.dark input:-webkit-autofill:active {
+  -webkit-text-fill-color:
+    var(--text-primary)
+    !important;
 
-html.dark [class~="bg-white/90"] {
-  background-color: rgba(40, 34, 36, 0.90) !important;
-}
+  -webkit-box-shadow:
+    0 0 0 1000px
+    var(--surface-soft)
+    inset
+    !important;
 
-html.dark [class~="bg-white/70"] {
-  background-color: rgba(40, 34, 36, 0.70) !important;
-}
+  box-shadow:
+    0 0 0 1000px
+    var(--surface-soft)
+    inset
+    !important;
 
-html.dark [class~="bg-white/60"] {
-  background-color: rgba(40, 34, 36, 0.60) !important;
+  caret-color:
+    var(--text-primary);
 }
-
-html.dark [class~="bg-white/55"] {
-  background-color: rgba(40, 34, 36, 0.55) !important;
-}
-
-/* Полупрозрачные белые границы. */
-html.dark [class~="border-white/70"] {
-  border-color: rgba(90, 72, 77, 0.75) !important;
-}
-
-/*
- * Градиент шапки "Доски дня".
- * Там используются немного другие светлые оттенки,
- * чем на главной странице.
- */
-html.dark [class~="via-[#fff5ef]"] {
-  --tw-gradient-via: #34292a !important;
-}
-
-html.dark [class~="to-[#f1ebf8]"] {
-  --tw-gradient-to: #302a38 !important;
-}
-
-/* Дополнительные светлые градиенты на пустых карточках. */
-html.dark [class~="from-[#fffaf8]"] {
-  --tw-gradient-from: #2a2325 !important;
-}
-
-html.dark [class~="to-[#f7f0f6]"] {
-  --tw-gradient-to: #312a35 !important;
-}
-
-/*
- * Иногда Tailwind генерирует градиентные CSS-переменные
- * так, что старый светлый цвет остаётся в промежуточном значении.
- * Эти правила гарантируют, что конкретные блоки не будут светиться.
- */
-html.dark [class*="bg-gradient-to-r"][class*="from-[#fff0ec]"] {
-  background-image:
-    linear-gradient(
-      to right,
-      #38282b,
-      #34292a,
-      #302a38
-    ) !important;
-}
-
-html.dark [class*="bg-gradient-to-br"][class*="from-[#fffaf8]"] {
-  background-image:
-    linear-gradient(
-      to bottom right,
-      #2a2325,
-      #312a35
-    ) !important;
-}
-

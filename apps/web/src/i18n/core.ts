@@ -30,6 +30,9 @@ const english: Record<string, string> = {
   'Закрыть': 'Close',
   'Изменить': 'Edit',
 
+  'Планы, желания и моменты, которые вы создаёте вместе.':
+  'Plans, wishes, and moments you create together.',
+
   'Ваше общее пространство': 'Your shared space',
   'Добро пожаловать, вы вдвоём! 💕': 'Welcome, you are together! 💕',
   'Ваши планы рядом, даже когда вы далеко.': 'Your plans stay close, even when you are far apart.',
@@ -41,7 +44,7 @@ const english: Record<string, string> = {
   'Весь день': 'All day',
   'Смотреть все события →': 'View all events →',
   'Желаний пока нет': 'No wishes yet',
-  'Перейти к вишлистам →': 'Go to wishlists →',
+  'Перейти к вишлистам': 'Go to wishlists',
   'Вы': 'You',
   'Партнёр': 'Partner',
   'Сегодняшние моменты': "Today's moments",
