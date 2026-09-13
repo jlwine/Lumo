@@ -1,3 +1,7 @@
+import type {
+  Gender,
+} from '@/types/auth';
+
 export type SearchUser = {
   id: string;
   nickname: string;
@@ -18,6 +22,7 @@ export type PublicUserProfile = {
   displayName: string | null;
   avatarUrl: string | null;
   birthDate: string | null;
+  gender: Gender | null;
   createdAt: string;
 
   relationship: {

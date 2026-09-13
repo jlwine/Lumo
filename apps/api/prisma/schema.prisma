@@ -7,6 +7,11 @@ datasource db {
   provider = "postgresql"
 }
 
+enum Gender {
+  MALE
+  FEMALE
+}
+
 enum RelationshipStatus {
   ACTIVE
   ENDED
@@ -27,6 +32,15 @@ model User {
   displayName  String?
   avatarUrl    String?
   birthDate    DateTime? @db.Date
+
+  /*
+   * Пол пользователя.
+   *
+   * Поле nullable только для совместимости
+   * с аккаунтами, созданными до этой миграции.
+   * Для новых регистраций пол обязателен.
+   */
+  gender Gender?
 
   /*
    * Дата подтверждения email.

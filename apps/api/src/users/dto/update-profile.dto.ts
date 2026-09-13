@@ -1,5 +1,6 @@
 import {
   IsDateString,
+  IsIn,
   IsOptional,
   IsString,
   Matches,
@@ -26,4 +27,22 @@ export class UpdateProfileDto {
   @IsOptional()
   @IsDateString()
   birthDate?: string;
+
+
+  @IsOptional()
+  @IsString({
+    message: 'Пол должен быть строкой',
+  })
+  @IsIn(
+    [
+      'MALE',
+      'FEMALE',
+    ],
+    {
+      message: 'Выберите пол',
+    },
+  )
+  gender?:
+    | 'MALE'
+    | 'FEMALE';
 }

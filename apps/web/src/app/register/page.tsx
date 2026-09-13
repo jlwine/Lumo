@@ -33,6 +33,7 @@ import {
 } from '@/lib/auth';
 
 import type {
+  Gender,
   LoginResponse,
   RegisterResponse,
 } from '@/types/auth';
@@ -60,6 +61,14 @@ export default function RegisterPage() {
     setNickname,
   ] =
     useState('');
+
+  const [
+    gender,
+    setGender,
+  ] =
+    useState<Gender | null>(
+      null,
+    );
 
   const [
     password,
@@ -96,6 +105,16 @@ export default function RegisterPage() {
     setError(
       null,
     );
+
+    if (!gender) {
+      setError(
+        tr(
+          'Выберите пол',
+        ),
+      );
+
+      return;
+    }
 
     if (
       password !==
@@ -145,6 +164,8 @@ export default function RegisterPage() {
                 displayName
                   .trim() ||
                 undefined,
+
+              gender,
             }),
         },
       );
@@ -434,6 +455,82 @@ export default function RegisterPage() {
                     'Латинские буквы, цифры и _',
                   )}
                 </p>
+
+              </div>
+
+              <div>
+
+                <p className="mb-2 block text-sm font-medium text-[var(--text-secondary)]">
+                  {tr(
+                    'Пол',
+                  )}
+                </p>
+
+                <div
+                  role="group"
+                  aria-label={
+                    tr(
+                      'Пол',
+                    )
+                  }
+                  className="grid grid-cols-2 gap-3"
+                >
+
+                  <button
+                    type="button"
+                    aria-pressed={
+                      gender ===
+                      'MALE'
+                    }
+                    onClick={() =>
+                      setGender(
+                        'MALE',
+                      )
+                    }
+                    className={[
+                      'rounded-2xl border px-4 py-3.5 text-sm font-medium transition-all duration-200',
+
+                      gender ===
+                      'MALE'
+                        ? 'border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)] ring-2 ring-[var(--accent-soft)]'
+                        : 'border-[var(--border)] bg-[var(--surface-soft)] text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)]',
+                    ].join(
+                      ' ',
+                    )}
+                  >
+                    {tr(
+                      'Мужской',
+                    )}
+                  </button>
+
+                  <button
+                    type="button"
+                    aria-pressed={
+                      gender ===
+                      'FEMALE'
+                    }
+                    onClick={() =>
+                      setGender(
+                        'FEMALE',
+                      )
+                    }
+                    className={[
+                      'rounded-2xl border px-4 py-3.5 text-sm font-medium transition-all duration-200',
+
+                      gender ===
+                      'FEMALE'
+                        ? 'border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)] ring-2 ring-[var(--accent-soft)]'
+                        : 'border-[var(--border)] bg-[var(--surface-soft)] text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)]',
+                    ].join(
+                      ' ',
+                    )}
+                  >
+                    {tr(
+                      'Женский',
+                    )}
+                  </button>
+
+                </div>
 
               </div>
 

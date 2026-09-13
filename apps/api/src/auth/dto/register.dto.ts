@@ -1,5 +1,6 @@
 import {
   IsEmail,
+  IsIn,
   IsOptional,
   IsString,
   Length,
@@ -41,4 +42,21 @@ export class RegisterDto {
     message: 'Имя не может быть длиннее 50 символов',
   })
   displayName?: string;
+
+
+  @IsString({
+    message: 'Пол должен быть строкой',
+  })
+  @IsIn(
+    [
+      'MALE',
+      'FEMALE',
+    ],
+    {
+      message: 'Выберите пол',
+    },
+  )
+  gender:
+    | 'MALE'
+    | 'FEMALE';
 }

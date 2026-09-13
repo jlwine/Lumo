@@ -137,6 +137,9 @@ export class AuthService {
             data.displayName
               ?.trim() ||
             null,
+
+          gender:
+            data.gender,
         },
 
         select: {
@@ -146,6 +149,7 @@ export class AuthService {
           displayName: true,
           avatarUrl: true,
           birthDate: true,
+          gender: true,
           emailVerifiedAt: true,
           createdAt: true,
         },
@@ -274,6 +278,9 @@ export class AuthService {
         birthDate:
           user.birthDate,
 
+        gender:
+          user.gender,
+
         emailVerifiedAt:
           user.emailVerifiedAt,
       },
@@ -304,6 +311,7 @@ export class AuthService {
           displayName: true,
           avatarUrl: true,
           birthDate: true,
+          gender: true,
           emailVerifiedAt: true,
           createdAt: true,
         },

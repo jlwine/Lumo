@@ -1,3 +1,7 @@
+export type Gender =
+  | 'MALE'
+  | 'FEMALE';
+
 export type User = {
   id: string;
   email: string;
@@ -5,6 +9,7 @@ export type User = {
   displayName: string | null;
   avatarUrl: string | null;
   birthDate: string | null;
+  gender: Gender | null;
 
   /*
    * null означает, что email
@@ -25,6 +30,7 @@ export type RegisterResponse = {
   displayName: string | null;
   avatarUrl: string | null;
   birthDate: string | null;
+  gender: Gender;
   emailVerifiedAt: string | null;
   createdAt: string;
 };

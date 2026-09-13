@@ -490,6 +490,37 @@ export default function ProfilePage() {
 
                   <div className="flex items-start gap-3">
 
+                    <UserRound
+                      size={18}
+                      className="mt-0.5 shrink-0 text-[#83759a]"
+                    />
+
+                    <div>
+
+                      <p className="text-sm text-[#9b8580]">{tr('Пол')}</p>
+
+                      <p className="mt-1 font-medium text-[#65514d]">
+                        {profile.gender ===
+                        'MALE'
+                          ? tr(
+                              'Мужской',
+                            )
+                          : profile.gender ===
+                              'FEMALE'
+                            ? tr(
+                                'Женский',
+                              )
+                            : tr(
+                                'Не указан',
+                              )}
+                      </p>
+
+                    </div>
+
+                  </div>
+
+                  <div className="mt-5 flex items-start gap-3">
+
                     <Cake
                       size={18}
                       className="mt-0.5 shrink-0 text-[#c07b82]"

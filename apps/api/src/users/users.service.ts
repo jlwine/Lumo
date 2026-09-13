@@ -41,6 +41,7 @@ export class UsersService {
         displayName: true,
         avatarUrl: true,
         birthDate: true,
+        gender: true,
         createdAt: true,
       },
 
@@ -138,6 +139,7 @@ export class UsersService {
           displayName: true,
           avatarUrl: true,
           birthDate: true,
+          gender: true,
           createdAt: true,
         },
       });
@@ -373,6 +375,9 @@ export class UsersService {
       birthDate:
         user.birthDate,
 
+      gender:
+        user.gender,
+
       createdAt:
         user.createdAt,
 
@@ -519,6 +524,12 @@ export class UsersService {
             : undefined,
 
         birthDate,
+
+        gender:
+          data.gender !==
+          undefined
+            ? data.gender
+            : undefined,
       },
 
       select: {
@@ -528,6 +539,8 @@ export class UsersService {
         displayName: true,
         avatarUrl: true,
         birthDate: true,
+        gender: true,
+        emailVerifiedAt: true,
         createdAt: true,
         updatedAt: true,
       },
@@ -636,6 +649,8 @@ export class UsersService {
         displayName: true,
         avatarUrl: true,
         birthDate: true,
+        gender: true,
+        emailVerifiedAt: true,
         createdAt: true,
         updatedAt: true,
       },
@@ -779,6 +794,8 @@ export class UsersService {
         displayName: true,
         avatarUrl: true,
         birthDate: true,
+        gender: true,
+        emailVerifiedAt: true,
         createdAt: true,
         updatedAt: true,
       },

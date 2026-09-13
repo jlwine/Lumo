@@ -55,6 +55,7 @@ import {
 } from '@/lib/crop-image';
 
 import type {
+  Gender,
   User,
 } from '@/types/auth';
 
@@ -99,6 +100,14 @@ export default function ProfileSettingsPage() {
     setBirthDate,
   ] =
     useState('');
+
+  const [
+    gender,
+    setGender,
+  ] =
+    useState<Gender | null>(
+      null,
+    );
 
   /*
    * Данные аккаунта
@@ -312,6 +321,11 @@ export default function ProfileSettingsPage() {
               )
             : '',
         );
+
+        setGender(
+          result.gender ??
+            null,
+        );
       } catch (error) {
         if (cancelled) {
           return;
@@ -423,6 +437,12 @@ export default function ProfileSettingsPage() {
                       birthDate,
                     }
                   : {}),
+
+                ...(gender
+                  ? {
+                      gender,
+                    }
+                  : {}),
               }),
           },
         );
@@ -446,6 +466,11 @@ export default function ProfileSettingsPage() {
               result.birthDate,
             )
           : '',
+      );
+
+      setGender(
+        result.gender ??
+          null,
       );
 
       setSuccess(
@@ -1415,6 +1440,90 @@ export default function ProfileSettingsPage() {
                     'Только латинские буквы, цифры и нижнее подчёркивание.',
                   )}
                 </p>
+
+              </div>
+
+              <div>
+
+                <p className="mb-2 block text-sm font-medium text-[#665451]">
+                  {tr(
+                    'Пол',
+                  )}
+                </p>
+
+                <div
+                  role="group"
+                  aria-label={
+                    tr(
+                      'Пол',
+                    )
+                  }
+                  className="grid grid-cols-2 gap-3"
+                >
+
+                  <button
+                    type="button"
+                    aria-pressed={
+                      gender ===
+                      'MALE'
+                    }
+                    onClick={() =>
+                      setGender(
+                        'MALE',
+                      )
+                    }
+                    className={[
+                      'rounded-2xl border px-4 py-3.5 text-sm font-medium transition-all duration-150',
+
+                      gender ===
+                      'MALE'
+                        ? 'border-[#df9ca1] bg-[#fff0ef] text-[#bd666e] ring-2 ring-[#f7e3e5]'
+                        : 'border-[#eadbd7] bg-[#fffdfc] text-[#665451] hover:border-[#dfaaa7] hover:bg-[#fff7f5]',
+                    ].join(
+                      ' ',
+                    )}
+                  >
+                    {tr(
+                      'Мужской',
+                    )}
+                  </button>
+
+                  <button
+                    type="button"
+                    aria-pressed={
+                      gender ===
+                      'FEMALE'
+                    }
+                    onClick={() =>
+                      setGender(
+                        'FEMALE',
+                      )
+                    }
+                    className={[
+                      'rounded-2xl border px-4 py-3.5 text-sm font-medium transition-all duration-150',
+
+                      gender ===
+                      'FEMALE'
+                        ? 'border-[#df9ca1] bg-[#fff0ef] text-[#bd666e] ring-2 ring-[#f7e3e5]'
+                        : 'border-[#eadbd7] bg-[#fffdfc] text-[#665451] hover:border-[#dfaaa7] hover:bg-[#fff7f5]',
+                    ].join(
+                      ' ',
+                    )}
+                  >
+                    {tr(
+                      'Женский',
+                    )}
+                  </button>
+
+                </div>
+
+                {!gender && (
+                  <p className="mt-2 text-xs text-[#a9948e]">
+                    {tr(
+                      'Пол ещё не указан. Выберите его и сохраните изменения.',
+                    )}
+                  </p>
+                )}
 
               </div>
 
