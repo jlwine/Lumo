@@ -383,31 +383,31 @@ export class AuthService {
     }
 
     /*
-     * Одной транзакцией:
+     * Подтверждение email делаем идемпотентным.
      *
-     * 1. подтверждаем email;
-     * 2. удаляем использованный токен.
+     * Токен здесь намеренно НЕ удаляем:
+     * React в development может повторно
+     * выполнить эффект страницы подтверждения.
+     *
+     * Повторный запрос с тем же валидным токеном
+     * просто снова вернёт успешный результат.
+     *
+     * При смене email старый токен всё равно
+     * становится недействительным, потому что
+     * createEmailVerificationToken() делает upsert
+     * по userId и заменяет tokenHash новым.
      */
-    await this.prisma.$transaction([
-      this.prisma.user.update({
-        where: {
-          id:
-            verificationToken.userId,
-        },
+    await this.prisma.user.update({
+      where: {
+        id:
+          verificationToken.userId,
+      },
 
-        data: {
-          emailVerifiedAt:
-            new Date(),
-        },
-      }),
-
-      this.prisma.emailVerificationToken.delete({
-        where: {
-          id:
-            verificationToken.id,
-        },
-      }),
-    ]);
+      data: {
+        emailVerifiedAt:
+          new Date(),
+      },
+    });
 
     return {
       success:

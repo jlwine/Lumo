@@ -1,11 +1,16 @@
 'use client';
 
 import {
+  Suspense,
   useEffect,
   useState,
 } from 'react';
 
 import Link from 'next/link';
+
+import {
+  useSearchParams,
+} from 'next/navigation';
 
 import {
   CheckCircle2,
@@ -37,6 +42,70 @@ import type {
   AuthActionResponse,
 } from '@/types/auth';
 
+/*
+ * В development React Strict Mode может
+ * повторно запустить effect после монтирования.
+ *
+ * Храним Promise по токену на уровне модуля,
+ * чтобы один и тот же verification token
+ * физически не отправлялся на backend дважды.
+ */
+const verificationRequests =
+  new Map<
+    string,
+    Promise<AuthActionResponse>
+  >();
+
+function verifyEmailOnce(
+  token:
+    string,
+) {
+  const existingRequest =
+    verificationRequests.get(
+      token,
+    );
+
+  if (
+    existingRequest
+  ) {
+    return existingRequest;
+  }
+
+  const request =
+    apiRequest<AuthActionResponse>(
+      '/auth/verify-email',
+      {
+        method:
+          'POST',
+
+        body:
+          JSON.stringify({
+            token,
+          }),
+      },
+    );
+
+  verificationRequests.set(
+    token,
+    request,
+  );
+
+  /*
+   * Если запрос реально завершился ошибкой,
+   * удаляем его из кеша, чтобы пользователь
+   * мог повторить попытку после обновления.
+   */
+  void request.catch(
+    () => {
+      verificationRequests.delete(
+        token,
+      );
+    },
+  );
+
+  return request;
+}
+
 type VerificationState =
   | 'loading'
   | 'sent'
@@ -44,7 +113,22 @@ type VerificationState =
   | 'error';
 
 export default function VerifyEmailPage() {
+  return (
+    <Suspense
+      fallback={
+        <VerificationLoading />
+      }
+    >
+      <VerifyEmailContent />
+    </Suspense>
+  );
+}
+
+function VerifyEmailContent() {
   useLanguageVersion();
+
+  const searchParams =
+    useSearchParams();
 
   const [
     state,
@@ -91,13 +175,21 @@ export default function VerifyEmailPage() {
       false;
 
     async function initialize() {
-      const params =
-        new URLSearchParams(
-          window.location.search,
-        );
+      /*
+       * Небольшая async-граница нужна ещё и затем,
+       * чтобы все изменения state происходили
+       * асинхронно относительно самого effect.
+       */
+      await Promise.resolve();
+
+      if (
+        cancelled
+      ) {
+        return;
+      }
 
       const token =
-        params
+        searchParams
           .get(
             'token',
           )
@@ -105,7 +197,7 @@ export default function VerifyEmailPage() {
         null;
 
       const emailValue =
-        params
+        searchParams
           .get(
             'email',
           )
@@ -113,13 +205,13 @@ export default function VerifyEmailPage() {
         '';
 
       const sent =
-        params.get(
+        searchParams.get(
           'sent',
         ) ===
         '1';
 
       const verified =
-        params.get(
+        searchParams.get(
           'verified',
         ) ===
         '1';
@@ -134,7 +226,9 @@ export default function VerifyEmailPage() {
         ),
       );
 
-      if (verified) {
+      if (
+        verified
+      ) {
         setState(
           'success',
         );
@@ -142,24 +236,23 @@ export default function VerifyEmailPage() {
         return;
       }
 
-      if (token) {
+      if (
+        token
+      ) {
         try {
-          await apiRequest<AuthActionResponse>(
-            '/auth/verify-email',
-            {
-              method:
-                'POST',
-
-              body:
-                JSON.stringify({
-                  token,
-                }),
-            },
+          await verifyEmailOnce(
+            token,
           );
 
-          if (cancelled) {
+          if (
+            cancelled
+          ) {
             return;
           }
+
+          setError(
+            null,
+          );
 
           setState(
             'success',
@@ -167,7 +260,11 @@ export default function VerifyEmailPage() {
 
           /*
            * После успешного подтверждения
-           * удаляем одноразовый токен из URL.
+           * убираем одноразовый токен из URL.
+           *
+           * Если React повторно смонтирует компонент,
+           * следующий проход увидит verified=1
+           * и больше не будет обращаться к API.
            */
           window.history.replaceState(
             null,
@@ -175,7 +272,9 @@ export default function VerifyEmailPage() {
             '/verify-email?verified=1',
           );
         } catch (error) {
-          if (cancelled) {
+          if (
+            cancelled
+          ) {
             return;
           }
 
@@ -195,13 +294,21 @@ export default function VerifyEmailPage() {
         return;
       }
 
-      if (sent) {
+      if (
+        sent
+      ) {
         setState(
           'sent',
         );
 
         return;
       }
+
+      setError(
+        tr(
+          'Ссылка недействительна или устарела',
+        ),
+      );
 
       setState(
         'error',
@@ -214,7 +321,9 @@ export default function VerifyEmailPage() {
       cancelled =
         true;
     };
-  }, []);
+  }, [
+    searchParams,
+  ]);
 
   async function handleResend() {
     const accessToken =
@@ -273,14 +382,7 @@ export default function VerifyEmailPage() {
     'loading'
   ) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-[var(--background)]">
-
-        <LumoMark
-          size={48}
-          className="animate-pulse"
-        />
-
-      </main>
+      <VerificationLoading />
     );
   }
 
@@ -482,6 +584,19 @@ export default function VerifyEmailPage() {
         )}
 
       </div>
+
+    </main>
+  );
+}
+
+function VerificationLoading() {
+  return (
+    <main className="flex min-h-screen items-center justify-center bg-[var(--background)]">
+
+      <LumoMark
+        size={48}
+        className="animate-pulse"
+      />
 
     </main>
   );
