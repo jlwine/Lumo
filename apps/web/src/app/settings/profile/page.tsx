@@ -19,6 +19,8 @@ import {
   ArrowLeft,
   Cake,
   Camera,
+  CheckCircle2,
+  CircleAlert,
   Eye,
   EyeOff,
   Heart,
@@ -28,6 +30,7 @@ import {
   Minus,
   Plus,
   Save,
+  Send,
   ShieldCheck,
   UserRound,
   X,
@@ -55,6 +58,7 @@ import {
 } from '@/lib/crop-image';
 
 import type {
+  AuthActionResponse,
   Gender,
   User,
 } from '@/types/auth';
@@ -146,6 +150,12 @@ export default function ProfileSettingsPage() {
   const [
     isSavingEmail,
     setIsSavingEmail,
+  ] =
+    useState(false);
+
+  const [
+    isResendingVerification,
+    setIsResendingVerification,
   ] =
     useState(false);
 
@@ -614,9 +624,13 @@ export default function ProfileSettingsPage() {
       );
 
       setAccountSuccess(
-        tr(
-          'Email сохранён',
-        ),
+        result.emailVerifiedAt
+          ? tr(
+              'Email сохранён',
+            )
+          : tr(
+              'Email изменён. Подтвердите новый адрес.',
+            ),
       );
     } catch (error) {
       if (
@@ -634,6 +648,77 @@ export default function ProfileSettingsPage() {
       }
     } finally {
       setIsSavingEmail(
+        false,
+      );
+    }
+  }
+
+  /*
+   * Повторно отправляем письмо
+   * подтверждения текущего email.
+   */
+  async function resendVerificationEmail() {
+    const token =
+      getAccessToken();
+
+    if (!token) {
+      removeAccessToken();
+
+      router.replace(
+        '/login',
+      );
+
+      return;
+    }
+
+    try {
+      setIsResendingVerification(
+        true,
+      );
+
+      setAccountError(
+        null,
+      );
+
+      setAccountSuccess(
+        null,
+      );
+
+      const result =
+        await apiRequest<AuthActionResponse>(
+          '/auth/resend-verification-email',
+          {
+            method:
+              'POST',
+
+            headers: {
+              Authorization:
+                `Bearer ${token}`,
+            },
+          },
+        );
+
+      setAccountSuccess(
+        tr(
+          result.message,
+        ),
+      );
+    } catch (error) {
+      if (
+        error instanceof Error
+      ) {
+        setAccountError(
+          error.message,
+        );
+      } else {
+        setAccountError(
+          tr(
+            'Не удалось отправить письмо подтверждения',
+          ),
+        );
+      }
+    } finally {
+      setIsResendingVerification(
         false,
       );
     }
@@ -1164,6 +1249,17 @@ export default function ProfileSettingsPage() {
         0,
         10,
       );
+
+  const normalizedEditedEmail =
+    email
+      .trim()
+      .toLowerCase();
+
+  const emailHasUnsavedChanges =
+    normalizedEditedEmail !==
+    user.email
+      .trim()
+      .toLowerCase();
 
   return (
     <main className="min-h-screen bg-[#fffaf8] px-5 py-8">
@@ -1743,6 +1839,126 @@ export default function ProfileSettingsPage() {
                       placeholder="name@example.com"
                       className="w-full rounded-2xl border border-[#eadbd7] bg-[#fffdfc] px-4 py-3.5 text-[#554442] outline-none transition focus:border-[#df9ca1] focus:ring-4 focus:ring-[#f7e3e5]"
                     />
+
+                  </div>
+
+                  <div
+                    className={[
+                      'rounded-2xl border px-4 py-4',
+
+                      emailHasUnsavedChanges
+                        ? 'border-[#eadbd7] bg-[#fffdfc]'
+                        : user.emailVerifiedAt
+                          ? 'border-[#d7e7d1] bg-[#f4f9f0]'
+                          : 'border-[#efd9c7] bg-[#fff8ee]',
+                    ].join(
+                      ' ',
+                    )}
+                  >
+
+                    {emailHasUnsavedChanges ? (
+                      <div className="flex items-start gap-3">
+
+                        <CircleAlert
+                          size={18}
+                          className="mt-0.5 shrink-0 text-[#b88a63]"
+                        />
+
+                        <div>
+
+                          <p className="text-sm font-medium text-[#725f58]">
+                            {tr(
+                              'Новый email нужно будет подтвердить',
+                            )}
+                          </p>
+
+                          <p className="mt-1 text-xs leading-5 text-[#a28d87]">
+                            {tr(
+                              'После сохранения мы отправим письмо подтверждения на новый адрес.',
+                            )}
+                          </p>
+
+                        </div>
+
+                      </div>
+                    ) : user.emailVerifiedAt ? (
+                      <div className="flex items-start gap-3">
+
+                        <CheckCircle2
+                          size={18}
+                          className="mt-0.5 shrink-0 text-[#6f8a63]"
+                        />
+
+                        <div>
+
+                          <p className="text-sm font-medium text-[#647557]">
+                            {tr(
+                              'Email подтверждён',
+                            )}
+                          </p>
+
+                          <p className="mt-1 text-xs leading-5 text-[#819078]">
+                            {tr(
+                              'Адрес подтверждён и может использоваться для восстановления аккаунта.',
+                            )}
+                          </p>
+
+                        </div>
+
+                      </div>
+                    ) : (
+                      <>
+
+                        <div className="flex items-start gap-3">
+
+                          <CircleAlert
+                            size={18}
+                            className="mt-0.5 shrink-0 text-[#c18a59]"
+                          />
+
+                          <div>
+
+                            <p className="text-sm font-medium text-[#8a694d]">
+                              {tr(
+                                'Email не подтверждён',
+                              )}
+                            </p>
+
+                            <p className="mt-1 text-xs leading-5 text-[#a3866c]">
+                              {tr(
+                                'Подтвердите адрес по ссылке из письма.',
+                              )}
+                            </p>
+
+                          </div>
+
+                        </div>
+
+                        <button
+                          type="button"
+                          disabled={
+                            isResendingVerification
+                          }
+                          onClick={() =>
+                            void resendVerificationEmail()
+                          }
+                          className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl border border-[#e7cdb8] bg-white px-4 py-2.5 text-sm font-medium text-[#a96e5a] transition-all hover:border-[#d9ad91] hover:bg-[#fff3ea] active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50"
+                        >
+                          <Send
+                            size={15}
+                          />
+
+                          {isResendingVerification
+                            ? tr(
+                                'Отправляем письмо...',
+                              )
+                            : tr(
+                                'Отправить письмо подтверждения',
+                              )}
+                        </button>
+
+                      </>
+                    )}
 
                   </div>
 

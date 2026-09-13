@@ -8,6 +8,10 @@ import {
 import * as bcrypt from 'bcrypt';
 
 import {
+  AuthService,
+} from '../auth/auth.service.js';
+
+import {
   PrismaService,
 } from '../prisma/prisma.service.js';
 
@@ -28,6 +32,9 @@ export class UsersService {
   constructor(
     private readonly prisma:
       PrismaService,
+
+    private readonly authService:
+      AuthService,
   ) {}
 
   /*
@@ -570,6 +577,7 @@ export class UsersService {
           id: true,
           email: true,
           passwordHash: true,
+          emailVerifiedAt: true,
         },
       });
 
@@ -631,30 +639,75 @@ export class UsersService {
       );
     }
 
-    return this.prisma.user.update({
-      where: {
-        id:
-          userId,
-      },
+    /*
+     * Если адрес фактически не изменился,
+     * не сбрасываем уже существующее
+     * подтверждение email.
+     */
+    if (
+      normalizedEmail ===
+      user.email
+    ) {
+      return this.prisma.user.findUniqueOrThrow({
+        where: {
+          id:
+            userId,
+        },
 
-      data: {
-        email:
-          normalizedEmail,
-      },
+        select: {
+          id: true,
+          email: true,
+          nickname: true,
+          displayName: true,
+          avatarUrl: true,
+          birthDate: true,
+          gender: true,
+          emailVerifiedAt: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      });
+    }
 
-      select: {
-        id: true,
-        email: true,
-        nickname: true,
-        displayName: true,
-        avatarUrl: true,
-        birthDate: true,
-        gender: true,
-        emailVerifiedAt: true,
-        createdAt: true,
-        updatedAt: true,
-      },
-    });
+    /*
+     * Новый адрес всегда требует
+     * повторного подтверждения.
+     */
+    const updatedUser =
+      await this.prisma.user.update({
+        where: {
+          id:
+            userId,
+        },
+
+        data: {
+          email:
+            normalizedEmail,
+
+          emailVerifiedAt:
+            null,
+        },
+
+        select: {
+          id: true,
+          email: true,
+          nickname: true,
+          displayName: true,
+          avatarUrl: true,
+          birthDate: true,
+          gender: true,
+          emailVerifiedAt: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      });
+
+    await this.authService.sendVerificationEmailForUser(
+      updatedUser.id,
+      updatedUser.email,
+    );
+
+    return updatedUser;
   }
 
   /*

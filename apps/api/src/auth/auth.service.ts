@@ -17,6 +17,10 @@ import {
 import * as bcrypt from 'bcrypt';
 
 import {
+  MailService,
+} from '../mail/mail.service.js';
+
+import {
   PrismaService,
 } from '../prisma/prisma.service.js';
 
@@ -47,6 +51,9 @@ export class AuthService {
 
     private readonly jwtService:
       JwtService,
+
+    private readonly mailService:
+      MailService,
   ) {}
 
   /*
@@ -412,6 +419,27 @@ export class AuthService {
   }
 
   /*
+   * Создаёт новый токен подтверждения
+   * и отправляет письмо пользователю.
+   *
+   * Метод публичный, потому что он также
+   * используется после изменения email
+   * в UsersService.
+   */
+  async sendVerificationEmailForUser(
+    userId:
+      string,
+
+    email:
+      string,
+  ) {
+    await this.createEmailVerificationToken(
+      userId,
+      email,
+    );
+  }
+
+  /*
    * Повторная отправка письма
    * подтверждения.
    */
@@ -459,7 +487,7 @@ export class AuthService {
      * Старый токен автоматически
      * будет заменён новым.
      */
-    await this.createEmailVerificationToken(
+    await this.sendVerificationEmailForUser(
       user.id,
       user.email,
     );
@@ -673,35 +701,9 @@ export class AuthService {
         token,
       );
 
-    /*
-     * Пока реальная почта не подключена,
-     * ссылка выводится в консоль backend.
-     *
-     * Следующим этапом этот console.log
-     * заменит MailService.
-     */
-    console.log(
-      '\n========================================',
-    );
-
-    console.log(
-      'Lumo: подтверждение email',
-    );
-
-    console.log(
-      `Email: ${email}`,
-    );
-
-    console.log(
-      `Ссылка: ${url}`,
-    );
-
-    console.log(
-      'Срок действия: 24 часа',
-    );
-
-    console.log(
-      '========================================\n',
+    await this.mailService.sendEmailVerification(
+      email,
+      url,
     );
   }
 
@@ -755,32 +757,9 @@ export class AuthService {
         token,
       );
 
-    /*
-     * Временно выводим ссылку
-     * восстановления в backend-консоль.
-     */
-    console.log(
-      '\n========================================',
-    );
-
-    console.log(
-      'Lumo: восстановление пароля',
-    );
-
-    console.log(
-      `Email: ${email}`,
-    );
-
-    console.log(
-      `Ссылка: ${url}`,
-    );
-
-    console.log(
-      'Срок действия: 30 минут',
-    );
-
-    console.log(
-      '========================================\n',
+    await this.mailService.sendPasswordReset(
+      email,
+      url,
     );
   }
 

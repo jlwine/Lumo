@@ -29,6 +29,7 @@ import {
   Images,
   Leaf,
   LogOut,
+  Mail,
   MapPin,
   Settings,
   Sparkles,
@@ -57,6 +58,7 @@ import {
 } from '@/lib/auth';
 
 import type {
+  AuthActionResponse,
   User,
 } from '@/types/auth';
 
@@ -145,6 +147,28 @@ export default function HomePage() {
   const [
     error,
     setError,
+  ] =
+    useState<string | null>(
+      null,
+    );
+
+  const [
+    isResendingVerification,
+    setIsResendingVerification,
+  ] =
+    useState(false);
+
+  const [
+    verificationMessage,
+    setVerificationMessage,
+  ] =
+    useState<string | null>(
+      null,
+    );
+
+  const [
+    verificationError,
+    setVerificationError,
   ] =
     useState<string | null>(
       null,
@@ -361,6 +385,73 @@ export default function HomePage() {
   }, [
     router,
   ]);
+
+  async function resendVerificationEmail() {
+    const token =
+      getAccessToken();
+
+    if (!token) {
+      removeAccessToken();
+
+      router.replace(
+        '/login',
+      );
+
+      return;
+    }
+
+    try {
+      setIsResendingVerification(
+        true,
+      );
+
+      setVerificationMessage(
+        null,
+      );
+
+      setVerificationError(
+        null,
+      );
+
+      const result =
+        await apiRequest<AuthActionResponse>(
+          '/auth/resend-verification-email',
+          {
+            method:
+              'POST',
+
+            headers: {
+              Authorization:
+                `Bearer ${token}`,
+            },
+          },
+        );
+
+      setVerificationMessage(
+        tr(
+          result.message,
+        ),
+      );
+    } catch (error) {
+      if (
+        error instanceof Error
+      ) {
+        setVerificationError(
+          error.message,
+        );
+      } else {
+        setVerificationError(
+          tr(
+            'Не удалось отправить письмо повторно',
+          ),
+        );
+      }
+    } finally {
+      setIsResendingVerification(
+        false,
+      );
+    }
+  }
 
   function handleLogout() {
     removeAccessToken();
@@ -801,6 +892,83 @@ export default function HomePage() {
                   <div className="mb-5 rounded-2xl border border-[#efc9cc] bg-[#fff1f1] p-4 text-sm text-[#a95057]">
                     {error}
                   </div>
+                )}
+
+                {!user.emailVerifiedAt && (
+                  <section className="mb-5 overflow-hidden rounded-[22px] border border-[#ead8c6] bg-[#fff8ee] shadow-[0_10px_30px_rgba(110,80,55,0.05)]">
+
+                    <div className="flex flex-col gap-4 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+
+                      <div className="flex min-w-0 items-start gap-4">
+
+                        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white text-[#bd7a5e] shadow-sm">
+                          <Mail
+                            size={20}
+                          />
+                        </div>
+
+                        <div className="min-w-0">
+
+                          <p className="text-sm font-semibold text-[#6f574f]">
+                            {tr(
+                              'Подтверждение email',
+                            )}
+                          </p>
+
+                          <p className="mt-1 text-sm leading-6 text-[#90786f]">
+                            {tr(
+                              'Мы отправили ссылку для подтверждения на {email}.',
+                              {
+                                email:
+                                  user.email,
+                              },
+                            )}
+                          </p>
+
+                          <p className="mt-1 text-xs leading-5 text-[#aa9187]">
+                            {tr(
+                              'Перейдите по ссылке в письме, чтобы подтвердить адрес.',
+                            )}
+                          </p>
+
+                          {verificationMessage && (
+                            <p className="mt-2 text-xs font-medium text-[#6f815f]">
+                              {verificationMessage}
+                            </p>
+                          )}
+
+                          {verificationError && (
+                            <p className="mt-2 text-xs font-medium text-[#b45f63]">
+                              {verificationError}
+                            </p>
+                          )}
+
+                        </div>
+
+                      </div>
+
+                      <button
+                        type="button"
+                        disabled={
+                          isResendingVerification
+                        }
+                        onClick={() =>
+                          void resendVerificationEmail()
+                        }
+                        className="flex shrink-0 items-center justify-center rounded-2xl border border-[#e4c5b2] bg-white px-4 py-2.5 text-sm font-medium text-[#aa6856] shadow-sm transition-all duration-200 hover:-translate-y-[1px] hover:border-[#dba98d] hover:bg-[#fffdfb] hover:shadow-md active:translate-y-0 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-60"
+                      >
+                        {isResendingVerification
+                          ? tr(
+                              'Отправляем повторно...',
+                            )
+                          : tr(
+                              'Отправить письмо ещё раз',
+                            )}
+                      </button>
+
+                    </div>
+
+                  </section>
                 )}
 
                 <section className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_255px]">

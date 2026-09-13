@@ -484,6 +484,21 @@ const english: Record<string, string> = {
 
   'Если аккаунт с таким email существует, мы отправили ссылку для восстановления пароля':
     'If an account with this email exists, we sent a password recovery link',
+
+  'Email не подтверждён': 'Email not verified',
+  'Новый email нужно будет подтвердить': 'The new email will need to be verified',
+  'После сохранения мы отправим письмо подтверждения на новый адрес.':
+    'After saving, we will send a verification email to the new address.',
+  'Адрес подтверждён и может использоваться для восстановления аккаунта.':
+    'The address is verified and can be used for account recovery.',
+  'Подтвердите адрес по ссылке из письма.':
+    'Verify the address using the link in the email.',
+  'Отправить письмо подтверждения': 'Send verification email',
+  'Отправляем письмо...': 'Sending email...',
+  'Email изменён. Подтвердите новый адрес.':
+    'Email changed. Verify the new address.',
+  'Не удалось отправить письмо подтверждения':
+    'Failed to send verification email',
 };
 
 let currentLocale: AppLocale = 'ru';
