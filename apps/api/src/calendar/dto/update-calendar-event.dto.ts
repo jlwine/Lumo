@@ -1,5 +1,6 @@
 import {
   IsBoolean,
+  IsIn,
   IsISO8601,
   IsOptional,
   IsString,
@@ -8,6 +9,10 @@ import {
 } from 'class-validator';
 
 export class UpdateCalendarEventDto {
+  @IsOptional()
+  @IsIn(['PERSONAL', 'SHARED'])
+  scope?: 'PERSONAL' | 'SHARED';
+
   @IsOptional()
   @IsString()
   @MinLength(1)

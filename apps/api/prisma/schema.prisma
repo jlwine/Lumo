@@ -24,6 +24,16 @@ enum RelationshipInvitationStatus {
   CANCELLED
 }
 
+enum CalendarEventScope {
+  PERSONAL
+  SHARED
+}
+
+enum CalendarEventParticipantRole {
+  OWNER
+  EDITOR
+}
+
 model User {
   id           String    @id @default(uuid())
   email        String    @unique
@@ -63,6 +73,7 @@ model User {
   relationshipsAsUser2 Relationship[] @relation("RelationshipUser2")
 
   createdCalendarEvents CalendarEvent[] @relation("CalendarEventCreator")
+  calendarEventParticipants CalendarEventParticipant[]
 
   wishlists Wishlist[]
 
@@ -210,8 +221,10 @@ model Relationship {
 model CalendarEvent {
   id String @id @default(uuid())
 
-  relationshipId String
+  relationshipId String?
   createdById    String
+
+  scope CalendarEventScope @default(PERSONAL)
 
   title       String
   description String?
@@ -225,11 +238,28 @@ model CalendarEvent {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  relationship Relationship @relation(fields: [relationshipId], references: [id], onDelete: Cascade)
+  relationship Relationship? @relation(fields: [relationshipId], references: [id], onDelete: SetNull)
   createdBy    User         @relation(name: "CalendarEventCreator", fields: [createdById], references: [id], onDelete: Cascade)
+
+  participants CalendarEventParticipant[]
 
   @@index([relationshipId, startsAt])
   @@index([createdById])
+}
+
+model CalendarEventParticipant {
+  eventId String
+  userId  String
+
+  role CalendarEventParticipantRole @default(EDITOR)
+
+  createdAt DateTime @default(now())
+
+  event CalendarEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user  User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([eventId, userId])
+  @@index([userId])
 }
 
 model Wishlist {

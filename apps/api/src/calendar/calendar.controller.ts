@@ -42,11 +42,15 @@ export class CalendarController {
 
     @Query('to')
     to?: string,
+
+    @Query('filter')
+    filter?: string,
   ) {
     return this.calendarService.findAll(
       request.user.sub,
       from,
       to,
+      filter,
     );
   }
 

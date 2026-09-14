@@ -47,6 +47,7 @@ import {
 
 import type {
   CalendarEvent,
+  CalendarEventScope,
 } from '@/types/calendar';
 
 import type {
@@ -59,6 +60,7 @@ type CalendarDay = {
 };
 
 type EventForm = {
+  scope: CalendarEventScope;
   title: string;
   description: string;
   location: string;
@@ -68,7 +70,10 @@ type EventForm = {
   allDay: boolean;
 };
 
+type CalendarFilter = 'all' | 'personal' | 'shared' | 'partner';
+
 const emptyForm: EventForm = {
+  scope: 'PERSONAL',
   title: '',
   description: '',
   location: '',
@@ -137,13 +142,7 @@ function CalendarContent() {
       null,
     );
 
-  /*
-   * Сначала проверяем, есть ли у пользователя
-   * активная пара.
-   *
-   * Календарь является общей функцией,
-   * поэтому без отношений он недоступен.
-   */
+  /* Проверяем наличие партнёра для совместных событий. */
   const [
     accessState,
     setAccessState,
@@ -151,7 +150,6 @@ function CalendarContent() {
     useState<
       | 'loading'
       | 'available'
-      | 'unavailable'
       | 'error'
     >(
       'loading',
@@ -164,6 +162,18 @@ function CalendarContent() {
     useState<string | null>(
       null,
     );
+
+  const [
+    hasPartner,
+    setHasPartner,
+  ] = useState(false);
+
+  const [
+    calendarFilter,
+    setCalendarFilter,
+  ] = useState<CalendarFilter>(
+    'all',
+  );
 
   const [
     selectedDate,
@@ -241,9 +251,7 @@ function CalendarContent() {
       emptyForm,
     );
 
-  /*
-   * Проверяем доступ к общему календарю.
-   */
+  /* Проверяем, можно ли создавать совместные события. */
   useEffect(() => {
     let cancelled =
       false;
@@ -280,10 +288,14 @@ function CalendarContent() {
           return;
         }
 
+        setHasPartner(
+          Boolean(
+            response.relationship,
+          ),
+        );
+
         setAccessState(
-          response.relationship
-            ? 'available'
-            : 'unavailable',
+          'available',
         );
       } catch (error) {
         if (cancelled) {
@@ -395,7 +407,7 @@ function CalendarContent() {
             from,
           )}&to=${encodeURIComponent(
             to,
-          )}`,
+          )}&filter=${calendarFilter}`,
           {
             headers: {
               Authorization:
@@ -406,6 +418,7 @@ function CalendarContent() {
       },
       [
         accessState,
+        calendarFilter,
         firstVisibleDay,
         lastVisibleDay,
         router,
@@ -687,7 +700,7 @@ function CalendarContent() {
             from,
           )}&to=${encodeURIComponent(
             to,
-          )}`,
+          )}&filter=${calendarFilter}`,
           {
             headers: {
               Authorization:
@@ -837,6 +850,11 @@ function CalendarContent() {
 
     setForm({
       ...emptyForm,
+
+      scope:
+        hasPartner
+          ? 'SHARED'
+          : 'PERSONAL',
 
       date:
         toDateInputValue(
@@ -1006,6 +1024,9 @@ function CalendarContent() {
       }
 
       const requestBody = {
+        scope:
+          form.scope,
+
         title:
           form.title.trim(),
 
@@ -1200,30 +1221,6 @@ function CalendarContent() {
   }
 
   /*
-   * Без пары общий календарь
-   * полностью закрыт.
-   */
-  if (
-    accessState ===
-    'unavailable'
-  ) {
-    return (
-      <CalendarUnavailableScreen
-        onBack={() =>
-          router.push(
-            '/home',
-          )
-        }
-        onInvitations={() =>
-          router.push(
-            '/invitations',
-          )
-        }
-      />
-    );
-  }
-
-  /*
    * Если не удалось проверить отношения,
    * не пытаемся открывать календарь вслепую.
    */
@@ -1314,13 +1311,36 @@ function CalendarContent() {
         {/* Заголовок */}
         <header className="mb-7">
 
-          <p className="text-sm font-medium text-[#c8757c]">{tr('♡ Общее пространство')}</p>
+          <p className="text-sm font-medium text-[#c8757c]">{tr('♡ Ваше пространство')}</p>
 
           <h1 className="mt-1 text-3xl font-semibold text-[#554442]">{tr('Календарь')}</h1>
 
-          <p className="mt-3 text-[#98837e]">{tr('Ваши общие планы, встречи и важные даты.')}</p>
+          <p className="mt-3 text-[#98837e]">{tr('Ваши личные и совместные планы, встречи и важные даты.')}</p>
 
         </header>
+
+        <div className="mb-6 flex flex-wrap gap-2" role="group" aria-label={tr('Фильтр событий')}>
+          {([
+            ['all', tr('Все')],
+            ['personal', tr('Мои личные')],
+            ['shared', tr('Совместные')],
+            ['partner', tr('Добавил партнёр')],
+          ] as Array<[CalendarFilter, string]>).map(([value, label]) => (
+            <button
+              key={value}
+              type="button"
+              onClick={() => setCalendarFilter(value)}
+              aria-pressed={calendarFilter === value}
+              className={`rounded-full border px-4 py-2 text-sm font-medium transition ${
+                calendarFilter === value
+                  ? 'border-[#d98a92] bg-[#f9e5e7] text-[#a95660]'
+                  : 'border-[#eadbd7] bg-white text-[#806a65] hover:border-[#dca9a7] hover:bg-[#fff2f0]'
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
 
         {/* Ошибка */}
         {error && (
@@ -1553,7 +1573,11 @@ function CalendarContent() {
                                       event,
                                     )
                                   }
-                                  className="block w-full truncate rounded-lg bg-[#fae5e6] px-2 py-1 text-left text-[10px] font-medium text-[#a85f66] transition hover:bg-[#f6d7da] active:scale-[0.98] md:text-xs"
+                                  className={`block w-full truncate rounded-lg px-2 py-1 text-left text-[10px] font-medium transition active:scale-[0.98] md:text-xs ${
+                                    event.scope === 'PERSONAL'
+                                      ? 'bg-[#eee9f8] text-[#74638f] hover:bg-[#e5dcf4]'
+                                      : 'bg-[#fae5e6] text-[#a85f66] hover:bg-[#f6d7da]'
+                                  }`}
                                 >
 
                                   {!event.allDay && (
@@ -1666,6 +1690,10 @@ function CalendarContent() {
                       {event.title}
                     </p>
 
+                    <p className={`mt-1 text-[11px] font-medium ${event.scope === 'PERSONAL' ? 'text-[#7a6995]' : 'text-[#bd6d75]'}`}>
+                      {event.scope === 'PERSONAL' ? tr('Личное') : tr('Совместное')}
+                    </p>
+
                     <div className="mt-2 flex items-center gap-2 text-xs text-[#9b8580]">
 
                       <Clock
@@ -1776,6 +1804,13 @@ function CalendarContent() {
           isSaving={
             isSaving
           }
+          hasPartner={
+            hasPartner
+          }
+          canChangeScope={
+            !selectedEvent ||
+            selectedEvent.canChangeScope
+          }
           onChange={
             setForm
           }
@@ -1821,114 +1856,6 @@ function CalendarAccessLoading() {
         size={34}
         className="animate-pulse text-[var(--accent)]"
       />
-
-    </main>
-  );
-}
-
-function CalendarUnavailableScreen({
-  onBack,
-  onInvitations,
-}: {
-  onBack: () => void;
-  onInvitations: () => void;
-}) {
-  return (
-    <main className="min-h-screen bg-[var(--background)] px-4 py-6 md:px-8 md:py-8">
-
-      <div className="mx-auto max-w-[1100px]">
-
-        <button
-          type="button"
-          onClick={
-            onBack
-          }
-          className="flex items-center gap-2 rounded-xl border border-transparent px-3 py-2 text-sm font-medium text-[var(--text-secondary)] transition-all duration-150 hover:border-[var(--border)] hover:bg-[var(--surface-soft)] hover:text-[var(--accent)] active:scale-[0.96]"
-        >
-          <ArrowLeft
-            size={18}
-          />
-
-          {tr(
-            'На главную',
-          )}
-        </button>
-
-        <section
-          className="mt-8 overflow-hidden rounded-[32px] border border-[var(--border)] px-8 py-12 md:px-12 md:py-16"
-          style={{
-            background:
-              'linear-gradient(135deg, var(--accent-soft) 0%, var(--surface-soft) 58%, var(--lavender-soft) 100%)',
-          }}
-        >
-
-          <div className="max-w-[680px]">
-
-            <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-[var(--border)] bg-[var(--surface)] text-[var(--accent)] shadow-sm">
-
-              <CalendarDays
-                size={25}
-              />
-
-            </div>
-
-            <p className="mt-8 text-sm font-medium text-[var(--accent)]">
-              {tr(
-                'Общее пространство',
-              )}
-            </p>
-
-            <h1 className="mt-2 text-3xl font-semibold text-[var(--text-primary)] md:text-4xl">
-              {tr(
-                'Календарь пока недоступен',
-              )}
-            </h1>
-
-            <p className="mt-4 max-w-[620px] text-base leading-7 text-[var(--text-secondary)]">
-              {tr(
-                'Общий календарь станет доступен после того, как вы создадите пару в Lumo.',
-              )}
-            </p>
-
-            <p className="mt-3 max-w-[620px] text-sm leading-6 text-[var(--text-muted)]">
-              {tr(
-                'Найдите партнёра по никнейму или проверьте входящие приглашения.',
-              )}
-            </p>
-
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-
-              <button
-                type="button"
-                onClick={
-                  onInvitations
-                }
-                className="cursor-pointer rounded-2xl bg-[var(--accent)] px-5 py-3 font-medium text-white shadow-sm transition-all duration-200 hover:-translate-y-[1px] hover:brightness-105 hover:shadow-md active:translate-y-0 active:scale-[0.98]"
-              >
-                {tr(
-                  'Открыть приглашения',
-                )}
-              </button>
-
-              <button
-                type="button"
-                onClick={
-                  onBack
-                }
-                className="cursor-pointer rounded-2xl border border-[var(--border)] bg-[var(--surface)] px-5 py-3 font-medium text-[var(--text-primary)] transition-all duration-200 hover:-translate-y-[1px] hover:border-[var(--accent)] hover:text-[var(--accent)] active:translate-y-0 active:scale-[0.98]"
-              >
-                {tr(
-                  'На главную',
-                )}
-              </button>
-
-            </div>
-
-          </div>
-
-        </section>
-
-      </div>
 
     </main>
   );
@@ -2314,6 +2241,10 @@ function EventDetailsDialog({
 
         <div className="mt-6 space-y-4">
 
+          <div className={`inline-flex rounded-full px-3 py-1 text-xs font-medium ${event.scope === 'PERSONAL' ? 'bg-[#eee9f8] text-[#74638f]' : 'bg-[#fae5e6] text-[#a85f66]'}`}>
+            {event.scope === 'PERSONAL' ? tr('Личное событие') : tr('Совместное событие')}
+          </div>
+
           <div className="flex items-start gap-3">
 
             <CalendarDays
@@ -2369,6 +2300,22 @@ function EventDetailsDialog({
           {creatorName}
         </p>
 
+        {event.scope === 'SHARED' && (
+          <p className="mt-2 text-xs text-[#ad9993]">
+            {tr('Участники:')}{' '}
+            {event.participants
+              .map((participant) => participant.user.displayName ?? participant.user.nickname)
+              .join(', ')}
+          </p>
+        )}
+
+        {!event.canEdit && (
+          <p className="mt-5 rounded-2xl bg-[#fff5f1] px-4 py-3 text-sm text-[#92756e]">
+            {tr('Совместное событие сохранено в истории и доступно только для просмотра.')}
+          </p>
+        )}
+
+        {event.canEdit && (
         <div className="mt-7 flex flex-col gap-3 sm:flex-row">
 
           <button
@@ -2394,6 +2341,7 @@ function EventDetailsDialog({
             />{tr('Удалить')}</button>
 
         </div>
+        )}
 
       </div>
 
@@ -2405,6 +2353,8 @@ function EventFormDialog({
   form,
   editing,
   isSaving,
+  hasPartner,
+  canChangeScope,
   onChange,
   onClose,
   onSave,
@@ -2412,6 +2362,8 @@ function EventFormDialog({
   form: EventForm;
   editing: boolean;
   isSaving: boolean;
+  hasPartner: boolean;
+  canChangeScope: boolean;
   onChange: (
     value: EventForm,
   ) => void;
@@ -2459,6 +2411,37 @@ function EventFormDialog({
         </div>
 
         <div className="mt-7 space-y-5">
+
+          <fieldset>
+            <legend className="mb-2 block text-sm font-medium text-[#665451]">{tr('Кому видно событие')}</legend>
+            <div className="grid gap-3 sm:grid-cols-2">
+              {([
+                ['PERSONAL', tr('Только мне')],
+                ['SHARED', tr('Мне и партнёру')],
+              ] as Array<[CalendarEventScope, string]>).map(([scope, label]) => {
+                const disabled = !canChangeScope || (scope === 'SHARED' && !hasPartner);
+                return (
+                  <button
+                    key={scope}
+                    type="button"
+                    disabled={disabled}
+                    aria-pressed={form.scope === scope}
+                    onClick={() => onChange({ ...form, scope })}
+                    className={`rounded-2xl border px-4 py-3 text-sm font-medium transition ${
+                      form.scope === scope
+                        ? 'border-[#d98a92] bg-[#f9e5e7] text-[#a95660]'
+                        : 'border-[#eadbd7] bg-[#fffdfc] text-[#806a65]'
+                    } disabled:cursor-not-allowed disabled:opacity-45`}
+                  >
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
+            {!hasPartner && (
+              <p className="mt-2 text-xs text-[#a48f89]">{tr('Совместные события станут доступны после создания пары.')}</p>
+            )}
+          </fieldset>
 
           <div>
 
@@ -2725,7 +2708,9 @@ function DeleteEventDialog({
 
         <p className="mt-3 text-sm leading-6 text-[#917975]">
           {tr(
-            '«{title}» будет удалено из общего календаря для вас обоих.',
+            event.scope === 'SHARED'
+              ? '«{title}» будет удалено из календаря для вас обоих.'
+              : '«{title}» будет удалено из вашего личного календаря.',
             {
               title: event.title,
             },
@@ -2788,6 +2773,9 @@ function calendarEventToForm(
       : null;
 
   return {
+    scope:
+      event.scope,
+
     title:
       event.title,
 
