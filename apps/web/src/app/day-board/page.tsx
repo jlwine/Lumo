@@ -148,105 +148,46 @@ export default function DayBoardPage() {
   ] =
     useState(false);
 
-  const loadData =
-    useCallback(
-      async (
-        refreshing = false,
-      ) => {
-        const token =
-          getAccessToken();
+  const loadData = useCallback((signal?: AbortSignal) => {
+    const token = getAccessToken();
+    if (!token) {
+      removeAccessToken();
+      router.replace('/login');
+      return Promise.resolve();
+    }
 
-        if (!token) {
-          removeAccessToken();
+    const options = { signal, headers: { Authorization: `Bearer ${token}` } };
+    return Promise.all([
+      apiRequest<DayBoardTodayResponse>(
+        `/day-board/today?date=${encodeURIComponent(todayDate)}`, options,
+      ),
+      apiRequest<DayBoardHistoryResponse>('/day-board/history?limit=60', options),
+    ]).then(([todayResult, historyResult]) => {
+      if (signal?.aborted) return;
+      setError(null);
+      setToday(todayResult);
+      setHistory(historyResult.days);
+    }).catch((error: unknown) => {
+      if (signal?.aborted) return;
+      setError(getErrorMessage(error, 'Не удалось загрузить доску дня'));
+    }).finally(() => {
+      if (!signal?.aborted) {
+        setIsLoading(false);
+        setIsRefreshing(false);
+      }
+    });
+  }, [router, todayDate]);
 
-          router.replace(
-            '/login',
-          );
-
-          return;
-        }
-
-        try {
-          if (refreshing) {
-            setIsRefreshing(
-              true,
-            );
-          } else {
-            setIsLoading(
-              true,
-            );
-          }
-
-          setError(
-            null,
-          );
-
-          const [
-            todayResult,
-            historyResult,
-          ] =
-            await Promise.all([
-              apiRequest<
-                DayBoardTodayResponse
-              >(
-                `/day-board/today?date=${encodeURIComponent(
-                  todayDate,
-                )}`,
-                {
-                  headers: {
-                    Authorization:
-                      `Bearer ${token}`,
-                  },
-                },
-              ),
-
-              apiRequest<
-                DayBoardHistoryResponse
-              >(
-                '/day-board/history?limit=60',
-                {
-                  headers: {
-                    Authorization:
-                      `Bearer ${token}`,
-                  },
-                },
-              ),
-            ]);
-
-          setToday(
-            todayResult,
-          );
-
-          setHistory(
-            historyResult.days,
-          );
-        } catch (
-          error
-        ) {
-          setError(
-            getErrorMessage(
-              error,
-              'Не удалось загрузить доску дня',
-            ),
-          );
-        } finally {
-          setIsLoading(
-            false,
-          );
-
-          setIsRefreshing(
-            false,
-          );
-        }
-      },
-      [
-        router,
-        todayDate,
-      ],
-    );
+  const refreshData = async () => {
+    setIsRefreshing(true);
+    setError(null);
+    await loadData();
+  };
 
   useEffect(() => {
-    void loadData();
+    const controller = new AbortController();
+    void loadData(controller.signal);
+    return () => controller.abort();
   }, [
     loadData,
   ]);
@@ -477,9 +418,7 @@ export default function DayBoardPage() {
         '',
       );
 
-      await loadData(
-        true,
-      );
+      await refreshData();
     } catch (
       error
     ) {
@@ -538,9 +477,7 @@ export default function DayBoardPage() {
         false,
       );
 
-      await loadData(
-        true,
-      );
+      await refreshData();
     } catch (
       error
     ) {
@@ -609,9 +546,7 @@ export default function DayBoardPage() {
               isRefreshing
             }
             onClick={() =>
-              void loadData(
-                true,
-              )
+              void refreshData()
             }
             className="flex items-center gap-2 rounded-xl border border-[#eadbd7] bg-white px-4 py-2.5 text-sm font-medium text-[#806a65] transition hover:border-[#dcaaa6] hover:bg-[#fff0ef] hover:text-[#c36f77] disabled:opacity-50"
           >
@@ -645,14 +580,14 @@ export default function DayBoardPage() {
             Доска дня
           </h1>
 
-          <p className="mt-3 max-w-2xl leading-7 text-[#907c76]">
+          <p className="mt-3 max-w-2xl leading-7 text-[color:var(--text-secondary)]">
             Одно фото от каждого из вас.
             Маленький ежедневный снимок жизни,
             который со временем превращается
             в общую историю.
           </p>
 
-          <div className="mt-5 inline-flex items-center gap-2 rounded-2xl border border-white/70 bg-white/60 px-4 py-2 text-sm text-[#806b66] shadow-sm">
+          <div className="mt-5 inline-flex items-center gap-2 rounded-2xl border border-white/70 bg-white/60 px-4 py-2 text-sm text-[color:var(--text-secondary)] shadow-sm">
             <CalendarDays
               size={16}
             />
@@ -806,7 +741,7 @@ export default function DayBoardPage() {
                       className="mx-auto text-[#b8a4b5]"
                     />
 
-                    <p className="mt-4 font-medium text-[#725e5a]">
+                    <p className="mt-4 font-medium text-[color:var(--text-primary)]">
                       Архив пока пуст
                     </p>
 
@@ -914,7 +849,7 @@ function TodayPhotoCard({
 
           <div className="min-w-0">
 
-            <p className="truncate font-semibold text-[#5d4945]">
+            <p className="truncate font-semibold text-[color:var(--text-primary)]">
               {name}
             </p>
 
@@ -979,7 +914,7 @@ function TodayPhotoCard({
           <div className="p-5 md:p-6">
 
             {entry.caption ? (
-              <p className="text-[15px] leading-7 text-[#6f5b57]">
+              <p className="text-[15px] leading-7 text-[color:var(--text-secondary)]">
                 {entry.caption}
               </p>
             ) : (
@@ -1011,7 +946,7 @@ function TodayPhotoCard({
 
             </div>
 
-            <p className="mt-5 font-semibold text-[#6b5753]">
+            <p className="mt-5 font-semibold text-[color:var(--text-primary)]">
               Фото сегодня ещё нет
             </p>
 
@@ -1089,7 +1024,7 @@ function ArchiveDay({
           />
         </div>
 
-        <h3 className="font-semibold capitalize text-[#695550]">
+        <h3 className="font-semibold capitalize text-[color:var(--text-primary)]">
           {formatBoardDate(
             day.date,
           )}
@@ -1178,7 +1113,7 @@ function ArchivePhoto({
             {name}
           </p>
 
-          <p className="mt-3 text-sm leading-6 text-[#705c58]">
+          <p className="mt-3 text-sm leading-6 text-[color:var(--text-secondary)]">
             {entry.caption ??
               'Без подписи'}
           </p>
@@ -1412,7 +1347,7 @@ function DayBoardEditorDialog({
                   />
                 </div>
 
-                <p className="mt-5 font-semibold text-[#695651]">
+                <p className="mt-5 font-semibold text-[color:var(--text-primary)]">
                   Выберите фотографию
                 </p>
 

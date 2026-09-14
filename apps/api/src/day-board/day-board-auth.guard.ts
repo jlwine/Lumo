@@ -1,108 +1,26 @@
-import {
-  CanActivate,
-  ExecutionContext,
-  Injectable,
-  UnauthorizedException,
-} from '@nestjs/common';
-
+import { ExecutionContext, Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
+import type { Request } from 'express';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard.js';
+import { PrismaService } from '../prisma/prisma.service.js';
 
-import type {
-  Request,
-} from 'express';
-
-export type DayBoardAuthenticatedRequest =
-  Request & {
-    dayBoardUserId?: string;
-  };
-
-type JwtPayload = {
-  sub?: string;
-  userId?: string;
-  id?: string;
+export type DayBoardAuthenticatedRequest = Request & {
+  user?: { sub: string };
+  dayBoardUserId?: string;
 };
 
 @Injectable()
-export class DayBoardAuthGuard
-implements CanActivate {
-  constructor(
-    private readonly jwtService:
-      JwtService,
-  ) {}
+export class DayBoardAuthGuard extends JwtAuthGuard {
+  constructor(jwtService: JwtService, configService: ConfigService, prisma: PrismaService) {
+    super(jwtService, configService, prisma);
+  }
 
-  async canActivate(
-    context: ExecutionContext,
-  ) {
-    const request =
-      context
-        .switchToHttp()
-        .getRequest<
-          DayBoardAuthenticatedRequest
-        >();
-
-    const authorization =
-      request.headers.authorization;
-
-    if (
-      !authorization ||
-      !authorization.startsWith(
-        'Bearer ',
-      )
-    ) {
-      throw new UnauthorizedException(
-        'Требуется авторизация',
-      );
-    }
-
-    const token =
-      authorization
-        .slice(
-          7,
-        )
-        .trim();
-
-    if (!token) {
-      throw new UnauthorizedException(
-        'Требуется авторизация',
-      );
-    }
-
-    try {
-      const payload =
-        await this.jwtService.verifyAsync<
-          JwtPayload
-        >(
-          token,
-        );
-
-      const userId =
-        payload.sub ??
-        payload.userId ??
-        payload.id;
-
-      if (!userId) {
-        throw new UnauthorizedException(
-          'В токене отсутствует идентификатор пользователя',
-        );
-      }
-
-      request.dayBoardUserId =
-        userId;
-
-      return true;
-    } catch (
-      error
-    ) {
-      if (
-        error instanceof
-        UnauthorizedException
-      ) {
-        throw error;
-      }
-
-      throw new UnauthorizedException(
-        'Сессия истекла или токен недействителен',
-      );
-    }
+  async canActivate(context: ExecutionContext): Promise<boolean> {
+    // Единая проверка подписи, срока действия и отзыва сессии.
+    await super.canActivate(context);
+    const request = context.switchToHttp().getRequest<DayBoardAuthenticatedRequest>();
+    request.dayBoardUserId = request.user!.sub;
+    return true;
   }
 }

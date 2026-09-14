@@ -10,6 +10,7 @@ import {
 } from '@/i18n/use-language';
 
 import {
+  Suspense,
   useCallback,
   useEffect,
   useMemo,
@@ -78,6 +79,14 @@ const emptyForm: EventForm = {
 };
 
 export default function CalendarPage() {
+  return (
+    <Suspense fallback={<main className="min-h-screen bg-[var(--background)] p-8 text-[color:var(--text-primary)]" aria-busy="true">{tr('Календарь')}</main>}>
+      <CalendarContent />
+    </Suspense>
+  );
+}
+
+function CalendarContent() {
   useLanguageVersion();
 
   const router =

@@ -7,7 +7,6 @@ import {
 import {
   getCurrentLocale,
   setCurrentLocale,
-  tr,
 } from '@/i18n/core';
 
 import {

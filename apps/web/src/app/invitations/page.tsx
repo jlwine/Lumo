@@ -1,7 +1,6 @@
 'use client';
 
 import {
-  getIntlLocale,
   tr,
 } from '@/i18n/core';
 
