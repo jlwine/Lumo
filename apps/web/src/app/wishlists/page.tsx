@@ -64,6 +64,7 @@ type WishlistForm = {
 };
 
 type WishlistItemForm = {
+  status: WishlistItem['status'];
   title: string;
   description: string;
   url: string;
@@ -78,6 +79,7 @@ const emptyWishlistForm: WishlistForm = {
 };
 
 const emptyItemForm: WishlistItemForm = {
+  status: 'WANT',
   title: '',
   description: '',
   url: '',
@@ -230,6 +232,13 @@ export default function WishlistsPage() {
     setIsDeleting,
   ] =
     useState(false);
+
+  const [
+    giftMarkItemId,
+    setGiftMarkItemId,
+  ] = useState<string | null>(
+    null,
+  );
 
   const fetchWishlists =
     useCallback(
@@ -673,6 +682,9 @@ export default function WishlistsPage() {
     );
 
     setItemForm({
+      status:
+        item.status,
+
       title:
         item.title,
 
@@ -898,6 +910,9 @@ export default function WishlistsPage() {
         );
 
       const requestBody = {
+        status:
+          itemForm.status,
+
         title,
 
         description:
@@ -1032,6 +1047,71 @@ export default function WishlistsPage() {
     } finally {
       setIsDeleting(
         false,
+      );
+    }
+  }
+
+  async function updateGiftMark(
+    item: WishlistItem,
+    status:
+      | 'PLANNING'
+      | 'PURCHASED'
+      | null,
+  ) {
+    if (!selectedWishlist) {
+      return;
+    }
+
+    const token =
+      getAccessToken();
+
+    if (!token) {
+      removeAccessToken();
+      router.replace('/login');
+      return;
+    }
+
+    try {
+      setGiftMarkItemId(
+        item.id,
+      );
+      setError(null);
+
+      await apiRequest(
+        `/wishlists/items/${encodeURIComponent(item.id)}/gift-mark`,
+        {
+          method:
+            status
+              ? 'PUT'
+              : 'DELETE',
+          headers: {
+            Authorization:
+              `Bearer ${token}`,
+          },
+          body:
+            status
+              ? JSON.stringify({
+                  status,
+                  hiddenFromOwner:
+                    true,
+                })
+              : undefined,
+        },
+      );
+
+      await refreshWishlists(
+        selectedWishlist.id,
+      );
+    } catch (error) {
+      setError(
+        getErrorMessage(
+          error,
+          tr('Не удалось сохранить отметку подарка'),
+        ),
+      );
+    } finally {
+      setGiftMarkItemId(
+        null,
       );
     }
   }
@@ -1320,6 +1400,14 @@ export default function WishlistsPage() {
                               activeTab ===
                               'mine'
                             }
+                            canPlanGift={
+                              activeTab ===
+                              'partner'
+                            }
+                            isGiftMarkSaving={
+                              giftMarkItemId ===
+                              item.id
+                            }
                             onEdit={() =>
                               openEditItem(
                                 item,
@@ -1328,6 +1416,12 @@ export default function WishlistsPage() {
                             onDelete={() =>
                               setDeletingItem(
                                 item,
+                              )
+                            }
+                            onGiftMarkChange={(status) =>
+                              void updateGiftMark(
+                                item,
+                                status,
                               )
                             }
                           />
@@ -1489,13 +1583,24 @@ export default function WishlistsPage() {
 function WishlistItemCard({
   item,
   canEdit,
+  canPlanGift,
+  isGiftMarkSaving,
   onEdit,
   onDelete,
+  onGiftMarkChange,
 }: {
   item: WishlistItem;
   canEdit: boolean;
+  canPlanGift: boolean;
+  isGiftMarkSaving: boolean;
   onEdit: () => void;
   onDelete: () => void;
+  onGiftMarkChange: (
+    status:
+      | 'PLANNING'
+      | 'PURCHASED'
+      | null,
+  ) => void;
 }) {
   return (
     <article className="overflow-hidden rounded-[24px] border border-[#eee1df] bg-[#fffdfc]">
@@ -1582,6 +1687,12 @@ function WishlistItemCard({
           }
         />
 
+        <p className="mt-3 inline-flex rounded-full bg-[#f1ebf5] px-3 py-1 text-xs font-medium text-[#78658a]">
+          {getWishlistStatusLabel(
+            item.status,
+          )}
+        </p>
+
         {item.description && (
           <p className="mt-3 line-clamp-3 text-sm leading-6 text-[#9a8580]">
             {item.description}
@@ -1603,6 +1714,41 @@ function WishlistItemCard({
             <ExternalLink
               size={15}
             />{tr('Открыть товар')}</button>
+        )}
+
+        {canPlanGift && (
+          <div className="mt-5 border-t border-[#eee1df] pt-4">
+            <p className="text-xs font-medium text-[#8b759c]">{tr('Отметка подарка')}</p>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {([
+                [null, tr('Без отметки')],
+                ['PLANNING', tr('Планирую подарить')],
+                ['PURCHASED', tr('Уже куплено')],
+              ] as Array<['PLANNING' | 'PURCHASED' | null, string]>).map(([status, label]) => (
+                <button
+                  key={status ?? 'none'}
+                  type="button"
+                  disabled={isGiftMarkSaving}
+                  onClick={() => onGiftMarkChange(status)}
+                  aria-pressed={(item.giftMark?.status ?? null) === status}
+                  className={`rounded-full border px-3 py-1.5 text-xs transition ${
+                    (item.giftMark?.status ?? null) === status
+                      ? 'border-[#d9989f] bg-[#fae5e7] text-[#a95c65]'
+                      : 'border-[#e5dce5] text-[#8b7888] hover:border-[#cbb6d2]'
+                  } disabled:opacity-50`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+            <p className="mt-2 text-[11px] text-[#aa9690]">{tr('Сюрприз: владелец желания не увидит эту отметку.')}</p>
+          </div>
+        )}
+
+        {!canPlanGift && item.giftMark && !item.giftMark.hiddenFromOwner && (
+          <p className="mt-4 text-xs text-[#a95c65]">
+            {item.giftMark.status === 'PURCHASED' ? tr('Подарок уже куплен') : tr('Подарок планируют купить')}
+          </p>
         )}
 
       </div>
@@ -2287,6 +2433,28 @@ function ItemFormDialog({
             />
           </FormField>
 
+          <FormField
+            label={tr('Статус желания')}
+          >
+            <select
+              value={form.status}
+              disabled={isSaving}
+              onChange={(event) =>
+                onChange({
+                  ...form,
+                  status:
+                    event.target.value as WishlistItem['status'],
+                })
+              }
+              className={wishlistInputClass}
+            >
+              <option value="WANT">{tr('Хочу')}</option>
+              <option value="PLANNED">{tr('В планах')}</option>
+              <option value="BUY_LATER">{tr('Купить позже')}</option>
+              <option value="RECEIVED">{tr('Подарено / получено')}</option>
+            </select>
+          </FormField>
+
           {/*
            * Новый выбор
            * приоритета желания.
@@ -2563,6 +2731,22 @@ function getPriorityLabel(
 
     default:
       return tr('Очень хочу');
+  }
+}
+
+function getWishlistStatusLabel(
+  status: WishlistItem['status'],
+) {
+  switch (status) {
+    case 'PLANNED':
+      return tr('В планах');
+    case 'BUY_LATER':
+      return tr('Купить позже');
+    case 'RECEIVED':
+      return tr('Подарено / получено');
+    case 'WANT':
+    default:
+      return tr('Хочу');
   }
 }
 

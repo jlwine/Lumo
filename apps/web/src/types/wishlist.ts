@@ -26,6 +26,11 @@ export type WishlistItem = {
    * 5 — мечтаю
    */
   priority: number;
+  status: 'WANT' | 'PLANNED' | 'BUY_LATER' | 'RECEIVED';
+  giftMark: {
+    status: 'PLANNING' | 'PURCHASED';
+    hiddenFromOwner: boolean;
+  } | null;
 
   createdAt: string;
   updatedAt: string;

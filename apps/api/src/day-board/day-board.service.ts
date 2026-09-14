@@ -35,6 +35,22 @@ type DayBoardUser = {
   avatarUrl: string | null;
 };
 
+const dayBoardEntryInclude = {
+  author: {
+    select: {
+      id: true,
+      nickname: true,
+      displayName: true,
+      avatarUrl: true,
+    },
+  },
+  reactions: {
+    select: {
+      userId: true,
+    },
+  },
+} as const;
+
 type SerializedDayBoardEntry = {
   id: string;
   date: string;
@@ -44,6 +60,8 @@ type SerializedDayBoardEntry = {
   createdAt: string;
   updatedAt: string;
   author: DayBoardUser;
+  heartCount: number;
+  reactedByMe: boolean;
 };
 
 type DayBoardEntryWithAuthor = {
@@ -58,6 +76,7 @@ type DayBoardEntryWithAuthor = {
   updatedAt: Date;
 
   author: DayBoardUser;
+  reactions: Array<{ userId: string }>;
 };
 
 @Injectable()
@@ -103,16 +122,7 @@ export class DayBoardService {
             date,
         },
 
-        include: {
-          author: {
-            select: {
-              id: true,
-              nickname: true,
-              displayName: true,
-              avatarUrl: true,
-            },
-          },
-        },
+        include: dayBoardEntryInclude,
       });
 
     const mine =
@@ -145,6 +155,7 @@ export class DayBoardService {
         mine
           ? this.serializeEntry(
               mine,
+              userId,
             )
           : null,
 
@@ -152,6 +163,7 @@ export class DayBoardService {
         partner
           ? this.serializeEntry(
               partner,
+              userId,
             )
           : null,
     };
@@ -255,16 +267,7 @@ export class DayBoardService {
             context.relationshipId,
         },
 
-        include: {
-          author: {
-            select: {
-              id: true,
-              nickname: true,
-              displayName: true,
-              avatarUrl: true,
-            },
-          },
-        },
+        include: dayBoardEntryInclude,
 
         orderBy: [
           {
@@ -339,11 +342,13 @@ export class DayBoardService {
         group.mine =
           this.serializeEntry(
             entry,
+            userId,
           );
       } else {
         group.partner =
           this.serializeEntry(
             entry,
+            userId,
           );
       }
     }
@@ -403,16 +408,7 @@ export class DayBoardService {
             date,
         },
 
-        include: {
-          author: {
-            select: {
-              id: true,
-              nickname: true,
-              displayName: true,
-              avatarUrl: true,
-            },
-          },
-        },
+        include: dayBoardEntryInclude,
       });
 
     if (
@@ -456,20 +452,12 @@ export class DayBoardService {
             caption,
           },
 
-          include: {
-            author: {
-              select: {
-                id: true,
-                nickname: true,
-                displayName: true,
-                avatarUrl: true,
-              },
-            },
-          },
+          include: dayBoardEntryInclude,
         });
 
       return this.serializeEntry(
         updated,
+        userId,
       );
     }
 
@@ -510,16 +498,7 @@ export class DayBoardService {
               caption,
             },
 
-            include: {
-              author: {
-                select: {
-                  id: true,
-                  nickname: true,
-                  displayName: true,
-                  avatarUrl: true,
-                },
-              },
-            },
+            include: dayBoardEntryInclude,
           });
 
         await Promise.all([
@@ -552,21 +531,13 @@ export class DayBoardService {
               caption,
             },
 
-            include: {
-              author: {
-                select: {
-                  id: true,
-                  nickname: true,
-                  displayName: true,
-                  avatarUrl: true,
-                },
-              },
-            },
+            include: dayBoardEntryInclude,
           });
       }
 
       return this.serializeEntry(
         saved,
+        userId,
       );
     } catch (
       error
@@ -650,20 +621,12 @@ export class DayBoardService {
               : undefined,
         },
 
-        include: {
-          author: {
-            select: {
-              id: true,
-              nickname: true,
-              displayName: true,
-              avatarUrl: true,
-            },
-          },
-        },
+        include: dayBoardEntryInclude,
       });
 
     return this.serializeEntry(
       updated,
+      userId,
     );
   }
 
@@ -726,6 +689,114 @@ export class DayBoardService {
     return {
       success: true,
     };
+  }
+
+  async addHeart(
+    userId: string,
+    entryId: string,
+  ) {
+    const entry =
+      await this.findReactableEntry(
+        userId,
+        entryId,
+      );
+
+    await this.prisma.dayBoardReaction.upsert({
+      where: {
+        entryId_userId: {
+          entryId,
+          userId,
+        },
+      },
+      create: {
+        entryId,
+        userId,
+      },
+      update: {},
+    });
+
+    return {
+      entryId:
+        entry.id,
+      heartCount:
+        await this.prisma.dayBoardReaction.count({
+          where: {
+            entryId,
+          },
+        }),
+      reactedByMe: true,
+    };
+  }
+
+  async removeHeart(
+    userId: string,
+    entryId: string,
+  ) {
+    const entry =
+      await this.findReactableEntry(
+        userId,
+        entryId,
+      );
+
+    await this.prisma.dayBoardReaction.deleteMany({
+      where: {
+        entryId,
+        userId,
+      },
+    });
+
+    return {
+      entryId:
+        entry.id,
+      heartCount:
+        await this.prisma.dayBoardReaction.count({
+          where: {
+            entryId,
+          },
+        }),
+      reactedByMe: false,
+    };
+  }
+
+  private async findReactableEntry(
+    userId: string,
+    entryId: string,
+  ) {
+    const context =
+      await this.getRelationshipContext(
+        userId,
+      );
+
+    const entry =
+      await this.prisma.dayBoardEntry.findFirst({
+        where: {
+          id:
+            entryId,
+          relationshipId:
+            context.relationshipId,
+        },
+        select: {
+          id: true,
+          authorId: true,
+        },
+      });
+
+    if (!entry) {
+      throw new NotFoundException(
+        'Фотография не найдена',
+      );
+    }
+
+    if (
+      entry.authorId ===
+      userId
+    ) {
+      throw new BadRequestException(
+        'Реакцию можно поставить только на фотографию партнёра',
+      );
+    }
+
+    return entry;
   }
 
   /*
@@ -1132,6 +1203,7 @@ export class DayBoardService {
 
   private serializeEntry(
     entry: DayBoardEntryWithAuthor,
+    userId: string,
   ): SerializedDayBoardEntry {
     return {
       id:
@@ -1159,6 +1231,16 @@ export class DayBoardService {
 
       author:
         entry.author,
+
+      heartCount:
+        entry.reactions.length,
+
+      reactedByMe:
+        entry.reactions.some(
+          (reaction) =>
+            reaction.userId ===
+            userId,
+        ),
     };
   }
 }

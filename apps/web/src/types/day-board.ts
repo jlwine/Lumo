@@ -14,6 +14,14 @@ export type DayBoardEntry = {
   createdAt: string;
   updatedAt: string;
   author: DayBoardUser;
+  heartCount: number;
+  reactedByMe: boolean;
+};
+
+export type DayBoardReactionResponse = {
+  entryId: string;
+  heartCount: number;
+  reactedByMe: boolean;
 };
 
 export type DayBoardTodayResponse = {

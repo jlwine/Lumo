@@ -40,6 +40,7 @@ import type {
   DayBoardEntry,
   DayBoardHistoryDay,
   DayBoardHistoryResponse,
+  DayBoardReactionResponse,
   DayBoardTodayResponse,
   DayBoardUser,
 } from '@/types/day-board';
@@ -147,6 +148,13 @@ export default function DayBoardPage() {
     setIsDeleting,
   ] =
     useState(false);
+
+  const [
+    reactingEntryId,
+    setReactingEntryId,
+  ] = useState<string | null>(
+    null,
+  );
 
   const loadData = useCallback((signal?: AbortSignal) => {
     const token = getAccessToken();
@@ -494,6 +502,95 @@ export default function DayBoardPage() {
     }
   }
 
+  async function toggleHeart(
+    entry: DayBoardEntry,
+  ) {
+    const token =
+      getAccessToken();
+
+    if (!token) {
+      removeAccessToken();
+      router.replace('/login');
+      return;
+    }
+
+    try {
+      setReactingEntryId(
+        entry.id,
+      );
+      setError(null);
+
+      const result =
+        await apiRequest<DayBoardReactionResponse>(
+          `/day-board/entries/${encodeURIComponent(entry.id)}/heart`,
+          {
+            method:
+              entry.reactedByMe
+                ? 'DELETE'
+                : 'POST',
+            headers: {
+              Authorization:
+                `Bearer ${token}`,
+            },
+          },
+        );
+
+      const applyReaction = (
+        value: DayBoardEntry | null,
+      ) =>
+        value?.id === result.entryId
+          ? {
+              ...value,
+              heartCount:
+                result.heartCount,
+              reactedByMe:
+                result.reactedByMe,
+            }
+          : value;
+
+      setToday((current) =>
+        current
+          ? {
+              ...current,
+              mine:
+                applyReaction(
+                  current.mine,
+                ),
+              partner:
+                applyReaction(
+                  current.partner,
+                ),
+            }
+          : current,
+      );
+
+      setHistory((current) =>
+        current.map((day) => ({
+          ...day,
+          mine:
+            applyReaction(
+              day.mine,
+            ),
+          partner:
+            applyReaction(
+              day.partner,
+            ),
+        })),
+      );
+    } catch (error) {
+      setError(
+        getErrorMessage(
+          error,
+          'Не удалось изменить реакцию',
+        ),
+      );
+    } finally {
+      setReactingEntryId(
+        null,
+      );
+    }
+  }
+
   if (isLoading) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-[#fffaf8]">
@@ -667,6 +764,9 @@ export default function DayBoardPage() {
                       true,
                     )
                   }
+                  canReact={
+                    false
+                  }
                 />
 
                 <TodayPhotoCard
@@ -678,6 +778,17 @@ export default function DayBoardPage() {
                   }
                   editable={
                     false
+                  }
+                  canReact
+                  isReacting={
+                    reactingEntryId ===
+                    today.partner?.id
+                  }
+                  onToggleHeart={() =>
+                    today.partner &&
+                    void toggleHeart(
+                      today.partner,
+                    )
                   }
                 />
 
@@ -725,6 +836,12 @@ export default function DayBoardPage() {
                         }
                         partner={
                           today.partnerUser
+                        }
+                        reactingEntryId={
+                          reactingEntryId
+                        }
+                        onToggleHeart={
+                          toggleHeart
                         }
                       />
                     ),
@@ -821,14 +938,20 @@ function TodayPhotoCard({
   user,
   entry,
   editable,
+  canReact,
+  isReacting,
   onEdit,
   onDelete,
+  onToggleHeart,
 }: {
   user: DayBoardUser;
   entry: DayBoardEntry | null;
   editable: boolean;
+  canReact: boolean;
+  isReacting?: boolean;
   onEdit?: () => void;
   onDelete?: () => void;
+  onToggleHeart?: () => void;
 }) {
   const name =
     user.displayName ??
@@ -930,6 +1053,27 @@ function TodayPhotoCard({
               )}
             </p>
 
+            {(canReact || entry.heartCount > 0) && (
+              <button
+                type="button"
+                disabled={!canReact || isReacting}
+                onClick={onToggleHeart}
+                aria-pressed={entry.reactedByMe}
+                aria-label={entry.reactedByMe ? 'Убрать реакцию' : 'Поставить сердце'}
+                className={`mt-4 inline-flex items-center gap-2 rounded-full border px-3 py-2 text-sm font-medium transition ${
+                  entry.reactedByMe
+                    ? 'border-[#e8a8ad] bg-[#fbe5e7] text-[#b95863]'
+                    : 'border-[#eadbd7] text-[#9a7f7b] hover:border-[#e2a6ab] hover:bg-[#fff1f2] hover:text-[#bd6670]'
+                } disabled:cursor-default disabled:opacity-70`}
+              >
+                <Heart
+                  size={17}
+                  fill={entry.reactedByMe ? 'currentColor' : 'none'}
+                />
+                {entry.heartCount > 0 ? entry.heartCount : 'Сердце'}
+              </button>
+            )}
+
           </div>
 
         </>
@@ -1008,10 +1152,14 @@ function ArchiveDay({
   day,
   me,
   partner,
+  reactingEntryId,
+  onToggleHeart,
 }: {
   day: DayBoardHistoryDay;
   me: DayBoardUser;
   partner: DayBoardUser;
+  reactingEntryId: string | null;
+  onToggleHeart: (entry: DayBoardEntry) => Promise<void>;
 }) {
   return (
     <div>
@@ -1041,6 +1189,9 @@ function ArchiveDay({
           entry={
             day.mine
           }
+          canReact={
+            false
+          }
         />
 
         <ArchivePhoto
@@ -1049,6 +1200,17 @@ function ArchiveDay({
           }
           entry={
             day.partner
+          }
+          canReact
+          isReacting={
+            reactingEntryId ===
+            day.partner?.id
+          }
+          onToggleHeart={() =>
+            day.partner &&
+            void onToggleHeart(
+              day.partner,
+            )
           }
         />
 
@@ -1061,9 +1223,15 @@ function ArchiveDay({
 function ArchivePhoto({
   user,
   entry,
+  canReact,
+  isReacting,
+  onToggleHeart,
 }: {
   user: DayBoardUser;
   entry: DayBoardEntry | null;
+  canReact: boolean;
+  isReacting?: boolean;
+  onToggleHeart?: () => void;
 }) {
   const name =
     user.displayName ??
@@ -1125,6 +1293,27 @@ function ArchivePhoto({
             entry.createdAt,
           )}
         </p>
+
+        {(canReact || entry.heartCount > 0) && (
+          <button
+            type="button"
+            disabled={!canReact || isReacting}
+            onClick={onToggleHeart}
+            aria-pressed={entry.reactedByMe}
+            aria-label={entry.reactedByMe ? 'Убрать реакцию' : 'Поставить сердце'}
+            className={`mt-3 inline-flex w-fit items-center gap-1.5 rounded-full border px-2.5 py-1.5 text-xs font-medium transition ${
+              entry.reactedByMe
+                ? 'border-[#e8a8ad] bg-[#fbe5e7] text-[#b95863]'
+                : 'border-[#eadbd7] text-[#9a7f7b] hover:border-[#e2a6ab] hover:bg-[#fff1f2]'
+            } disabled:cursor-default disabled:opacity-70`}
+          >
+            <Heart
+              size={14}
+              fill={entry.reactedByMe ? 'currentColor' : 'none'}
+            />
+            {entry.heartCount > 0 ? entry.heartCount : 'Сердце'}
+          </button>
+        )}
 
       </div>
 

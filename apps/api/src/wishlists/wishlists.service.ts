@@ -11,6 +11,7 @@ import { CreateWishlistDto } from './dto/create-wishlist.dto.js';
 import { CreateWishlistItemDto } from './dto/create-wishlist-item.dto.js';
 import { UpdateWishlistDto } from './dto/update-wishlist.dto.js';
 import { UpdateWishlistItemDto } from './dto/update-wishlist-item.dto.js';
+import { UpsertWishlistGiftMarkDto } from './dto/upsert-wishlist-gift-mark.dto.js';
 
 @Injectable()
 export class WishlistsService {
@@ -100,6 +101,16 @@ export class WishlistsService {
               imageUrl: true,
               price: true,
               priority: true,
+              status: true,
+              giftMarks: {
+                where: {
+                  hiddenFromOwner: false,
+                },
+                select: {
+                  status: true,
+                  hiddenFromOwner: true,
+                },
+              },
               createdAt: true,
               updatedAt: true,
             },
@@ -159,6 +170,17 @@ export class WishlistsService {
                   imageUrl: true,
                   price: true,
                   priority: true,
+                  status: true,
+                  giftMarks: {
+                    where: {
+                      partnerId:
+                        userId,
+                    },
+                    select: {
+                      status: true,
+                      hiddenFromOwner: true,
+                    },
+                  },
                   createdAt: true,
                   updatedAt: true,
                 },
@@ -190,8 +212,20 @@ export class WishlistsService {
         : [];
 
     return {
-      mine,
-      partner,
+      mine:
+        mine.map(
+          (wishlist) =>
+            this.serializeWishlistGiftMarks(
+              wishlist,
+            ),
+        ),
+      partner:
+        partner.map(
+          (wishlist) =>
+            this.serializeWishlistGiftMarks(
+              wishlist,
+            ),
+        ),
     };
   }
 
@@ -237,6 +271,25 @@ export class WishlistsService {
               imageUrl: true,
               price: true,
               priority: true,
+              status: true,
+              giftMarks: {
+                where: {
+                  OR: [
+                    {
+                      partnerId:
+                        userId,
+                    },
+                    {
+                      hiddenFromOwner:
+                        false,
+                    },
+                  ],
+                },
+                select: {
+                  status: true,
+                  hiddenFromOwner: true,
+                },
+              },
               createdAt: true,
               updatedAt: true,
             },
@@ -288,6 +341,23 @@ export class WishlistsService {
 
     return {
       ...safeWishlist,
+
+      items:
+        safeWishlist.items.map(
+          (item) => {
+            const {
+              giftMarks,
+              ...safeItem
+            } = item;
+
+            return {
+              ...safeItem,
+              giftMark:
+                giftMarks[0] ??
+                null,
+            };
+          },
+        ),
 
       canEdit:
         wishlist.ownerId ===
@@ -471,6 +541,10 @@ export class WishlistsService {
         priority:
           data.priority ??
           3,
+
+        status:
+          data.status ??
+          'WANT',
       },
     });
   }
@@ -565,6 +639,9 @@ export class WishlistsService {
 
         priority:
           data.priority,
+
+        status:
+          data.status,
       },
     });
   }
@@ -618,6 +695,149 @@ export class WishlistsService {
     return {
       success: true,
     };
+  }
+
+  async upsertGiftMark(
+    userId: string,
+    itemId: string,
+    data: UpsertWishlistGiftMarkDto,
+  ) {
+    await this.ensurePartnerWishlistItem(
+      userId,
+      itemId,
+    );
+
+    return this.prisma.wishlistGiftMark.upsert({
+      where: {
+        itemId_partnerId: {
+          itemId,
+          partnerId:
+            userId,
+        },
+      },
+      create: {
+        itemId,
+        partnerId:
+          userId,
+        status:
+          data.status,
+        hiddenFromOwner:
+          data.hiddenFromOwner ??
+          true,
+      },
+      update: {
+        status:
+          data.status,
+        hiddenFromOwner:
+          data.hiddenFromOwner,
+      },
+      select: {
+        status: true,
+        hiddenFromOwner: true,
+      },
+    });
+  }
+
+  async removeGiftMark(
+    userId: string,
+    itemId: string,
+  ) {
+    await this.ensurePartnerWishlistItem(
+      userId,
+      itemId,
+    );
+
+    await this.prisma.wishlistGiftMark.deleteMany({
+      where: {
+        itemId,
+        partnerId:
+          userId,
+      },
+    });
+
+    return {
+      success: true,
+    };
+  }
+
+  private serializeWishlistGiftMarks<
+    T extends {
+      items: Array<{
+        giftMarks: Array<{
+          status: 'PLANNING' | 'PURCHASED';
+          hiddenFromOwner: boolean;
+        }>;
+      }>;
+    },
+  >(wishlist: T) {
+    return {
+      ...wishlist,
+      items:
+        wishlist.items.map(
+          (item) => {
+            const {
+              giftMarks,
+              ...safeItem
+            } = item;
+
+            return {
+              ...safeItem,
+              giftMark:
+                giftMarks[0] ??
+                null,
+            };
+          },
+        ),
+    };
+  }
+
+  private async ensurePartnerWishlistItem(
+    userId: string,
+    itemId: string,
+  ) {
+    const partnerId =
+      await this.getPartnerId(
+        userId,
+      );
+
+    if (!partnerId) {
+      throw new ForbiddenException(
+        'Отметки подарков доступны только для желаний партнёра',
+      );
+    }
+
+    const item =
+      await this.prisma.wishlistItem.findUnique({
+        where: {
+          id:
+            itemId,
+        },
+        select: {
+          id: true,
+          wishlist: {
+            select: {
+              ownerId: true,
+            },
+          },
+        },
+      });
+
+    if (!item) {
+      throw new NotFoundException(
+        'Желание не найдено',
+      );
+    }
+
+    if (
+      item.wishlist.ownerId !==
+      partnerId
+    ) {
+      throw new ForbiddenException(
+        'Отметку можно поставить только на желание текущего партнёра',
+      );
+    }
+
+    return item;
   }
 
   /*

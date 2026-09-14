@@ -3,6 +3,7 @@ import {
   Controller,
   Delete,
   Get,
+  Param,
   Patch,
   Post,
   Query,
@@ -220,6 +221,48 @@ export class DayBoardController {
         request,
       ),
       date,
+    );
+  }
+
+  @Post(
+    'entries/:entryId/heart',
+  )
+  addHeart(
+    @Req()
+    request:
+      DayBoardAuthenticatedRequest,
+
+    @Param(
+      'entryId',
+    )
+    entryId: string,
+  ) {
+    return this.dayBoardService.addHeart(
+      this.getUserId(
+        request,
+      ),
+      entryId,
+    );
+  }
+
+  @Delete(
+    'entries/:entryId/heart',
+  )
+  removeHeart(
+    @Req()
+    request:
+      DayBoardAuthenticatedRequest,
+
+    @Param(
+      'entryId',
+    )
+    entryId: string,
+  ) {
+    return this.dayBoardService.removeHeart(
+      this.getUserId(
+        request,
+      ),
+      entryId,
     );
   }
 

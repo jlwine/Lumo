@@ -1,5 +1,6 @@
 import {
   IsInt,
+  IsIn,
   IsOptional,
   IsString,
   IsUrl,
@@ -10,6 +11,10 @@ import {
 } from 'class-validator';
 
 export class CreateWishlistItemDto {
+  @IsOptional()
+  @IsIn(['WANT', 'PLANNED', 'BUY_LATER', 'RECEIVED'])
+  status?: 'WANT' | 'PLANNED' | 'BUY_LATER' | 'RECEIVED';
+
   @IsString()
   @MinLength(1)
   @MaxLength(120)

@@ -34,6 +34,18 @@ enum CalendarEventParticipantRole {
   EDITOR
 }
 
+enum WishlistItemStatus {
+  WANT
+  PLANNED
+  BUY_LATER
+  RECEIVED
+}
+
+enum WishlistGiftMarkStatus {
+  PLANNING
+  PURCHASED
+}
+
 model User {
   id           String    @id @default(uuid())
   email        String    @unique
@@ -76,12 +88,14 @@ model User {
   calendarEventParticipants CalendarEventParticipant[]
 
   wishlists Wishlist[]
+  wishlistGiftMarks WishlistGiftMark[]
 
   /*
    * Фотографии пользователя
    * на доске дня.
    */
   dayBoardEntries DayBoardEntry[] @relation("DayBoardEntryAuthor")
+  dayBoardReactions DayBoardReaction[]
 
   /*
    * Текущий токен подтверждения email.
@@ -304,13 +318,32 @@ model WishlistItem {
    * автоматически получают 3.
    */
   priority Int @default(3)
+  status   WishlistItemStatus @default(WANT)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   wishlist Wishlist @relation(fields: [wishlistId], references: [id], onDelete: Cascade)
+  giftMarks WishlistGiftMark[]
 
   @@index([wishlistId])
+}
+
+model WishlistGiftMark {
+  itemId    String
+  partnerId String
+
+  status          WishlistGiftMarkStatus @default(PLANNING)
+  hiddenFromOwner Boolean                @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  item    WishlistItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  partner User         @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+
+  @@id([itemId, partnerId])
+  @@index([partnerId])
 }
 
 /*
@@ -338,8 +371,22 @@ model DayBoardEntry {
 
   relationship Relationship @relation(fields: [relationshipId], references: [id], onDelete: Cascade)
   author       User         @relation(name: "DayBoardEntryAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+  reactions    DayBoardReaction[]
 
   @@unique([relationshipId, authorId, boardDate])
   @@index([relationshipId, boardDate])
   @@index([authorId, boardDate])
+}
+
+model DayBoardReaction {
+  entryId String
+  userId  String
+
+  createdAt DateTime @default(now())
+
+  entry DayBoardEntry @relation(fields: [entryId], references: [id], onDelete: Cascade)
+  user  User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([entryId, userId])
+  @@index([userId])
 }

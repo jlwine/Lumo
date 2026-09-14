@@ -7,6 +7,7 @@ import {
   Param,
   Patch,
   Post,
+  Put,
   Req,
   UploadedFile,
   UseGuards,
@@ -39,6 +40,7 @@ import { CreateWishlistDto } from './dto/create-wishlist.dto.js';
 import { CreateWishlistItemDto } from './dto/create-wishlist-item.dto.js';
 import { UpdateWishlistDto } from './dto/update-wishlist.dto.js';
 import { UpdateWishlistItemDto } from './dto/update-wishlist-item.dto.js';
+import { UpsertWishlistGiftMarkDto } from './dto/upsert-wishlist-gift-mark.dto.js';
 
 import { WishlistsService } from './wishlists.service.js';
 
@@ -322,6 +324,38 @@ export class WishlistsController {
     return this.wishlistsService.removeItem(
       request.user.sub,
       wishlistId,
+      itemId,
+    );
+  }
+
+  @Put('items/:itemId/gift-mark')
+  async upsertGiftMark(
+    @Param('itemId')
+    itemId: string,
+
+    @Body()
+    data: UpsertWishlistGiftMarkDto,
+
+    @Req()
+    request: any,
+  ) {
+    return this.wishlistsService.upsertGiftMark(
+      request.user.sub,
+      itemId,
+      data,
+    );
+  }
+
+  @Delete('items/:itemId/gift-mark')
+  async removeGiftMark(
+    @Param('itemId')
+    itemId: string,
+
+    @Req()
+    request: any,
+  ) {
+    return this.wishlistsService.removeGiftMark(
+      request.user.sub,
       itemId,
     );
   }
