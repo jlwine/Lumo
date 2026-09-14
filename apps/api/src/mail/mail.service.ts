@@ -135,6 +135,9 @@ export class MailService {
       });
   }
 
+  /*
+   * Подтверждение email.
+   */
   async sendEmailVerification(
     to: string,
     url: string,
@@ -183,6 +186,79 @@ export class MailService {
     });
   }
 
+  /*
+   * Уведомление безопасности,
+   * которое отправляется на старый email
+   * после изменения адреса аккаунта.
+   */
+  async sendEmailChangedNotification(
+    to: string,
+    newEmail: string,
+  ) {
+    const frontendUrl =
+      (
+        this.configService.get<string>(
+          'FRONTEND_URL',
+        ) ??
+        'http://localhost:3000'
+      ).replace(
+        /\/+$/,
+        '',
+      );
+
+    const securityUrl =
+      `${frontendUrl}/settings/profile`;
+
+    return this.send({
+      to,
+
+      subject:
+        'Email аккаунта Lumo изменён',
+
+      text:
+        [
+          'Email вашего аккаунта Lumo был изменён.',
+          '',
+          `Новый email: ${newEmail}`,
+          '',
+          'Если это были вы, никаких действий не требуется.',
+          '',
+          'Если вы не меняли email и доступ к аккаунту сохранился, немедленно измените пароль в настройках Lumo.',
+          '',
+          `Настройки аккаунта: ${securityUrl}`,
+        ].join(
+          '\n',
+        ),
+
+      html:
+        this.buildEmailHtml({
+          eyebrow:
+            'Безопасность аккаунта',
+
+          title:
+            'Email аккаунта изменён',
+
+          description:
+            `Email вашего аккаунта Lumo был изменён на ${newEmail}. Если это были вы, никаких действий не требуется.`,
+
+          buttonLabel:
+            'Открыть настройки аккаунта',
+
+          buttonUrl:
+            securityUrl,
+
+          footer:
+            'Если вы не меняли email и доступ к аккаунту сохранился, немедленно измените пароль в настройках Lumo.',
+        }),
+
+      developmentUrl:
+        securityUrl,
+    });
+  }
+
+  /*
+   * Восстановление пароля.
+   */
   async sendPasswordReset(
     to: string,
     url: string,
@@ -231,6 +307,9 @@ export class MailService {
     });
   }
 
+  /*
+   * Универсальная отправка письма.
+   */
   private async send(
     content:
       MailContent,
@@ -289,6 +368,10 @@ export class MailService {
     }
   }
 
+  /*
+   * В development оставляем ссылку
+   * в консоли как резервный вариант.
+   */
   private logDevelopmentFallback(
     content:
       MailContent,
@@ -314,6 +397,9 @@ export class MailService {
     );
   }
 
+  /*
+   * Общий HTML-шаблон писем Lumo.
+   */
   private buildEmailHtml({
     eyebrow,
     title,
@@ -339,56 +425,177 @@ export class MailService {
 <html lang="ru">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1"
+    />
+
     <title>${escapeHtml(title)}</title>
   </head>
 
-  <body style="margin:0;padding:0;background:#fff8f6;font-family:Arial,Helvetica,sans-serif;color:#554442;">
-    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background:#fff8f6;padding:32px 16px;">
+  <body
+    style="
+      margin:0;
+      padding:0;
+      background:#fff8f6;
+      font-family:Arial,Helvetica,sans-serif;
+      color:#554442;
+    "
+  >
+    <table
+      role="presentation"
+      width="100%"
+      cellspacing="0"
+      cellpadding="0"
+      border="0"
+      style="
+        background:#fff8f6;
+        padding:32px 16px;
+      "
+    >
       <tr>
         <td align="center">
-          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="max-width:560px;background:#ffffff;border:1px solid #eeddda;border-radius:28px;overflow:hidden;">
+
+          <table
+            role="presentation"
+            width="100%"
+            cellspacing="0"
+            cellpadding="0"
+            border="0"
+            style="
+              max-width:560px;
+              background:#ffffff;
+              border:1px solid #eeddda;
+              border-radius:28px;
+              overflow:hidden;
+            "
+          >
+
             <tr>
-              <td style="padding:34px 36px 18px;">
-                <div style="font-size:28px;font-weight:700;letter-spacing:-0.6px;color:#69514f;">
+              <td
+                style="
+                  padding:34px 36px 18px;
+                "
+              >
+
+                <div
+                  style="
+                    font-size:28px;
+                    font-weight:700;
+                    letter-spacing:-0.6px;
+                    color:#69514f;
+                  "
+                >
                   ☾ Lumo
                 </div>
 
-                <div style="margin-top:30px;font-size:13px;font-weight:700;color:#c8757c;">
+                <div
+                  style="
+                    margin-top:30px;
+                    font-size:13px;
+                    font-weight:700;
+                    color:#c8757c;
+                  "
+                >
                   ${escapeHtml(eyebrow)}
                 </div>
 
-                <h1 style="margin:8px 0 0;font-size:28px;line-height:1.25;color:#554442;">
+                <h1
+                  style="
+                    margin:8px 0 0;
+                    font-size:28px;
+                    line-height:1.25;
+                    color:#554442;
+                  "
+                >
                   ${escapeHtml(title)}
                 </h1>
 
-                <p style="margin:16px 0 0;font-size:15px;line-height:1.7;color:#8f7974;">
+                <p
+                  style="
+                    margin:16px 0 0;
+                    font-size:15px;
+                    line-height:1.7;
+                    color:#8f7974;
+                  "
+                >
                   ${escapeHtml(description)}
                 </p>
+
               </td>
             </tr>
 
             <tr>
-              <td style="padding:10px 36px 8px;">
-                <a href="${safeUrl}" style="display:inline-block;background:#df8e94;color:#ffffff;text-decoration:none;font-weight:700;font-size:15px;padding:14px 22px;border-radius:16px;">
+              <td
+                style="
+                  padding:10px 36px 8px;
+                "
+              >
+
+                <a
+                  href="${safeUrl}"
+                  style="
+                    display:inline-block;
+                    background:#df8e94;
+                    color:#ffffff;
+                    text-decoration:none;
+                    font-weight:700;
+                    font-size:15px;
+                    padding:14px 22px;
+                    border-radius:16px;
+                  "
+                >
                   ${escapeHtml(buttonLabel)}
                 </a>
+
               </td>
             </tr>
 
             <tr>
-              <td style="padding:22px 36px 34px;">
-                <p style="margin:0;font-size:12px;line-height:1.6;color:#aa9690;">
+              <td
+                style="
+                  padding:22px 36px 34px;
+                "
+              >
+
+                <p
+                  style="
+                    margin:0;
+                    font-size:12px;
+                    line-height:1.6;
+                    color:#aa9690;
+                  "
+                >
                   ${escapeHtml(footer)}
                 </p>
 
-                <p style="margin:18px 0 0;font-size:11px;line-height:1.6;color:#b8a5a0;word-break:break-all;">
-                  Если кнопка не работает, откройте эту ссылку:<br />
-                  <a href="${safeUrl}" style="color:#b96b72;">${safeUrl}</a>
+                <p
+                  style="
+                    margin:18px 0 0;
+                    font-size:11px;
+                    line-height:1.6;
+                    color:#b8a5a0;
+                    word-break:break-all;
+                  "
+                >
+                  Если кнопка не работает, откройте эту ссылку:
+                  <br />
+
+                  <a
+                    href="${safeUrl}"
+                    style="
+                      color:#b96b72;
+                    "
+                  >
+                    ${safeUrl}
+                  </a>
                 </p>
+
               </td>
             </tr>
+
           </table>
+
         </td>
       </tr>
     </table>

@@ -29,6 +29,9 @@ model User {
   email        String    @unique
   nickname     String    @unique
   passwordHash String
+
+  sessionVersion Int @default(0)
+  
   displayName  String?
   avatarUrl    String?
   birthDate    DateTime? @db.Date

@@ -37,9 +37,6 @@ export class UsersService {
       AuthService,
   ) {}
 
-  /*
-   * Получение списка пользователей.
-   */
   async findAll() {
     return this.prisma.user.findMany({
       select: {
@@ -53,14 +50,12 @@ export class UsersService {
       },
 
       orderBy: {
-        createdAt: 'desc',
+        createdAt:
+          'desc',
       },
     });
   }
 
-  /*
-   * Поиск пользователей.
-   */
   async search(
     query: string,
     currentUserId: string,
@@ -69,7 +64,8 @@ export class UsersService {
       query.trim();
 
     if (
-      normalizedQuery.length < 2
+      normalizedQuery.length <
+      2
     ) {
       return [];
     }
@@ -121,9 +117,6 @@ export class UsersService {
     });
   }
 
-  /*
-   * Получение публичного профиля.
-   */
   async findByNickname(
     nickname: string,
     currentUserId: string,
@@ -151,16 +144,14 @@ export class UsersService {
         },
       });
 
-    if (!user) {
+    if (
+      !user
+    ) {
       throw new NotFoundException(
         'Пользователь не найден',
       );
     }
 
-    /*
-     * Активные отношения
-     * открытого пользователя.
-     */
     const userRelationship =
       await this.prisma.relationship.findFirst({
         where: {
@@ -201,10 +192,6 @@ export class UsersService {
         },
       });
 
-    /*
-     * Активные отношения
-     * текущего пользователя.
-     */
     const currentUserRelationship =
       await this.prisma.relationship.findFirst({
         where: {
@@ -225,66 +212,48 @@ export class UsersService {
         },
       });
 
-    /*
-     * Незавершённое приглашение
-     * между пользователями.
-     */
     const pendingInvitation =
       user.id !==
       currentUserId
-        ? await this.prisma.relationshipInvitation.findFirst(
-            {
-              where: {
-                status:
-                  'PENDING',
+        ? await this.prisma.relationshipInvitation.findFirst({
+            where: {
+              status:
+                'PENDING',
 
-                OR: [
-                  {
-                    senderId:
-                      currentUserId,
+              OR: [
+                {
+                  senderId:
+                    currentUserId,
 
-                    receiverId:
-                      user.id,
-                  },
+                  receiverId:
+                    user.id,
+                },
 
-                  {
-                    senderId:
-                      user.id,
+                {
+                  senderId:
+                    user.id,
 
-                    receiverId:
-                      currentUserId,
-                  },
-                ],
-              },
-
-              select: {
-                id: true,
-                senderId: true,
-                receiverId: true,
-                status: true,
-              },
+                  receiverId:
+                    currentUserId,
+                },
+              ],
             },
-          )
+
+            select: {
+              id: true,
+              senderId: true,
+              receiverId: true,
+              status: true,
+            },
+          })
         : null;
 
-    /*
-     * Определяем партнёра
-     * открытого пользователя.
-     */
     let partner:
       | {
           id: string;
-
-          nickname:
-            string;
-
-          displayName:
-            | string
-            | null;
-
-          avatarUrl:
-            | string
-            | null;
+          nickname: string;
+          displayName: string | null;
+          avatarUrl: string | null;
         }
       | null =
       null;
@@ -299,10 +268,6 @@ export class UsersService {
           : userRelationship.user1;
     }
 
-    /*
-     * Направление существующего
-     * приглашения.
-     */
     const invitation =
       pendingInvitation
         ? {
@@ -420,9 +385,6 @@ export class UsersService {
     };
   }
 
-  /*
-   * Изменение данных профиля.
-   */
   async updateProfile(
     userId: string,
     data:
@@ -436,7 +398,9 @@ export class UsersService {
         },
       });
 
-    if (!user) {
+    if (
+      !user
+    ) {
       throw new NotFoundException(
         'Пользователь не найден',
       );
@@ -554,13 +518,6 @@ export class UsersService {
     });
   }
 
-  /*
-   * Изменение электронной почты.
-   *
-   * Перед изменением пользователь
-   * должен подтвердить действие
-   * своим текущим паролем.
-   */
   async updateEmail(
     userId: string,
     data:
@@ -581,15 +538,14 @@ export class UsersService {
         },
       });
 
-    if (!user) {
+    if (
+      !user
+    ) {
       throw new NotFoundException(
         'Пользователь не найден',
       );
     }
 
-    /*
-     * Проверяем текущий пароль.
-     */
     const passwordMatches =
       await bcrypt.compare(
         data.currentPassword,
@@ -604,19 +560,11 @@ export class UsersService {
       );
     }
 
-    /*
-     * Email всегда храним
-     * в нижнем регистре.
-     */
     const normalizedEmail =
       data.email
         .trim()
         .toLowerCase();
 
-    /*
-     * Проверяем, не используется ли
-     * этот email другим аккаунтом.
-     */
     const existingUser =
       await this.prisma.user.findUnique({
         where: {
@@ -639,11 +587,6 @@ export class UsersService {
       );
     }
 
-    /*
-     * Если адрес фактически не изменился,
-     * не сбрасываем уже существующее
-     * подтверждение email.
-     */
     if (
       normalizedEmail ===
       user.email
@@ -669,10 +612,6 @@ export class UsersService {
       });
     }
 
-    /*
-     * Новый адрес всегда требует
-     * повторного подтверждения.
-     */
     const updatedUser =
       await this.prisma.user.update({
         where: {
@@ -702,21 +641,27 @@ export class UsersService {
         },
       });
 
+    /*
+     * Новый email получает письмо
+     * подтверждения.
+     */
     await this.authService.sendVerificationEmailForUser(
       updatedUser.id,
+      updatedUser.email,
+    );
+
+    /*
+     * Старый email получает
+     * уведомление безопасности.
+     */
+    await this.authService.sendEmailChangedNotification(
+      user.email,
       updatedUser.email,
     );
 
     return updatedUser;
   }
 
-  /*
-   * Изменение пароля.
-   *
-   * Сначала проверяем старый пароль,
-   * затем убеждаемся, что новый пароль
-   * действительно отличается от него.
-   */
   async updatePassword(
     userId: string,
     data:
@@ -735,15 +680,14 @@ export class UsersService {
         },
       });
 
-    if (!user) {
+    if (
+      !user
+    ) {
       throw new NotFoundException(
         'Пользователь не найден',
       );
     }
 
-    /*
-     * Проверяем действующий пароль.
-     */
     const currentPasswordMatches =
       await bcrypt.compare(
         data.currentPassword,
@@ -758,10 +702,6 @@ export class UsersService {
       );
     }
 
-    /*
-     * Проверяем, что новый пароль
-     * не совпадает со старым.
-     */
     const newPasswordMatchesOld =
       await bcrypt.compare(
         data.newPassword,
@@ -777,27 +717,47 @@ export class UsersService {
     }
 
     /*
-     * Создаём новый bcrypt-хэш.
-     *
-     * 10 раундов достаточно
-     * для текущего проекта.
+     * Используем 12 bcrypt-раундов,
+     * как при регистрации.
      */
     const passwordHash =
       await bcrypt.hash(
         data.newPassword,
-        10,
+        12,
       );
 
-    await this.prisma.user.update({
-      where: {
-        id:
-          userId,
-      },
+    /*
+     * После ручной смены пароля
+     * уничтожаем все ранее созданные
+     * ссылки восстановления.
+     */
+    await this.prisma.$transaction([
+      this.prisma.user.update({
+        where: {
+          id:
+            userId,
+        },
 
-      data: {
-        passwordHash,
-      },
-    });
+        data: {
+          passwordHash,
+
+          /*
+          * Отзываем абсолютно все
+          * ранее выданные JWT пользователя.
+          */
+          sessionVersion: {
+            increment:
+              1,
+          },
+        },
+      }),
+
+      this.prisma.passwordResetToken.deleteMany({
+        where: {
+          userId,
+        },
+      }),
+    ]);
 
     return {
       success:
@@ -805,9 +765,6 @@ export class UsersService {
     };
   }
 
-  /*
-   * Сохраняем адрес нового аватара.
-   */
   async updateAvatar(
     userId: string,
     avatarUrl: string,
@@ -824,7 +781,9 @@ export class UsersService {
         },
       });
 
-    if (!user) {
+    if (
+      !user
+    ) {
       throw new NotFoundException(
         'Пользователь не найден',
       );

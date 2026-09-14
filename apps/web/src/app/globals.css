@@ -651,3 +651,11 @@ html.dark input:-webkit-autofill:active {
   caret-color:
     var(--text-primary);
 }
+/* Profile header: keep the overlapping name readable in both themes. */
+.profile-banner {
+  background: linear-gradient(to right, #f6dce0, #f4e4eb, #e7e0f3);
+}
+
+html.dark .profile-banner {
+  background: linear-gradient(to right, #4a343a, #3f3036, #352d43);
+}

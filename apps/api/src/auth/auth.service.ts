@@ -261,6 +261,9 @@ export class AuthService {
 
         nickname:
           user.nickname,
+
+        sessionVersion:
+          user.sessionVersion,
       });
 
     return {
@@ -436,6 +439,23 @@ export class AuthService {
     await this.createEmailVerificationToken(
       userId,
       email,
+    );
+  }
+
+    /*
+   * Отправляем уведомление безопасности
+   * на старый email после изменения адреса аккаунта.
+   */
+  async sendEmailChangedNotification(
+    oldEmail:
+      string,
+
+    newEmail:
+      string,
+  ) {
+    await this.mailService.sendEmailChangedNotification(
+      oldEmail,
+      newEmail,
     );
   }
 
@@ -622,13 +642,25 @@ export class AuthService {
 
         data: {
           passwordHash,
+
+          /*
+          * Любые JWT, выданные до восстановления
+          * пароля, мгновенно становятся недействительными.
+          */
+          sessionVersion: {
+            increment:
+              1,
+          },
         },
       }),
 
-      this.prisma.passwordResetToken.delete({
+      /*
+      * Удаляем все reset-токены пользователя.
+      */
+      this.prisma.passwordResetToken.deleteMany({
         where: {
-          id:
-            resetToken.id,
+          userId:
+            resetToken.userId,
         },
       }),
     ]);

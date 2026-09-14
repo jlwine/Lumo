@@ -967,11 +967,6 @@ export default function ProfileSettingsPage() {
       return;
     }
 
-    /*
-     * Если до этого редактор
-     * уже использовался,
-     * освобождаем старый URL.
-     */
     if (
       cropImageUrl
     ) {
@@ -1010,18 +1005,10 @@ export default function ProfileSettingsPage() {
       null,
     );
 
-    /*
-     * Позволяет потом выбрать
-     * тот же самый файл повторно.
-     */
     event.target.value =
       '';
   }
 
-  /*
-   * react-easy-crop сообщает
-   * координаты выбранного участка.
-   */
   function handleCropComplete(
     _croppedArea:
       Area,
@@ -1034,9 +1021,6 @@ export default function ProfileSettingsPage() {
     );
   }
 
-  /*
-   * Закрываем редактор.
-   */
   function closeCropEditor() {
     if (
       cropImageUrl
@@ -1064,11 +1048,6 @@ export default function ProfileSettingsPage() {
     );
   }
 
-  /*
-   * Физически обрезаем изображение
-   * и только после этого отправляем
-   * полученный аватар на backend.
-   */
   async function saveCroppedAvatar() {
     if (
       !cropImageUrl ||
@@ -1336,7 +1315,7 @@ export default function ProfileSettingsPage() {
 
         <section className="overflow-hidden rounded-[32px] border border-[#eeddda] bg-white shadow-[0_20px_70px_rgba(91,65,59,0.07)]">
 
-          <div className="h-36 bg-gradient-to-r from-[#f6dce0] via-[#f4e4eb] to-[#e7e0f3]" />
+          <div className="profile-banner h-36" />
 
           <div className="px-7 pb-8 md:px-10">
 
@@ -1410,11 +1389,11 @@ export default function ProfileSettingsPage() {
 
               <div className="pb-1">
 
-                <h2 className="text-2xl font-semibold text-[#554442]">
+                <h2 className="text-2xl font-semibold text-[color:var(--text-primary)]">
                   {name}
                 </h2>
 
-                <p className="mt-1 text-sm text-[#a08b85]">
+                <p className="mt-1 text-sm text-[color:var(--text-secondary)]">
                   @{nickname}
                 </p>
 
@@ -1426,7 +1405,7 @@ export default function ProfileSettingsPage() {
                   onClick={() =>
                     fileInputRef.current?.click()
                   }
-                  className="mt-3 flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-[#b96b72] transition-all hover:bg-[#fff0ef] active:scale-[0.97]"
+                  className="mt-3 flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-[#b96b72] transition-all hover:bg-[#fff0ef] active:scale-[0.97] dark:text-[#f0a3ad] dark:hover:bg-[#51383d]"
                 >
                   <ImagePlus
                     size={16}
@@ -1437,7 +1416,7 @@ export default function ProfileSettingsPage() {
                   )}
                 </button>
 
-                <p className="mt-1 text-xs text-[#b09b95]">
+                <p className="mt-1 text-xs text-[#b09b95] dark:text-[#c8aaa6]">
                   {tr(
                     'JPG, PNG или WEBP, до 5 МБ',
                   )}
@@ -2169,7 +2148,6 @@ export default function ProfileSettingsPage() {
 
       </div>
 
-      {/* Редактор миниатюры */}
       {cropImageUrl && (
         <AvatarCropDialog
           imageUrl={
@@ -2216,11 +2194,8 @@ function PasswordField({
   onToggle,
 }: {
   id: string;
-
   label: string;
-
   value: string;
-
   shown: boolean;
 
   autoComplete:
@@ -2329,12 +2304,8 @@ function AvatarCropDialog({
   onSave,
 }: {
   imageUrl: string;
-
-  crop:
-    CropPosition;
-
+  crop: CropPosition;
   zoom: number;
-
   isSaving: boolean;
 
   onCropChange: (
@@ -2355,7 +2326,6 @@ function AvatarCropDialog({
   ) => void;
 
   onCancel: () => void;
-
   onSave: () => void;
 }) {
   return (
@@ -2363,7 +2333,6 @@ function AvatarCropDialog({
 
       <div className="w-full max-w-lg overflow-hidden rounded-[30px] border border-[#eadbd7] bg-white shadow-[0_30px_100px_rgba(73,48,45,0.24)]">
 
-        {/* Заголовок */}
         <div className="flex items-start justify-between gap-4 px-6 pb-5 pt-6">
 
           <div>
@@ -2410,7 +2379,6 @@ function AvatarCropDialog({
 
         </div>
 
-        {/* Область кадрирования */}
         <div className="relative h-[420px] w-full bg-[#2e2928]">
 
           <Cropper
@@ -2444,7 +2412,6 @@ function AvatarCropDialog({
 
         </div>
 
-        {/* Масштаб */}
         <div className="px-6 py-5">
 
           <div className="flex items-center gap-4">
@@ -2501,7 +2468,6 @@ function AvatarCropDialog({
 
         </div>
 
-        {/* Кнопки */}
         <div className="flex flex-col-reverse gap-3 border-t border-[#f0e3df] px-6 py-5 sm:flex-row">
 
           <button
