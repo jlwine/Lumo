@@ -19,6 +19,8 @@ import {
   LoginDto,
 } from './dto/login.dto.js';
 
+import { RevokeOtherSessionsDto } from './dto/revoke-other-sessions.dto.js';
+
 import {
   RegisterDto,
 } from './dto/register.dto.js';
@@ -92,6 +94,15 @@ export class AuthController {
     return this.authService.getCurrentUser(
       request.user.sub,
     );
+  }
+
+  @Post('sessions/revoke-others')
+  @UseGuards(JwtAuthGuard)
+  async revokeOtherSessions(
+    @Req() request: { user: { sub: string } },
+    @Body() data: RevokeOtherSessionsDto,
+  ) {
+    return this.authService.revokeOtherSessions(request.user.sub, data.currentPassword);
   }
 
   /*

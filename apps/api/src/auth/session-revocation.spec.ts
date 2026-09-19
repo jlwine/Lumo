@@ -48,6 +48,14 @@ describe('Отзыв сессий через HTTP', () => {
           user.sessionVersion += data.sessionVersion.increment;
           return { ...user };
         }),
+        updateMany: vi.fn(async ({ where, data }: {
+          where: { id: string; sessionVersion: number };
+          data: { sessionVersion: { increment: number } };
+        }) => {
+          if (where.id !== user.id || where.sessionVersion !== user.sessionVersion) return { count: 0 };
+          user.sessionVersion += data.sessionVersion.increment;
+          return { count: 1 };
+        }),
       },
       passwordResetToken: {
         findUnique: vi.fn(async () => resetAvailable ? {
@@ -115,6 +123,25 @@ describe('Отзыв сессий через HTTP', () => {
 
   it('сохраняет совместимость старых JWT до первого отзыва', async () => {
     await checkRoutes(jwt.sign({ sub: user.id }), 200);
+  });
+
+  it('завершает другие сеансы и сохраняет текущий после проверки пароля', async () => {
+    const login = await request(app.getHttpServer()).post('/auth/login')
+      .send({ login: 'tester', password: 'Old-password-123' }).expect(201);
+    const oldToken = login.body.accessToken as string;
+
+    await request(app.getHttpServer()).post('/auth/sessions/revoke-others')
+      .auth(oldToken, { type: 'bearer' })
+      .send({ currentPassword: 'wrong-password' }).expect(401);
+    await checkRoutes(oldToken, 200);
+
+    const response = await request(app.getHttpServer()).post('/auth/sessions/revoke-others')
+      .auth(oldToken, { type: 'bearer' })
+      .send({ currentPassword: 'Old-password-123' }).expect(201);
+    const currentToken = response.body.accessToken as string;
+
+    await checkRoutes(oldToken, 401);
+    await checkRoutes(currentToken, 200);
   });
 
   it.each(['expired', 'signature', 'deleted', 'missing-sub'])('не принимает токен: %s', async (reason) => {

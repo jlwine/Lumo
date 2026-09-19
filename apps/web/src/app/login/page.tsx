@@ -9,6 +9,7 @@ import {
 } from '@/i18n/use-language';
 
 import {
+  Suspense,
   useState,
   type FormEvent,
 } from 'react';
@@ -17,6 +18,7 @@ import Link from 'next/link';
 
 import {
   useRouter,
+  useSearchParams,
 } from 'next/navigation';
 
 import {
@@ -322,6 +324,8 @@ export default function LoginPage() {
 
               </div>
 
+              {!error && <Suspense fallback={null}><PasswordChangedNotice /></Suspense>}
+
               {error && (
                 <div className="rounded-2xl border border-[#efc9cc] bg-[var(--accent-soft)] px-4 py-3 text-sm text-[#c46973]">
                   {error}
@@ -373,5 +377,16 @@ export default function LoginPage() {
       </div>
 
     </main>
+  );
+}
+
+function PasswordChangedNotice() {
+  const searchParams = useSearchParams();
+  if (searchParams.get('passwordChanged') !== '1') return null;
+
+  return (
+    <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-muted)] px-4 py-3 text-sm text-[var(--text-primary)]" role="status">
+      {tr('Пароль изменён. Войдите снова.')}
+    </div>
   );
 }

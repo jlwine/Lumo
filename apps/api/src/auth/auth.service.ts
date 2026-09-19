@@ -336,6 +336,40 @@ export class AuthService {
     return user;
   }
 
+  async revokeOtherSessions(userId: string, currentPassword: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        email: true,
+        nickname: true,
+        passwordHash: true,
+        sessionVersion: true,
+      },
+    });
+
+    if (!user || !(await bcrypt.compare(currentPassword, user.passwordHash))) {
+      throw new UnauthorizedException('Неверный текущий пароль');
+    }
+
+    const accessToken = await this.jwtService.signAsync({
+      sub: user.id,
+      email: user.email,
+      nickname: user.nickname,
+      sessionVersion: user.sessionVersion + 1,
+    });
+
+    const updated = await this.prisma.user.updateMany({
+      where: { id: userId, sessionVersion: user.sessionVersion },
+      data: { sessionVersion: { increment: 1 } },
+    });
+    if (updated.count !== 1) {
+      throw new ConflictException('Сессии уже изменились. Обновите страницу и попробуйте снова');
+    }
+
+    return { accessToken };
+  }
+
   /*
    * ---------------------------------------------------------
    * Подтверждение email

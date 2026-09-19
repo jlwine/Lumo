@@ -26,6 +26,7 @@ import {
   Heart,
   ImagePlus,
   KeyRound,
+  LogOut,
   Mail,
   Minus,
   Plus,
@@ -51,6 +52,7 @@ import {
 import {
   getAccessToken,
   removeAccessToken,
+  saveAccessToken,
 } from '@/lib/auth';
 
 import {
@@ -67,6 +69,8 @@ type CropPosition = {
   x: number;
   y: number;
 };
+
+type PasswordConfirmationAction = 'email' | 'sessions';
 
 export default function ProfileSettingsPage() {
   useLanguageVersion();
@@ -123,11 +127,11 @@ export default function ProfileSettingsPage() {
   ] =
     useState('');
 
-  const [
-    emailCurrentPassword,
-    setEmailCurrentPassword,
-  ] =
-    useState('');
+  const [confirmationAction, setConfirmationAction] =
+    useState<PasswordConfirmationAction | null>(null);
+  const [confirmationPassword, setConfirmationPassword] = useState('');
+  const [showConfirmationPassword, setShowConfirmationPassword] = useState(false);
+  const [confirmationError, setConfirmationError] = useState<string | null>(null);
 
   const [
     currentPassword,
@@ -165,11 +169,7 @@ export default function ProfileSettingsPage() {
   ] =
     useState(false);
 
-  const [
-    showEmailPassword,
-    setShowEmailPassword,
-  ] =
-    useState(false);
+  const [isRevokingSessions, setIsRevokingSessions] = useState(false);
 
   const [
     showCurrentPassword,
@@ -509,13 +509,47 @@ export default function ProfileSettingsPage() {
     }
   }
 
-  /*
-   * Изменение электронной почты.
-   *
-   * Для подтверждения просим
-   * текущий пароль пользователя.
-   */
-  async function saveEmail() {
+  function openPasswordConfirmation(action: PasswordConfirmationAction) {
+    if (action === 'email') {
+      const normalizedEmail = email.trim().toLowerCase();
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
+        setAccountError(tr('Введите корректный email'));
+        setAccountSuccess(null);
+        return;
+      }
+    }
+
+    setAccountError(null);
+    setAccountSuccess(null);
+    setConfirmationPassword('');
+    setShowConfirmationPassword(false);
+    setConfirmationError(null);
+    setConfirmationAction(action);
+  }
+
+  function closePasswordConfirmation() {
+    setConfirmationAction(null);
+    setConfirmationPassword('');
+    setShowConfirmationPassword(false);
+    setConfirmationError(null);
+  }
+
+  async function confirmPasswordAction() {
+    if (!confirmationPassword) {
+      setConfirmationError(tr('Введите текущий пароль'));
+      return;
+    }
+
+    setConfirmationError(null);
+    if (confirmationAction === 'email') {
+      await saveEmail(confirmationPassword);
+    } else if (confirmationAction === 'sessions') {
+      await revokeOtherSessions(confirmationPassword);
+    }
+  }
+
+  /* Изменение электронной почты после подтверждения паролем. */
+  async function saveEmail(password: string) {
     const token =
       getAccessToken();
 
@@ -545,22 +579,6 @@ export default function ProfileSettingsPage() {
       setAccountError(
         tr(
           'Введите корректный email',
-        ),
-      );
-
-      setAccountSuccess(
-        null,
-      );
-
-      return;
-    }
-
-    if (
-      !emailCurrentPassword
-    ) {
-      setAccountError(
-        tr(
-          'Введите текущий пароль',
         ),
       );
 
@@ -602,7 +620,7 @@ export default function ProfileSettingsPage() {
                   normalizedEmail,
 
                 currentPassword:
-                  emailCurrentPassword,
+                  password,
               }),
           },
         );
@@ -615,13 +633,7 @@ export default function ProfileSettingsPage() {
         result.email,
       );
 
-      setEmailCurrentPassword(
-        '',
-      );
-
-      setShowEmailPassword(
-        false,
-      );
+      closePasswordConfirmation();
 
       setAccountSuccess(
         result.emailVerifiedAt
@@ -636,11 +648,11 @@ export default function ProfileSettingsPage() {
       if (
         error instanceof Error
       ) {
-        setAccountError(
+        setConfirmationError(
           error.message,
         );
       } else {
-        setAccountError(
+        setConfirmationError(
           tr(
             'Не удалось изменить email',
           ),
@@ -883,11 +895,8 @@ export default function ProfileSettingsPage() {
         false,
       );
 
-      setAccountSuccess(
-        tr(
-          'Пароль изменён',
-        ),
-      );
+      removeAccessToken();
+      router.replace('/login?passwordChanged=1');
     } catch (error) {
       if (
         error instanceof Error
@@ -906,6 +915,38 @@ export default function ProfileSettingsPage() {
       setIsSavingPassword(
         false,
       );
+    }
+  }
+
+  async function revokeOtherSessions(password: string) {
+    const token = getAccessToken();
+    if (!token) {
+      removeAccessToken();
+      router.replace('/login');
+      return;
+    }
+
+    setIsRevokingSessions(true);
+    setConfirmationError(null);
+    setAccountSuccess(null);
+    try {
+      const response = await apiRequest<{ accessToken: string }>(
+        '/auth/sessions/revoke-others',
+        {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ currentPassword: password }),
+        },
+      );
+      saveAccessToken(response.accessToken);
+      closePasswordConfirmation();
+      setAccountSuccess(tr('Другие сеансы завершены. Вы остались в аккаунте.'));
+    } catch (error) {
+      setConfirmationError(error instanceof Error
+        ? error.message
+        : tr('Не удалось завершить другие сеансы'));
+    } finally {
+      setIsRevokingSessions(false);
     }
   }
 
@@ -1706,7 +1747,7 @@ export default function ProfileSettingsPage() {
 
                 <p className="mt-2 max-w-2xl text-sm leading-6 text-[#98837e]">
                   {tr(
-                    'Управляйте электронной почтой и паролем вашего аккаунта.',
+                    'Управляйте электронной почтой, паролем и сеансами вашего аккаунта.',
                   )}
                 </p>
 
@@ -1941,46 +1982,13 @@ export default function ProfileSettingsPage() {
 
                   </div>
 
-                  <PasswordField
-                    id="emailCurrentPassword"
-                    label={
-                      tr(
-                        'Текущий пароль',
-                      )
-                    }
-                    value={
-                      emailCurrentPassword
-                    }
-                    shown={
-                      showEmailPassword
-                    }
-                    autoComplete="current-password"
-                    onChange={
-                      setEmailCurrentPassword
-                    }
-                    onToggle={() =>
-                      setShowEmailPassword(
-                        (
-                          value,
-                        ) =>
-                          !value,
-                      )
-                    }
-                  />
-
-                  <p className="-mt-2 text-xs leading-5 text-[#a9948e]">
-                    {tr(
-                      'Для изменения почты подтвердите действие текущим паролем.',
-                    )}
-                  </p>
-
                   <button
                     type="button"
                     disabled={
                       isSavingEmail
                     }
                     onClick={() =>
-                      void saveEmail()
+                      openPasswordConfirmation('email')
                     }
                     className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[#df8e94] px-5 py-3.5 font-medium text-white shadow-sm transition-all duration-150 hover:bg-[#d37b83] hover:shadow-md active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50"
                   >
@@ -2140,6 +2148,32 @@ export default function ProfileSettingsPage() {
 
               </div>
 
+              {/* Другие сеансы */}
+              <div className="rounded-[26px] border border-[#eee0db] bg-[#fffaf9] p-5 md:p-6 lg:col-span-2">
+                <div className="flex items-start gap-3">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[#fde9e8] text-[#c8757c]">
+                    <LogOut size={19} />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-[#554442]">{tr('Другие сеансы')}</h3>
+                    <p className="mt-1 text-sm leading-5 text-[#98837e]">
+                      {tr('Завершите вход на других устройствах. На этом устройстве вы останетесь в аккаунте.')}
+                    </p>
+                  </div>
+                </div>
+                <div className="mt-6 md:max-w-md">
+                  <button
+                    type="button"
+                    disabled={isRevokingSessions}
+                    onClick={() => openPasswordConfirmation('sessions')}
+                    className="flex w-full items-center justify-center gap-2 rounded-2xl border border-[#efc9cc] bg-[#fff1f1] px-5 py-3.5 font-medium text-[#c8757c] transition hover:bg-[#fde9e8] disabled:pointer-events-none disabled:opacity-50"
+                  >
+                    <LogOut size={17} />
+                    {isRevokingSessions ? tr('Завершаем...') : tr('Завершить другие сеансы')}
+                  </button>
+                </div>
+              </div>
+
             </div>
 
           </div>
@@ -2147,6 +2181,72 @@ export default function ProfileSettingsPage() {
         </section>
 
       </div>
+
+      {confirmationAction && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="password-confirmation-title"
+          aria-describedby="password-confirmation-description"
+          onKeyDown={(event) => {
+            if (event.key === 'Escape' && !isSavingEmail && !isRevokingSessions) {
+              closePasswordConfirmation();
+            }
+          }}
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-[#1c1819]/65 p-4 backdrop-blur-sm"
+        >
+          <div className="w-full max-w-md rounded-[28px] border border-[var(--border)] bg-[var(--surface)] p-6 shadow-2xl md:p-7">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h2 id="password-confirmation-title" className="text-xl font-semibold text-[var(--text-primary)]">
+                  {tr(confirmationAction === 'email' ? 'Подтвердить изменение email' : 'Завершить другие сеансы')}
+                </h2>
+                <p id="password-confirmation-description" className="mt-2 text-sm leading-6 text-[var(--text-muted)]">
+                  {tr(confirmationAction === 'email'
+                    ? 'Введите текущий пароль, чтобы сохранить новый email.'
+                    : 'Введите текущий пароль, чтобы завершить вход на других устройствах.')}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={closePasswordConfirmation}
+                disabled={isSavingEmail || isRevokingSessions}
+                aria-label={tr('Закрыть')}
+                className="rounded-xl p-2 text-[var(--text-muted)] hover:bg-[var(--surface-soft)] disabled:opacity-50"
+              >
+                <X size={19} />
+              </button>
+            </div>
+            <form className="mt-6 space-y-5" onSubmit={(event) => { event.preventDefault(); void confirmPasswordAction(); }}>
+              <PasswordField
+                id="confirmationPassword"
+                label={tr('Текущий пароль')}
+                value={confirmationPassword}
+                shown={showConfirmationPassword}
+                autoComplete="current-password"
+                autoFocus
+                onChange={setConfirmationPassword}
+                onToggle={() => setShowConfirmationPassword((value) => !value)}
+              />
+              {confirmationError && (
+                <p role="alert" className="rounded-xl bg-[var(--surface-muted)] px-4 py-3 text-sm text-[#c8757c]">
+                  {confirmationError}
+                </p>
+              )}
+              <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+                <button type="button" onClick={closePasswordConfirmation} disabled={isSavingEmail || isRevokingSessions} className="rounded-xl border border-[var(--border)] px-5 py-3 text-sm font-medium text-[var(--text-primary)] hover:bg-[var(--surface-soft)] disabled:opacity-50">
+                  {tr('Отмена')}
+                </button>
+                <button type="submit" disabled={isSavingEmail || isRevokingSessions} className="rounded-xl bg-[#df8e94] px-5 py-3 text-sm font-medium text-white hover:bg-[#d37b83] disabled:opacity-50">
+                  {isSavingEmail || isRevokingSessions
+                    ? tr('Сохраняем...')
+                    : tr(confirmationAction === 'email' ? 'Сохранить email' : 'Завершить другие сеансы')}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {cropImageUrl && (
         <AvatarCropDialog
@@ -2190,6 +2290,7 @@ function PasswordField({
   value,
   shown,
   autoComplete,
+  autoFocus,
   onChange,
   onToggle,
 }: {
@@ -2201,6 +2302,7 @@ function PasswordField({
   autoComplete:
     | 'current-password'
     | 'new-password';
+  autoFocus?: boolean;
 
   onChange: (
     value: string,
@@ -2234,6 +2336,7 @@ function PasswordField({
           autoComplete={
             autoComplete
           }
+          autoFocus={autoFocus}
           value={
             value
           }
