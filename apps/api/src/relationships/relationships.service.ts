@@ -12,6 +12,7 @@ import {
 } from '../generated/prisma/client.js';
 
 import { PrismaService } from '../prisma/prisma.service.js';
+import { createNotification } from '../notifications/notifications.service.js';
 
 import { AcceptInvitationDto } from './dto/accept-invitation.dto.js';
 
@@ -121,7 +122,7 @@ export class RelationshipsService {
       );
     }
 
-    return this.prisma.relationshipInvitation.create({
+    const invitation = await this.prisma.relationshipInvitation.create({
       data: {
         senderId: currentUserId,
         receiverId: receiver.id,
@@ -147,6 +148,16 @@ export class RelationshipsService {
         },
       },
     });
+
+    await createNotification(this.prisma, {
+      userId: receiver.id,
+      category: 'RELATIONSHIP',
+      title: 'Новое приглашение',
+      body: `${invitation.sender.displayName ?? invitation.sender.nickname} приглашает вас создать пару`,
+      href: '/invitations',
+    });
+
+    return invitation;
   }
 
   async getInvitations(
@@ -275,7 +286,7 @@ export class RelationshipsService {
       );
     }
 
-    return this.prisma.$transaction(
+    const relationship = await this.prisma.$transaction(
       async (transaction) => {
         const relationship =
           await transaction.relationship.create({
@@ -361,6 +372,16 @@ export class RelationshipsService {
         return relationship;
       },
     );
+
+    await createNotification(this.prisma, {
+      userId: invitation.senderId,
+      category: 'RELATIONSHIP',
+      title: 'Приглашение принято',
+      body: 'Партнёр принял ваше приглашение',
+      href: '/home',
+    });
+
+    return relationship;
   }
 
   async declineInvitation(
@@ -397,7 +418,7 @@ export class RelationshipsService {
       );
     }
 
-    return this.prisma.relationshipInvitation.update({
+    const declined = await this.prisma.relationshipInvitation.update({
       where: {
         id: invitation.id,
       },
@@ -409,6 +430,16 @@ export class RelationshipsService {
         respondedAt: new Date(),
       },
     });
+
+    await createNotification(this.prisma, {
+      userId: invitation.senderId,
+      category: 'RELATIONSHIP',
+      title: 'Приглашение отклонено',
+      body: 'Пользователь отклонил ваше приглашение',
+      href: '/invitations',
+    });
+
+    return declined;
   }
 
   async cancelInvitation(

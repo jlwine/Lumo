@@ -46,6 +46,12 @@ enum WishlistGiftMarkStatus {
   PURCHASED
 }
 
+enum NotificationCategory {
+  RELATIONSHIP
+  CALENDAR
+  DAY_BOARD
+}
+
 model User {
   id           String    @id @default(uuid())
   email        String    @unique
@@ -96,6 +102,8 @@ model User {
    */
   dayBoardEntries DayBoardEntry[] @relation("DayBoardEntryAuthor")
   dayBoardReactions DayBoardReaction[]
+  notifications Notification[]
+  notificationPreferences NotificationPreferences?
 
   /*
    * Текущий токен подтверждения email.
@@ -389,4 +397,28 @@ model DayBoardReaction {
 
   @@id([entryId, userId])
   @@index([userId])
+}
+
+model Notification {
+  id String @id @default(uuid())
+  userId String
+  category NotificationCategory
+  title String
+  body String
+  href String?
+  createdAt DateTime @default(now())
+  readAt DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, readAt, createdAt])
+}
+
+model NotificationPreferences {
+  userId String @id
+  relationship Boolean @default(true)
+  calendar Boolean @default(true)
+  dayBoard Boolean @default(true)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

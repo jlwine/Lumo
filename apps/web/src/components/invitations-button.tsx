@@ -14,10 +14,6 @@ import { useLanguageVersion } from '@/i18n/use-language';
 import { apiRequest } from '@/lib/api';
 import { getAccessToken } from '@/lib/auth';
 
-import type {
-  RelationshipInvitationsResponse,
-} from '@/types/relationship-invitation';
-
 export function InvitationsButton() {
   useLanguageVersion();
 
@@ -29,7 +25,7 @@ export function InvitationsButton() {
   useEffect(() => {
     let cancelled = false;
 
-    async function loadInvitations() {
+    async function loadNotifications() {
       const token =
         getAccessToken();
 
@@ -39,8 +35,8 @@ export function InvitationsButton() {
 
       try {
         const result =
-          await apiRequest<RelationshipInvitationsResponse>(
-            '/relationships/invitations',
+          await apiRequest<{ count: number }>(
+            '/notifications/unread-count',
             {
               headers: {
                 Authorization:
@@ -50,28 +46,29 @@ export function InvitationsButton() {
           );
 
         if (!cancelled) {
-          setCount(
-            result.received.length,
-          );
+          setCount(result.count);
         }
       } catch {
         // Счётчик не критичен для работы страницы.
       }
     }
 
-    void loadInvitations();
+    void loadNotifications();
+    const refresh = () => void loadNotifications();
+    window.addEventListener('focus', refresh);
 
     return () => {
       cancelled = true;
+      window.removeEventListener('focus', refresh);
     };
   }, []);
 
   return (
     <button
       type="button"
-      title={tr('Приглашения')}
+      title={tr('Уведомления')}
       onClick={() =>
-        router.push('/invitations')
+        router.push('/notifications')
       }
       className="relative flex h-10 w-10 items-center justify-center rounded-xl text-[#927c77] transition hover:bg-[#fff0ef] hover:text-[#c66f77]"
     >

@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 
 import type { Prisma } from '../generated/prisma/client.js';
+import { createNotification } from '../notifications/notifications.service.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { CreateCalendarEventDto } from './dto/create-calendar-event.dto.js';
 import { UpdateCalendarEventDto } from './dto/update-calendar-event.dto.js';
@@ -235,6 +236,16 @@ export class CalendarService {
       select: calendarEventSelect,
     });
 
+    if (scope === 'SHARED' && partnerId) {
+      await createNotification(this.prisma, {
+        userId: partnerId,
+        category: 'CALENDAR',
+        title: 'Новое совместное событие',
+        body: `Добавлено событие «${title}»`,
+        href: '/calendar',
+      });
+    }
+
     return this.serializeEvent(event, userId);
   }
 
@@ -323,6 +334,31 @@ export class CalendarService {
       select: calendarEventSelect,
     });
 
+    const partner = (updatedEvent.scope === 'SHARED'
+      ? updatedEvent.participants
+      : event.participants
+    ).find((participant) => participant.user.id !== userId);
+
+    if (partner && (event.scope === 'SHARED' || updatedEvent.scope === 'SHARED')) {
+      const becamePersonal = updatedEvent.scope === 'PERSONAL';
+      const becameShared = event.scope === 'PERSONAL';
+      await createNotification(this.prisma, {
+        userId: partner.user.id,
+        category: 'CALENDAR',
+        title: becamePersonal
+          ? 'Совместное событие удалено'
+          : becameShared
+            ? 'Новое совместное событие'
+            : 'Совместное событие изменено',
+        body: becamePersonal
+          ? `Событие «${event.title}» удалено из общего календаря`
+          : becameShared
+            ? `Добавлено событие «${updatedEvent.title}»`
+            : `Изменено событие «${updatedEvent.title}»`,
+        href: '/calendar',
+      });
+    }
+
     return this.serializeEvent(updatedEvent, userId);
   }
 
@@ -330,6 +366,20 @@ export class CalendarService {
     const event = await this.findAccessibleEvent(userId, eventId);
     this.ensureCanModify(userId, event);
     await this.prisma.calendarEvent.delete({ where: { id: eventId } });
+    if (event.scope === 'SHARED') {
+      const partner = event.participants.find(
+        (participant) => participant.user.id !== userId,
+      );
+      if (partner) {
+        await createNotification(this.prisma, {
+          userId: partner.user.id,
+          category: 'CALENDAR',
+          title: 'Совместное событие удалено',
+          body: `Удалено событие «${event.title}»`,
+          href: '/calendar',
+        });
+      }
+    }
     return { success: true };
   }
 }

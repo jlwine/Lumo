@@ -23,6 +23,7 @@ import {
 
 import sharp from 'sharp';
 
+import { createNotification } from '../notifications/notifications.service.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 
 import { UpdateDayBoardEntryDto } from './dto/update-day-board-entry.dto.js';
@@ -533,6 +534,16 @@ export class DayBoardService {
 
             include: dayBoardEntryInclude,
           });
+      }
+
+      if (!existing) {
+        await createNotification(this.prisma, {
+          userId: context.partner.id,
+          category: 'DAY_BOARD',
+          title: 'Новое фото на доске дня',
+          body: 'Партнёр добавил фотографию дня',
+          href: '/day-board',
+        });
       }
 
       return this.serializeEntry(

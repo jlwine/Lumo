@@ -110,9 +110,12 @@ describe('CalendarService', () => {
         }),
       ),
     }));
+    const notify = vi.fn().mockResolvedValue({});
     const service = createService({
       relationship: { findFirst: vi.fn().mockResolvedValue(relationship) },
       calendarEvent: { create },
+      notificationPreferences: { findUnique: vi.fn().mockResolvedValue(null) },
+      notification: { create: notify },
     });
 
     await service.create('user-1', {
@@ -125,13 +128,18 @@ describe('CalendarService', () => {
       { userId: 'user-1', role: 'OWNER' },
       { userId: 'user-2', role: 'EDITOR' },
     ]);
+    expect(notify).toHaveBeenCalledWith({ data: expect.objectContaining({
+      userId: 'user-2', category: 'CALENDAR',
+    }) });
   });
 
   it('создаёт личное событие пользователю без пары', async () => {
     const create = vi.fn().mockResolvedValue(baseEvent);
+    const notify = vi.fn();
     const service = createService({
       relationship: { findFirst: vi.fn().mockResolvedValue(null) },
       calendarEvent: { create },
+      notification: { create: notify },
     });
 
     const result = await service.create('user-1', {
@@ -147,6 +155,39 @@ describe('CalendarService', () => {
       },
     });
     expect(result.scope).toBe('PERSONAL');
+    expect(notify).not.toHaveBeenCalled();
+  });
+
+  it('сообщает партнёру, когда совместное событие становится личным', async () => {
+    const partner = { ...baseEvent.createdBy, id: 'user-2' };
+    const sharedEvent = {
+      ...baseEvent,
+      scope: 'SHARED' as const,
+      relationshipId: 'relationship-1',
+      relationship: { status: 'ACTIVE' as const },
+      participants: [
+        baseEvent.participants[0],
+        { role: 'EDITOR' as const, user: partner },
+      ],
+    };
+    const notify = vi.fn().mockResolvedValue({});
+    const service = createService({
+      calendarEvent: {
+        findUnique: vi.fn().mockResolvedValue(sharedEvent),
+        update: vi.fn().mockResolvedValue({
+          ...sharedEvent,
+          scope: 'PERSONAL',
+          participants: [baseEvent.participants[0]],
+        }),
+      },
+      notificationPreferences: { findUnique: vi.fn().mockResolvedValue(null) },
+      notification: { create: notify },
+    });
+
+    await service.update('user-1', 'event-1', { scope: 'PERSONAL' });
+    expect(notify).toHaveBeenCalledWith({ data: expect.objectContaining({
+      userId: 'user-2', category: 'CALENDAR', title: 'Совместное событие удалено',
+    }) });
   });
 
   it('оставляет завершённое совместное событие доступным только для чтения', async () => {
