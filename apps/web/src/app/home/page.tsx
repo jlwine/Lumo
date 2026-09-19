@@ -11,6 +11,7 @@ import {
   LumoBrand,
   LumoMark,
 } from '@/components/lumo-brand';
+import { DayBoardPhotoDialog } from '@/components/day-board-photo-dialog';
 
 import {
   getIntlLocale,
@@ -67,6 +68,7 @@ import type {
 } from '@/types/calendar';
 
 import type {
+  DayBoardEntry,
   DayBoardTodayResponse,
 } from '@/types/day-board';
 
@@ -137,6 +139,8 @@ export default function HomePage() {
     useState<DayBoardTodayResponse | null>(
       null,
     );
+  const [selectedDayBoardPhoto, setSelectedDayBoardPhoto] =
+    useState<DayBoardEntry | null>(null);
 
   const [
     isLoading,
@@ -1049,6 +1053,7 @@ export default function HomePage() {
                     dayBoard={
                       dayBoard
                     }
+                    onOpenPhoto={setSelectedDayBoardPhoto}
                     locked={
                       !relationship
                     }
@@ -1080,6 +1085,12 @@ export default function HomePage() {
 
       </div>
 
+      {selectedDayBoardPhoto && (
+        <DayBoardPhotoDialog
+          entry={selectedDayBoardPhoto}
+          onClose={() => setSelectedDayBoardPhoto(null)}
+        />
+      )}
     </main>
   );
 }
@@ -1752,10 +1763,12 @@ function DayBoardDashboardCard({
   dayBoard,
   locked,
   onOpen,
+  onOpenPhoto,
 }: {
   dayBoard: DayBoardTodayResponse | null;
   locked: boolean;
   onOpen: () => void;
+  onOpenPhoto: (entry: DayBoardEntry) => void;
 }) {
   if (locked) {
     return (
@@ -1865,9 +1878,7 @@ function DayBoardDashboardCard({
                 label
               }
               type="button"
-              onClick={
-                onOpen
-              }
+              onClick={() => entry ? onOpenPhoto(entry) : onOpen()}
               className="group relative min-h-[235px] overflow-hidden rounded-[16px] border border-[#eee0db] bg-[#fffaf8] text-left transition hover:border-[#e3c8c6] hover:shadow-sm"
             >
 

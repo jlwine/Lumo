@@ -28,6 +28,7 @@ import {
 import {
   useRouter,
 } from 'next/navigation';
+import { DayBoardPhotoDialog } from '@/components/day-board-photo-dialog';
 
 import { apiRequest } from '@/lib/api';
 
@@ -108,6 +109,8 @@ export default function DayBoardPage() {
     setShowEditor,
   ] =
     useState(false);
+  const [selectedPhoto, setSelectedPhoto] =
+    useState<DayBoardEntry | null>(null);
 
   const [
     showDeleteDialog,
@@ -755,6 +758,7 @@ export default function DayBoardPage() {
                   entry={
                     today.mine
                   }
+                  onOpenPhoto={setSelectedPhoto}
                   editable
                   onEdit={
                     openEditor
@@ -776,6 +780,7 @@ export default function DayBoardPage() {
                   entry={
                     today.partner
                   }
+                  onOpenPhoto={setSelectedPhoto}
                   editable={
                     false
                   }
@@ -843,6 +848,7 @@ export default function DayBoardPage() {
                         onToggleHeart={
                           toggleHeart
                         }
+                        onOpenPhoto={setSelectedPhoto}
                       />
                     ),
                   )}
@@ -930,6 +936,13 @@ export default function DayBoardPage() {
         />
       )}
 
+      {selectedPhoto && (
+        <DayBoardPhotoDialog
+          entry={selectedPhoto}
+          onClose={() => setSelectedPhoto(null)}
+        />
+      )}
+
     </main>
   );
 }
@@ -937,6 +950,7 @@ export default function DayBoardPage() {
 function TodayPhotoCard({
   user,
   entry,
+  onOpenPhoto,
   editable,
   canReact,
   isReacting,
@@ -946,6 +960,7 @@ function TodayPhotoCard({
 }: {
   user: DayBoardUser;
   entry: DayBoardEntry | null;
+  onOpenPhoto: (entry: DayBoardEntry) => void;
   editable: boolean;
   canReact: boolean;
   isReacting?: boolean;
@@ -1022,17 +1037,18 @@ function TodayPhotoCard({
       {entry ? (
         <>
 
-          <div
-            role="img"
+          <button
+            type="button"
+            onClick={() => onOpenPhoto(entry)}
             aria-label={
-              `Фото дня ${name}`
+              `Открыть фото дня ${name}`
             }
-            className="aspect-[4/3] w-full bg-[#f3ece8] bg-cover bg-center"
+            className="block aspect-[4/3] w-full cursor-zoom-in bg-[#f3ece8] bg-cover bg-center transition hover:brightness-95 focus-visible:outline-2 focus-visible:outline-offset-[-3px] focus-visible:outline-[#df8e94]"
             style={{
               backgroundImage:
                 `url("${entry.imageUrl}")`,
             }}
-          />
+          ></button>
 
           <div className="p-5 md:p-6">
 
@@ -1154,12 +1170,14 @@ function ArchiveDay({
   partner,
   reactingEntryId,
   onToggleHeart,
+  onOpenPhoto,
 }: {
   day: DayBoardHistoryDay;
   me: DayBoardUser;
   partner: DayBoardUser;
   reactingEntryId: string | null;
   onToggleHeart: (entry: DayBoardEntry) => Promise<void>;
+  onOpenPhoto: (entry: DayBoardEntry) => void;
 }) {
   return (
     <div>
@@ -1189,6 +1207,7 @@ function ArchiveDay({
           entry={
             day.mine
           }
+          onOpenPhoto={onOpenPhoto}
           canReact={
             false
           }
@@ -1201,6 +1220,7 @@ function ArchiveDay({
           entry={
             day.partner
           }
+          onOpenPhoto={onOpenPhoto}
           canReact
           isReacting={
             reactingEntryId ===
@@ -1223,12 +1243,14 @@ function ArchiveDay({
 function ArchivePhoto({
   user,
   entry,
+  onOpenPhoto,
   canReact,
   isReacting,
   onToggleHeart,
 }: {
   user: DayBoardUser;
   entry: DayBoardEntry | null;
+  onOpenPhoto: (entry: DayBoardEntry) => void;
   canReact: boolean;
   isReacting?: boolean;
   onToggleHeart?: () => void;
@@ -1261,17 +1283,18 @@ function ArchivePhoto({
   return (
     <article className="grid overflow-hidden rounded-[24px] border border-[#eee0dc] bg-white sm:grid-cols-[180px_minmax(0,1fr)]">
 
-      <div
-        role="img"
+      <button
+        type="button"
+        onClick={() => onOpenPhoto(entry)}
         aria-label={
-          `Фото ${name}`
+          `Открыть фото ${name}`
         }
-        className="min-h-[180px] bg-[#f2e9e5] bg-cover bg-center"
+        className="min-h-[180px] cursor-zoom-in bg-[#f2e9e5] bg-cover bg-center transition hover:brightness-95 focus-visible:outline-2 focus-visible:outline-offset-[-3px] focus-visible:outline-[#df8e94]"
         style={{
           backgroundImage:
             `url("${entry.thumbnailUrl}")`,
         }}
-      />
+      ></button>
 
       <div className="flex flex-col justify-between p-5">
 
