@@ -288,8 +288,27 @@ export class RelationshipsService {
 
     const relationship = await this.prisma.$transaction(
       async (transaction) => {
-        const relationship =
-          await transaction.relationship.create({
+        const previous = await transaction.relationship.findFirst({
+          where: {
+            status: RelationshipStatus.ENDED,
+            OR: [
+              { user1Id: invitation.senderId, user2Id: invitation.receiverId },
+              { user1Id: invitation.receiverId, user2Id: invitation.senderId },
+            ],
+          },
+          orderBy: { endedAt: 'desc' },
+        });
+
+        const relationship = previous
+          ? await transaction.relationship.update({
+              where: { id: previous.id },
+              data: { status: RelationshipStatus.ACTIVE, endedAt: null },
+              include: {
+                user1: { select: { id: true, nickname: true, displayName: true, avatarUrl: true } },
+                user2: { select: { id: true, nickname: true, displayName: true, avatarUrl: true } },
+              },
+            })
+          : await transaction.relationship.create({
             data: {
               user1Id: invitation.senderId,
               user2Id: invitation.receiverId,

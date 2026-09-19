@@ -172,7 +172,7 @@ export default function DayBoardPage() {
       apiRequest<DayBoardTodayResponse>(
         `/day-board/today?date=${encodeURIComponent(todayDate)}`, options,
       ),
-      apiRequest<DayBoardHistoryResponse>('/day-board/history?limit=60', options),
+      apiRequest<DayBoardHistoryResponse>('/day-board/history?limit=all', options),
     ]).then(([todayResult, historyResult]) => {
       if (signal?.aborted) return;
       setError(null);
@@ -639,6 +639,12 @@ export default function DayBoardPage() {
 
             На главную
           </button>
+
+          <button
+            type="button"
+            onClick={() => router.push('/day-board/archive')}
+            className="flex items-center gap-2 rounded-xl border border-[#eadbd7] bg-white px-4 py-2.5 text-sm font-medium text-[#806a65] transition hover:border-[#dcaaa6] hover:bg-[#fff0ef] hover:text-[#c36f77]"
+          ><Images size={16} />Архив прошлых отношений</button>
 
           <button
             type="button"

@@ -20,6 +20,7 @@ import {
   Cake,
   Camera,
   CheckCircle2,
+  ChevronRight,
   CircleAlert,
   Eye,
   EyeOff,
@@ -1717,6 +1718,21 @@ export default function ProfileSettingsPage() {
           </div>
 
         </section>
+
+        <button
+          type="button"
+          onClick={() => router.push('/settings/relationship')}
+          className="mt-7 flex w-full items-center gap-4 rounded-[28px] border border-[var(--border)] bg-[var(--surface)] p-6 text-left shadow-sm transition hover:border-[var(--accent)] hover:bg-[var(--surface-soft)]"
+        >
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)]">
+            <Heart size={21} />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block font-semibold text-[var(--text-primary)]">{tr('Настройки отношений')}</span>
+            <span className="mt-1 block text-sm text-[var(--text-secondary)]">{tr('Партнёр, дата начала и завершение отношений.')}</span>
+          </span>
+          <ChevronRight size={20} className="shrink-0 text-[var(--text-muted)]" />
+        </button>
 
         {/* Аккаунт и безопасность */}
         <section className="mt-7 overflow-hidden rounded-[32px] border border-[#eeddda] bg-white shadow-[0_20px_70px_rgba(91,65,59,0.07)]">

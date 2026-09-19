@@ -44,6 +44,18 @@ export type DayBoardHistoryResponse = {
   days: DayBoardHistoryDay[];
 };
 
+export type DayBoardPastRelationship = {
+  id: string;
+  partner: DayBoardUser;
+  startedAt: string;
+  endedAt: string;
+  photoCount: number;
+};
+
+export type DayBoardArchivesResponse = {
+  relationships: DayBoardPastRelationship[];
+};
+
 export type DayBoardWidgetResponse = {
   date: string;
 

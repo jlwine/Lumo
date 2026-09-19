@@ -1062,6 +1062,7 @@ export default function HomePage() {
                         '/day-board',
                       )
                     }
+                    onOpenArchive={() => router.push('/day-board/archive')}
                   />
 
                 </section>
@@ -1763,11 +1764,13 @@ function DayBoardDashboardCard({
   dayBoard,
   locked,
   onOpen,
+  onOpenArchive,
   onOpenPhoto,
 }: {
   dayBoard: DayBoardTodayResponse | null;
   locked: boolean;
   onOpen: () => void;
+  onOpenArchive: () => void;
   onOpenPhoto: (entry: DayBoardEntry) => void;
 }) {
   if (locked) {
@@ -1806,6 +1809,11 @@ function DayBoardDashboardCard({
               'Доска дня появится после создания пары.',
             )}
           </p>
+
+          <button type="button" onClick={onOpenArchive}
+            className="mt-5 rounded-xl border border-[#eadbd7] px-4 py-2 text-xs font-medium text-[#806a65] transition hover:bg-[#fff0ef]">
+            {tr('Архив прошлых отношений')}
+          </button>
 
         </div>
 

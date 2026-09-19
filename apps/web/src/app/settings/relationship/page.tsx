@@ -157,6 +157,10 @@ export default function RelationshipSettingsPage() {
                 .startedAt,
             ),
           );
+          if (new URLSearchParams(window.location.search).get('confirm') === 'end') {
+            setShowEndDialog(true);
+            router.replace('/settings/relationship', { scroll: false });
+          }
         }
       } catch (error) {
         if (cancelled) {
@@ -186,7 +190,7 @@ export default function RelationshipSettingsPage() {
     return () => {
       cancelled = true;
     };
-  }, [fetchRelationship]);
+  }, [fetchRelationship, router]);
 
   /*
    * Изменяем дату начала отношений.
@@ -280,7 +284,7 @@ export default function RelationshipSettingsPage() {
    * backend переводит её в ENDED.
    */
   async function endRelationship() {
-    if (!relationship) {
+    if (!relationship || isEnding) {
       return;
     }
 
@@ -311,6 +315,7 @@ export default function RelationshipSettingsPage() {
       );
 
       setShowEndDialog(false);
+      setRelationship(null);
 
       /*
        * Главная страница заново
@@ -365,6 +370,11 @@ export default function RelationshipSettingsPage() {
           <h1 className="mt-5 text-2xl font-semibold text-[#554442]">{tr('Нет активных отношений')}</h1>
 
           <p className="mt-3 text-sm leading-6 text-[#927d78]">{tr('Когда вы создадите пару, здесь появятся настройки ваших отношений.')}</p>
+
+          <button type="button" onClick={() => router.push('/day-board/archive')}
+            className="mt-5 block w-full rounded-2xl border border-[#eedfdb] px-6 py-3 text-sm font-medium text-[#806a65] transition hover:bg-[#fff0ef]">
+            {tr('Архив прошлых отношений')}
+          </button>
 
           {error && (
             <p className="mt-4 text-sm text-[#b6545b]">
@@ -626,11 +636,10 @@ export default function RelationshipSettingsPage() {
 
                 <button
                 type="button"
-                onClick={() =>
-                    setShowEndDialog(
-                    true,
-                    )
-                }
+                onClick={() => {
+                  setError(null);
+                  setShowEndDialog(true);
+                }}
                 className="mt-5 rounded-2xl border border-[#e5aeb1] bg-white px-5 py-3 text-sm font-medium text-[#b8555c] transition-all duration-150 hover:border-[#d96d73] hover:bg-[#c86167] hover:text-white hover:shadow-md active:scale-[0.97] active:bg-[#ae4e54]"
                 >{tr('Разорвать отношения')}</button>
 
@@ -650,11 +659,11 @@ export default function RelationshipSettingsPage() {
           isEnding={
             isEnding
           }
-          onCancel={() =>
-            setShowEndDialog(
-              false,
-            )
-          }
+          error={error}
+          onCancel={() => {
+            setShowEndDialog(false);
+            setError(null);
+          }}
           onConfirm={() =>
             void endRelationship()
           }
@@ -668,18 +677,28 @@ export default function RelationshipSettingsPage() {
 function EndRelationshipDialog({
   partnerName,
   isEnding,
+  error,
   onCancel,
   onConfirm,
 }: {
   partnerName: string;
   isEnding: boolean;
+  error: string | null;
   onCancel: () => void;
   onConfirm: () => void;
 }) {
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#4e3d3d]/30 p-5 backdrop-blur-sm">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center overflow-y-auto bg-[#4e3d3d]/30 p-5 backdrop-blur-sm">
 
-      <div className="w-full max-w-md rounded-[30px] border border-[#efd5d5] bg-white p-7 shadow-[0_30px_100px_rgba(73,48,45,0.22)]">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="end-relationship-title"
+        onKeyDown={(event) => {
+          if (event.key === 'Escape' && !isEnding) onCancel();
+        }}
+        className="my-auto w-full max-w-md rounded-[30px] border border-[#efd5d5] bg-white p-7 shadow-[0_30px_100px_rgba(73,48,45,0.22)]"
+      >
 
         <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#fdeaea] text-[#c45e64]">
           <TriangleAlert
@@ -687,18 +706,22 @@ function EndRelationshipDialog({
           />
         </div>
 
-        <h2 className="mt-5 text-2xl font-semibold text-[#624b48]">
+        <h2 id="end-relationship-title" className="mt-5 text-2xl font-semibold text-[#624b48]">
           {tr('Разорвать отношения с {name}?', {
             name: partnerName,
           })}
         </h2>
 
         <p className="mt-3 text-sm leading-6 text-[#917975]">{tr('Вы перестанете быть текущей парой в приложении. История этих отношений останется сохранена.')}</p>
+        <p className="mt-3 text-sm leading-6 text-[#917975]">{tr('Совместные события останутся в календаре только для просмотра. Фотографии появятся в архиве прошлых отношений. Если вы снова станете парой, они вернутся на доску дня.')}</p>
+
+        {error && <p role="alert" className="mt-4 rounded-xl bg-[#fff1f1] px-4 py-3 text-sm text-[#a95057]">{error}</p>}
 
         <div className="mt-7 flex flex-col-reverse gap-3 sm:flex-row">
 
           <button
             type="button"
+            autoFocus
             disabled={
               isEnding
             }

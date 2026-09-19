@@ -120,6 +120,19 @@ export class DayBoardController {
     );
   }
 
+  @Get('archives')
+  getArchives(@Req() request: DayBoardAuthenticatedRequest) {
+    return this.dayBoardService.getArchives(this.getUserId(request));
+  }
+
+  @Get('archives/:relationshipId')
+  getArchive(
+    @Req() request: DayBoardAuthenticatedRequest,
+    @Param('relationshipId') relationshipId: string,
+  ) {
+    return this.dayBoardService.getArchive(this.getUserId(request), relationshipId);
+  }
+
   /*
    * Создание или замена
    * сегодняшней фотографии.

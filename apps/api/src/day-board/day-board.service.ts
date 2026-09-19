@@ -3,6 +3,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { RelationshipStatus } from '../generated/prisma/client.js';
 
 import {
   ConfigService,
@@ -240,6 +241,17 @@ export class DayBoardService {
         userId,
       );
 
+    const pairRelationships = await this.prisma.relationship.findMany({
+      where: {
+        OR: [
+          { user1Id: context.me.id, user2Id: context.partner.id },
+          { user1Id: context.partner.id, user2Id: context.me.id },
+        ],
+      },
+      select: { id: true },
+    });
+
+    const allDays = limitValue === 'all';
     const parsedLimit =
       Number(
         limitValue ??
@@ -264,8 +276,9 @@ export class DayBoardService {
     const entries =
       await this.prisma.dayBoardEntry.findMany({
         where: {
-          relationshipId:
-            context.relationshipId,
+          relationshipId: {
+            in: pairRelationships.map((relationship) => relationship.id),
+          },
         },
 
         include: dayBoardEntryInclude,
@@ -285,9 +298,89 @@ export class DayBoardService {
          * Максимум две записи
          * на один день.
          */
-        take:
-          limit * 2,
+        ...(!allDays ? { take: limit * 2 } : {}),
       });
+
+    return {
+      me: context.me,
+      partnerUser: context.partner,
+      days: this.groupEntries(entries, userId, allDays ? undefined : limit),
+    };
+  }
+
+  async getArchives(userId: string) {
+    const active = await this.prisma.relationship.findFirst({
+      where: {
+        status: RelationshipStatus.ACTIVE,
+        OR: [{ user1Id: userId }, { user2Id: userId }],
+      },
+      select: { user1Id: true, user2Id: true },
+    });
+    const activePartnerId = active
+      ? active.user1Id === userId ? active.user2Id : active.user1Id
+      : null;
+    const relationships = await this.prisma.relationship.findMany({
+      where: {
+        status: RelationshipStatus.ENDED,
+        OR: [{ user1Id: userId }, { user2Id: userId }],
+        dayBoardEntries: { some: {} },
+      },
+      include: {
+        user1: { select: { id: true, nickname: true, displayName: true, avatarUrl: true } },
+        user2: { select: { id: true, nickname: true, displayName: true, avatarUrl: true } },
+        _count: { select: { dayBoardEntries: true } },
+      },
+      orderBy: { endedAt: 'desc' },
+    });
+
+    return {
+      relationships: relationships.filter((relationship) =>
+        relationship.user1Id !== activePartnerId && relationship.user2Id !== activePartnerId,
+      ).map((relationship) => ({
+        id: relationship.id,
+        partner: relationship.user1Id === userId ? relationship.user2 : relationship.user1,
+        startedAt: relationship.startedAt,
+        endedAt: relationship.endedAt,
+        photoCount: relationship._count.dayBoardEntries,
+      })),
+    };
+  }
+
+  async getArchive(userId: string, relationshipId: string) {
+    const relationship = await this.prisma.relationship.findFirst({
+      where: {
+        id: relationshipId,
+        status: RelationshipStatus.ENDED,
+        OR: [{ user1Id: userId }, { user2Id: userId }],
+      },
+      include: {
+        user1: { select: { id: true, nickname: true, displayName: true, avatarUrl: true } },
+        user2: { select: { id: true, nickname: true, displayName: true, avatarUrl: true } },
+      },
+    });
+
+    if (!relationship) {
+      throw new NotFoundException('Архив отношений не найден');
+    }
+
+    const entries = await this.prisma.dayBoardEntry.findMany({
+      where: { relationshipId },
+      include: dayBoardEntryInclude,
+      orderBy: [{ boardDate: 'desc' }, { updatedAt: 'desc' }],
+    });
+
+    return {
+      me: relationship.user1Id === userId ? relationship.user1 : relationship.user2,
+      partnerUser: relationship.user1Id === userId ? relationship.user2 : relationship.user1,
+      days: this.groupEntries(entries, userId),
+    };
+  }
+
+  private groupEntries(
+    entries: DayBoardEntryWithAuthor[],
+    userId: string,
+    limit?: number,
+  ) {
 
     const grouped =
       new Map<
@@ -340,13 +433,13 @@ export class DayBoardService {
         entry.authorId ===
         userId
       ) {
-        group.mine =
+        group.mine ??=
           this.serializeEntry(
             entry,
             userId,
           );
       } else {
-        group.partner =
+        group.partner ??=
           this.serializeEntry(
             entry,
             userId,
@@ -354,21 +447,7 @@ export class DayBoardService {
       }
     }
 
-    return {
-      me:
-        context.me,
-
-      partnerUser:
-        context.partner,
-
-      days:
-        Array.from(
-          grouped.values(),
-        ).slice(
-          0,
-          limit,
-        ),
-    };
+    return Array.from(grouped.values()).slice(0, limit);
   }
 
   /*

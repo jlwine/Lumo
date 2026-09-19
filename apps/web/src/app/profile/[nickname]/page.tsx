@@ -320,6 +320,7 @@ export default function ProfilePage() {
   const isOwnProfile =
     currentUser?.id ===
     profile.id;
+  const age = profile.birthDate ? formatAge(profile.birthDate) : null;
 
   return (
     <main className="min-h-screen bg-[#fffaf8] px-5 py-8">
@@ -397,11 +398,15 @@ export default function ProfilePage() {
                   profile={
                     profile
                   }
+                  currentUserId={currentUser?.id ?? null}
                   isInviting={
                     isInviting
                   }
                   onInvite={
                     handleInvite
+                  }
+                  onEndRelationship={() =>
+                    router.push('/settings/relationship?confirm=end')
                   }
                 />
               )}
@@ -532,9 +537,12 @@ export default function ProfilePage() {
 
                       <p className="mt-1 font-medium text-[#65514d]">
                         {profile.birthDate
-                          ? formatDate(
-                              profile.birthDate,
-                            )
+                          ? <>
+                              {formatDate(profile.birthDate)}
+                              {age && (
+                                <> ({age})</>
+                              )}
+                            </>
                           : tr('Не указан')}
                       </p>
 
@@ -581,12 +589,16 @@ export default function ProfilePage() {
 
 function ProfileAction({
   profile,
+  currentUserId,
   isInviting,
   onInvite,
+  onEndRelationship,
 }: {
   profile: PublicUserProfile;
+  currentUserId: string | null;
   isInviting: boolean;
   onInvite: () => void;
+  onEndRelationship: () => void;
 }) {
   if (
     profile.actions.canInvite
@@ -651,19 +663,46 @@ function ProfileAction({
     profile.actions
       .inviteUnavailableReason;
 
+  const isCurrentPartner =
+    currentUserId !== null &&
+    profile.relationship.status === 'ACTIVE' &&
+    profile.relationship.partner?.id === currentUserId;
+
   return (
-    <div className="flex items-center gap-2 rounded-2xl border border-[#eadbd7] bg-white px-5 py-3 text-sm text-[#8c7772]">
-
-      <UserRound
-        size={17}
-      />
-
-      {reason
-        ? messages[reason]
-        : tr('Приглашение недоступно')}
-
+    <div className="flex flex-wrap items-center gap-3">
+      <div className="flex items-center gap-2 rounded-2xl border border-[#eadbd7] bg-white px-5 py-3 text-sm text-[#8c7772]">
+        <UserRound size={17} />
+        {reason ? messages[reason] : tr('Приглашение недоступно')}
+      </div>
+      {isCurrentPartner && (
+        <button
+          type="button"
+          onClick={onEndRelationship}
+          className="rounded-2xl border border-[#e5aeb1] bg-white px-5 py-3 text-sm font-medium text-[#b8555c] transition hover:border-[#d96d73] hover:bg-[#fff0f0]"
+        >
+          {tr('Разорвать')}
+        </button>
+      )}
     </div>
   );
+}
+
+function formatAge(value: string) {
+  const birthDate = new Date(value);
+  if (Number.isNaN(birthDate.getTime())) return null;
+
+  const today = new Date();
+  const birthMonth = birthDate.getUTCMonth();
+  const birthDay = birthDate.getUTCDate();
+  const birthdayPassed =
+    today.getMonth() > birthMonth ||
+    (today.getMonth() === birthMonth && today.getDate() >= birthDay);
+  const age = today.getFullYear() - birthDate.getUTCFullYear() - (birthdayPassed ? 0 : 1);
+  if (age < 0) return null;
+
+  const plural = new Intl.PluralRules(getIntlLocale()).select(age);
+  const unit = plural === 'one' ? tr('год') : plural === 'few' ? tr('года') : tr('лет');
+  return `${age} ${unit}`;
 }
 
 function formatDate(
