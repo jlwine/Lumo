@@ -20,6 +20,84 @@ export class WishlistsService {
       PrismaService,
   ) {}
 
+  async getArchives(userId: string) {
+    const partnerId = await this.getPartnerId(userId);
+    const visibleOwnerIds = partnerId ? [userId, partnerId] : [userId];
+
+    const [current, relationships] = await Promise.all([
+      this.prisma.wishlist.findMany({
+        where: {
+          ownerId: { in: visibleOwnerIds },
+          items: { some: { archivedAt: { not: null } } },
+        },
+        select: {
+          id: true,
+          title: true,
+          description: true,
+          ownerId: true,
+          owner: {
+            select: { id: true, displayName: true, nickname: true, avatarUrl: true },
+          },
+          items: {
+            where: { archivedAt: { not: null } },
+            select: {
+              id: true,
+              title: true,
+              description: true,
+              url: true,
+              imageUrl: true,
+              price: true,
+              priority: true,
+              status: true,
+              archivedAt: true,
+              archiveReason: true,
+              giftMarks: {
+                where: {
+                  OR: [{ partnerId: userId }, { hiddenFromOwner: false }],
+                },
+                select: { status: true, hiddenFromOwner: true },
+              },
+              createdAt: true,
+              updatedAt: true,
+            },
+            orderBy: { archivedAt: 'desc' },
+          },
+        },
+        orderBy: { updatedAt: 'desc' },
+      }),
+      this.prisma.relationship.findMany({
+        where: {
+          status: 'ENDED',
+          OR: [{ user1Id: userId }, { user2Id: userId }],
+        },
+        select: {
+          id: true,
+          user1Id: true,
+          endedAt: true,
+          archivedWishlists: true,
+          user1: { select: { id: true, displayName: true, nickname: true } },
+          user2: { select: { id: true, displayName: true, nickname: true } },
+        },
+        orderBy: { endedAt: 'desc' },
+      }),
+    ]);
+
+    return {
+      current: current.map((wishlist) => ({
+        ...this.serializeWishlistGiftMarks(wishlist),
+        canRestore: wishlist.ownerId === userId,
+      })),
+      relationships: relationships
+        .filter((relationship) => Array.isArray(relationship.archivedWishlists))
+        .map((relationship) => ({
+          id: relationship.id,
+          endedAt: relationship.endedAt,
+          partner: relationship.user1Id === userId ? relationship.user2 : relationship.user1,
+          wishlists: relationship.archivedWishlists,
+        })),
+    };
+  }
+
   /*
    * Ищем активного партнёра
    * текущего пользователя.
@@ -93,6 +171,7 @@ export class WishlistsService {
           },
 
           items: {
+            where: { archivedAt: null },
             select: {
               id: true,
               title: true,
@@ -127,7 +206,7 @@ export class WishlistsService {
 
           _count: {
             select: {
-              items: true,
+              items: { where: { archivedAt: null } },
             },
           },
         },
@@ -162,6 +241,7 @@ export class WishlistsService {
               },
 
               items: {
+                where: { archivedAt: null },
                 select: {
                   id: true,
                   title: true,
@@ -199,7 +279,7 @@ export class WishlistsService {
 
               _count: {
                 select: {
-                  items: true,
+                  items: { where: { archivedAt: null } },
                 },
               },
             },
@@ -263,6 +343,7 @@ export class WishlistsService {
           },
 
           items: {
+            where: { archivedAt: null },
             select: {
               id: true,
               title: true,
@@ -542,9 +623,7 @@ export class WishlistsService {
           data.priority ??
           3,
 
-        status:
-          data.status ??
-          'WANT',
+        status: 'WANT',
       },
     });
   }
@@ -639,10 +718,73 @@ export class WishlistsService {
 
         priority:
           data.priority,
-
-        status:
-          data.status,
       },
+    });
+  }
+
+  async archiveItem(
+    userId: string,
+    wishlistId: string,
+    itemId: string,
+    reason: 'RECEIVED' | 'NO_LONGER_NEEDED',
+  ) {
+    await this.ensureWishlistOwner(userId, wishlistId);
+    const item = await this.prisma.wishlistItem.findUnique({
+      where: { id: itemId },
+      select: { id: true, wishlistId: true, archivedAt: true },
+    });
+
+    if (!item) {
+      throw new NotFoundException('Желание не найдено');
+    }
+    if (item.wishlistId !== wishlistId) {
+      throw new ForbiddenException('Желание не относится к этому вишлисту');
+    }
+    if (item.archivedAt) {
+      throw new BadRequestException('Желание уже находится в архиве');
+    }
+
+    return this.prisma.wishlistItem.update({
+      where: { id: itemId },
+      data: {
+        status: reason === 'RECEIVED' ? 'RECEIVED' : 'WANT',
+        archivedAt: new Date(),
+        archiveReason: reason,
+      },
+    });
+  }
+
+  async restoreItem(
+    userId: string,
+    wishlistId: string,
+    itemId: string,
+  ) {
+    await this.ensureWishlistOwner(userId, wishlistId);
+    const item = await this.prisma.wishlistItem.findUnique({
+      where: { id: itemId },
+      select: { id: true, wishlistId: true, archivedAt: true },
+    });
+
+    if (!item) {
+      throw new NotFoundException('Желание не найдено');
+    }
+    if (item.wishlistId !== wishlistId) {
+      throw new ForbiddenException('Желание не относится к этому вишлисту');
+    }
+    if (!item.archivedAt) {
+      throw new BadRequestException('Желание уже находится в активном списке');
+    }
+
+    return this.prisma.$transaction(async (transaction) => {
+      await transaction.wishlistGiftMark.deleteMany({ where: { itemId } });
+      return transaction.wishlistItem.update({
+        where: { id: itemId },
+        data: {
+          status: 'WANT',
+          archivedAt: null,
+          archiveReason: null,
+        },
+      });
     });
   }
 
@@ -707,6 +849,33 @@ export class WishlistsService {
       itemId,
     );
 
+    if (data.status === 'GIVEN') {
+      const currentMark = await this.prisma.wishlistGiftMark.findUnique({
+        where: { itemId_partnerId: { itemId, partnerId: userId } },
+        select: { status: true },
+      });
+      if (currentMark?.status !== 'PURCHASED') {
+        throw new BadRequestException('Сначала отметьте подарок как купленный');
+      }
+
+      return this.prisma.$transaction(async (transaction) => {
+        const mark = await transaction.wishlistGiftMark.update({
+          where: { itemId_partnerId: { itemId, partnerId: userId } },
+          data: { status: 'GIVEN', hiddenFromOwner: false },
+          select: { status: true, hiddenFromOwner: true },
+        });
+        await transaction.wishlistItem.update({
+          where: { id: itemId },
+          data: {
+            status: 'RECEIVED',
+            archivedAt: new Date(),
+            archiveReason: 'RECEIVED',
+          },
+        });
+        return mark;
+      });
+    }
+
     return this.prisma.wishlistGiftMark.upsert({
       where: {
         itemId_partnerId: {
@@ -764,7 +933,7 @@ export class WishlistsService {
     T extends {
       items: Array<{
         giftMarks: Array<{
-          status: 'PLANNING' | 'PURCHASED';
+          status: 'PLANNING' | 'PURCHASED' | 'GIVEN';
           hiddenFromOwner: boolean;
         }>;
       }>;
@@ -814,6 +983,7 @@ export class WishlistsService {
         },
         select: {
           id: true,
+          archivedAt: true,
           wishlist: {
             select: {
               ownerId: true,
@@ -826,6 +996,10 @@ export class WishlistsService {
       throw new NotFoundException(
         'Желание не найдено',
       );
+    }
+
+    if (item.archivedAt) {
+      throw new BadRequestException('Архивное желание нельзя отметить как подарок');
     }
 
     if (

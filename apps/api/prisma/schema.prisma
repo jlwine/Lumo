@@ -44,6 +44,12 @@ enum WishlistItemStatus {
 enum WishlistGiftMarkStatus {
   PLANNING
   PURCHASED
+  GIVEN
+}
+
+enum WishlistArchiveReason {
+  RECEIVED
+  NO_LONGER_NEEDED
 }
 
 enum NotificationCategory {
@@ -59,6 +65,7 @@ model User {
   passwordHash String
 
   sessionVersion Int @default(0)
+  deletedAt DateTime?
   
   displayName  String?
   avatarUrl    String?
@@ -221,6 +228,7 @@ model Relationship {
 
   startedAt DateTime  @default(now())
   endedAt   DateTime?
+  archivedWishlists Json?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -328,6 +336,9 @@ model WishlistItem {
   priority Int @default(3)
   status   WishlistItemStatus @default(WANT)
 
+  archivedAt    DateTime?
+  archiveReason WishlistArchiveReason?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -335,6 +346,7 @@ model WishlistItem {
   giftMarks WishlistGiftMark[]
 
   @@index([wishlistId])
+  @@index([wishlistId, archivedAt])
 }
 
 model WishlistGiftMark {

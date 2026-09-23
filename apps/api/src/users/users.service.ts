@@ -3,7 +3,9 @@ import {
   ConflictException,
   Injectable,
   NotFoundException,
+  UnauthorizedException,
 } from '@nestjs/common';
+import { randomUUID } from 'node:crypto';
 
 import * as bcrypt from 'bcrypt';
 
@@ -39,6 +41,7 @@ export class UsersService {
 
   async findAll() {
     return this.prisma.user.findMany({
+      where: { deletedAt: null },
       select: {
         id: true,
         nickname: true,
@@ -72,6 +75,7 @@ export class UsersService {
 
     return this.prisma.user.findMany({
       where: {
+        deletedAt: null,
         id: {
           not:
             currentUserId,
@@ -135,6 +139,7 @@ export class UsersService {
 
         select: {
           id: true,
+          deletedAt: true,
           nickname: true,
           displayName: true,
           avatarUrl: true,
@@ -145,7 +150,7 @@ export class UsersService {
       });
 
     if (
-      !user
+      !user || user.deletedAt
     ) {
       throw new NotFoundException(
         'Пользователь не найден',
@@ -383,6 +388,111 @@ export class UsersService {
         inviteUnavailableReason,
       },
     };
+  }
+
+  async deleteAccount(userId: string, currentPassword: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, passwordHash: true, deletedAt: true },
+    });
+
+    if (!user || user.deletedAt) {
+      throw new NotFoundException('Аккаунт не найден');
+    }
+    if (!(await bcrypt.compare(currentPassword, user.passwordHash))) {
+      throw new UnauthorizedException('Неверный текущий пароль');
+    }
+
+    const now = new Date();
+    const impossiblePasswordHash = await bcrypt.hash(randomUUID(), 10);
+    await this.prisma.$transaction(async (transaction) => {
+      const updated = await transaction.user.updateMany({
+        where: { id: userId, deletedAt: null },
+        data: {
+          email: `deleted-${userId}@deleted.lumo.local`,
+          nickname: `deleted_${userId.replace(/-/g, '')}`,
+          passwordHash: impossiblePasswordHash,
+          displayName: 'Удалённый пользователь',
+          avatarUrl: null,
+          birthDate: null,
+          gender: null,
+          emailVerifiedAt: null,
+          deletedAt: now,
+          sessionVersion: { increment: 1 },
+        },
+      });
+      if (updated.count !== 1) {
+        throw new NotFoundException('Аккаунт уже удалён');
+      }
+
+      const activeRelationships = await transaction.relationship.findMany({
+        where: {
+          status: 'ACTIVE',
+          OR: [{ user1Id: userId }, { user2Id: userId }],
+        },
+      });
+      for (const relationship of activeRelationships) {
+        const partnerId = relationship.user1Id === userId
+          ? relationship.user2Id : relationship.user1Id;
+        const wishlists = await transaction.wishlist.findMany({
+          where: { ownerId: userId },
+          select: {
+            id: true,
+            title: true,
+            description: true,
+            items: {
+              select: {
+                id: true,
+                title: true,
+                description: true,
+                url: true,
+                imageUrl: true,
+                price: true,
+                priority: true,
+                status: true,
+                giftMarks: {
+                  where: { partnerId },
+                  select: { status: true },
+                },
+              },
+            },
+          },
+        });
+        const archivedWishlists = wishlists.map((wishlist) => ({
+          id: wishlist.id,
+          title: wishlist.title,
+          description: wishlist.description,
+          items: wishlist.items.map((item) => ({
+            id: item.id,
+            title: item.title,
+            description: item.description,
+            url: item.url,
+            imageUrl: item.imageUrl,
+            price: item.price,
+            priority: item.priority,
+            status: item.status,
+            giftMark: item.giftMarks[0]?.status ?? null,
+          })),
+        }));
+        await transaction.relationship.update({
+          where: { id: relationship.id },
+          data: { status: 'ENDED', endedAt: now, archivedWishlists },
+        });
+      }
+      await transaction.relationshipInvitation.deleteMany({
+        where: { OR: [{ senderId: userId }, { receiverId: userId }] },
+      });
+      await transaction.calendarEvent.deleteMany({
+        where: { createdById: userId, scope: 'PERSONAL' },
+      });
+      await transaction.wishlistGiftMark.deleteMany({ where: { partnerId: userId } });
+      await transaction.notification.deleteMany({ where: { userId } });
+      await transaction.notificationPreferences.deleteMany({ where: { userId } });
+      await transaction.emailVerificationToken.deleteMany({ where: { userId } });
+      await transaction.passwordResetToken.deleteMany({ where: { userId } });
+    });
+
+    return { success: true };
   }
 
   async updateProfile(

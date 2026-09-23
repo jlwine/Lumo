@@ -1,6 +1,5 @@
 import {
   IsInt,
-  IsIn,
   IsOptional,
   IsString,
   IsUrl,
@@ -12,10 +11,6 @@ import {
 } from 'class-validator';
 
 export class UpdateWishlistItemDto {
-  @IsOptional()
-  @IsIn(['WANT', 'PLANNED', 'BUY_LATER', 'RECEIVED'])
-  status?: 'WANT' | 'PLANNED' | 'BUY_LATER' | 'RECEIVED';
-
   @IsOptional()
   @IsString()
   @MinLength(1)

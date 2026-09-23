@@ -36,6 +36,7 @@ import {
 
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard.js';
 
+import { ArchiveWishlistItemDto } from './dto/archive-wishlist-item.dto.js';
 import { CreateWishlistDto } from './dto/create-wishlist.dto.js';
 import { CreateWishlistItemDto } from './dto/create-wishlist-item.dto.js';
 import { UpdateWishlistDto } from './dto/update-wishlist.dto.js';
@@ -189,6 +190,11 @@ export class WishlistsController {
     );
   }
 
+  @Get('archives')
+  async getArchives(@Req() request: any) {
+    return this.wishlistsService.getArchives(request.user.sub);
+  }
+
   /*
    * Получаем один вишлист.
    */
@@ -304,6 +310,34 @@ export class WishlistsController {
       wishlistId,
       itemId,
       data,
+    );
+  }
+
+  @Patch(':id/items/:itemId/archive')
+  async archiveItem(
+    @Param('id') wishlistId: string,
+    @Param('itemId') itemId: string,
+    @Body() data: ArchiveWishlistItemDto,
+    @Req() request: any,
+  ) {
+    return this.wishlistsService.archiveItem(
+      request.user.sub,
+      wishlistId,
+      itemId,
+      data.reason,
+    );
+  }
+
+  @Patch(':id/items/:itemId/restore')
+  async restoreItem(
+    @Param('id') wishlistId: string,
+    @Param('itemId') itemId: string,
+    @Req() request: any,
+  ) {
+    return this.wishlistsService.restoreItem(
+      request.user.sub,
+      wishlistId,
+      itemId,
     );
   }
 

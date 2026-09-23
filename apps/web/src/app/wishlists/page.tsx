@@ -21,7 +21,9 @@ import {
 } from 'react';
 
 import {
+  Archive,
   ArrowLeft,
+  CheckCircle2,
   Clipboard,
   ExternalLink,
   Gift,
@@ -64,7 +66,6 @@ type WishlistForm = {
 };
 
 type WishlistItemForm = {
-  status: WishlistItem['status'];
   title: string;
   description: string;
   url: string;
@@ -79,7 +80,6 @@ const emptyWishlistForm: WishlistForm = {
 };
 
 const emptyItemForm: WishlistItemForm = {
-  status: 'WANT',
   title: '',
   description: '',
   url: '',
@@ -682,9 +682,6 @@ export default function WishlistsPage() {
     );
 
     setItemForm({
-      status:
-        item.status,
-
       title:
         item.title,
 
@@ -910,9 +907,6 @@ export default function WishlistsPage() {
         );
 
       const requestBody = {
-        status:
-          itemForm.status,
-
         title,
 
         description:
@@ -1051,11 +1045,45 @@ export default function WishlistsPage() {
     }
   }
 
+  async function archiveItem(
+    item: WishlistItem,
+    reason: 'RECEIVED' | 'NO_LONGER_NEEDED',
+  ) {
+    if (!selectedWishlist) {
+      return;
+    }
+    const token = getAccessToken();
+    if (!token) {
+      removeAccessToken();
+      router.replace('/login');
+      return;
+    }
+
+    try {
+      setGiftMarkItemId(item.id);
+      setError(null);
+      await apiRequest(
+        `/wishlists/${selectedWishlist.id}/items/${item.id}/archive`,
+        {
+          method: 'PATCH',
+          headers: { Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ reason }),
+        },
+      );
+      await refreshWishlists(selectedWishlist.id);
+    } catch (error) {
+      setError(getErrorMessage(error, tr('Не удалось переместить желание в архив')));
+    } finally {
+      setGiftMarkItemId(null);
+    }
+  }
+
   async function updateGiftMark(
     item: WishlistItem,
     status:
       | 'PLANNING'
       | 'PURCHASED'
+      | 'GIVEN'
       | null,
   ) {
     if (!selectedWishlist) {
@@ -1093,7 +1121,7 @@ export default function WishlistsPage() {
               ? JSON.stringify({
                   status,
                   hiddenFromOwner:
-                    true,
+                    status !== 'GIVEN',
                 })
               : undefined,
         },
@@ -1236,6 +1264,11 @@ export default function WishlistsPage() {
             )}
           >
             {tr('Вишлисты {name}', { name: partnerName })}
+          </button>
+
+          <button type="button" onClick={() => router.push('/wishlists/archive')}
+            className="rounded-xl border border-[var(--border)] px-4 py-2 text-sm text-[var(--text-secondary)] transition hover:bg-[var(--surface-soft)]">
+            {tr('Архив')}
           </button>
 
         </div>
@@ -1418,6 +1451,12 @@ export default function WishlistsPage() {
                                 item,
                               )
                             }
+                            onArchive={(reason) =>
+                              void archiveItem(
+                                item,
+                                reason,
+                              )
+                            }
                             onGiftMarkChange={(status) =>
                               void updateGiftMark(
                                 item,
@@ -1587,6 +1626,7 @@ function WishlistItemCard({
   isGiftMarkSaving,
   onEdit,
   onDelete,
+  onArchive,
   onGiftMarkChange,
 }: {
   item: WishlistItem;
@@ -1595,10 +1635,12 @@ function WishlistItemCard({
   isGiftMarkSaving: boolean;
   onEdit: () => void;
   onDelete: () => void;
+  onArchive: (reason: 'RECEIVED' | 'NO_LONGER_NEEDED') => void;
   onGiftMarkChange: (
     status:
       | 'PLANNING'
       | 'PURCHASED'
+      | 'GIVEN'
       | null,
   ) => void;
 }) {
@@ -1687,12 +1729,6 @@ function WishlistItemCard({
           }
         />
 
-        <p className="mt-3 inline-flex rounded-full bg-[#f1ebf5] px-3 py-1 text-xs font-medium text-[#78658a]">
-          {getWishlistStatusLabel(
-            item.status,
-          )}
-        </p>
-
         {item.description && (
           <p className="mt-3 line-clamp-3 text-sm leading-6 text-[#9a8580]">
             {item.description}
@@ -1714,6 +1750,29 @@ function WishlistItemCard({
             <ExternalLink
               size={15}
             />{tr('Открыть товар')}</button>
+        )}
+
+        {canEdit && (
+          <div className="mt-5 grid gap-2 border-t border-[#eee1df] pt-4">
+            <button
+              type="button"
+              disabled={isGiftMarkSaving}
+              onClick={() => onArchive('RECEIVED')}
+              className="flex items-center justify-center gap-2 rounded-2xl bg-[#e28b94] px-4 py-2.5 text-sm font-medium text-white transition hover:bg-[#d87c86] disabled:opacity-50"
+            >
+              <CheckCircle2 size={16} />
+              {tr('Получено')}
+            </button>
+            <button
+              type="button"
+              disabled={isGiftMarkSaving}
+              onClick={() => onArchive('NO_LONGER_NEEDED')}
+              className="flex items-center justify-center gap-2 rounded-2xl border border-[#e5dce5] px-4 py-2.5 text-xs font-medium text-[#8b7888] transition hover:border-[#cbb6d2] disabled:opacity-50"
+            >
+              <Archive size={15} />
+              {tr('Больше не актуально')}
+            </button>
+          </div>
         )}
 
         {canPlanGift && (
@@ -1741,7 +1800,18 @@ function WishlistItemCard({
                 </button>
               ))}
             </div>
-            <p className="mt-2 text-[11px] text-[#aa9690]">{tr('Сюрприз: владелец желания не увидит эту отметку.')}</p>
+            <p className="mt-2 text-[11px] text-[#aa9690]">{tr('Сюрприз: владелец желания не увидит эту отметку до вручения.')}</p>
+            {item.giftMark?.status === 'PURCHASED' && (
+              <button
+                type="button"
+                disabled={isGiftMarkSaving}
+                onClick={() => onGiftMarkChange('GIVEN')}
+                className="mt-3 flex w-full items-center justify-center gap-2 rounded-2xl bg-[#e28b94] px-4 py-2.5 text-sm font-medium text-white transition hover:bg-[#d87c86] disabled:opacity-50"
+              >
+                <Gift size={16} />
+                {tr('Подарено — в архив')}
+              </button>
+            )}
           </div>
         )}
 
@@ -2433,28 +2503,6 @@ function ItemFormDialog({
             />
           </FormField>
 
-          <FormField
-            label={tr('Статус желания')}
-          >
-            <select
-              value={form.status}
-              disabled={isSaving}
-              onChange={(event) =>
-                onChange({
-                  ...form,
-                  status:
-                    event.target.value as WishlistItem['status'],
-                })
-              }
-              className={wishlistInputClass}
-            >
-              <option value="WANT">{tr('Хочу')}</option>
-              <option value="PLANNED">{tr('В планах')}</option>
-              <option value="BUY_LATER">{tr('Купить позже')}</option>
-              <option value="RECEIVED">{tr('Подарено / получено')}</option>
-            </select>
-          </FormField>
-
           {/*
            * Новый выбор
            * приоритета желания.
@@ -2731,22 +2779,6 @@ function getPriorityLabel(
 
     default:
       return tr('Очень хочу');
-  }
-}
-
-function getWishlistStatusLabel(
-  status: WishlistItem['status'],
-) {
-  switch (status) {
-    case 'PLANNED':
-      return tr('В планах');
-    case 'BUY_LATER':
-      return tr('Купить позже');
-    case 'RECEIVED':
-      return tr('Подарено / получено');
-    case 'WANT':
-    default:
-      return tr('Хочу');
   }
 }
 

@@ -34,6 +34,7 @@ import {
   Save,
   Send,
   ShieldCheck,
+  Trash2,
   UserRound,
   X,
 } from 'lucide-react';
@@ -71,7 +72,7 @@ type CropPosition = {
   y: number;
 };
 
-type PasswordConfirmationAction = 'email' | 'sessions';
+type PasswordConfirmationAction = 'email' | 'sessions' | 'delete';
 
 export default function ProfileSettingsPage() {
   useLanguageVersion();
@@ -171,6 +172,8 @@ export default function ProfileSettingsPage() {
     useState(false);
 
   const [isRevokingSessions, setIsRevokingSessions] = useState(false);
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
+  const [deleteAcknowledged, setDeleteAcknowledged] = useState(false);
 
   const [
     showCurrentPassword,
@@ -525,6 +528,7 @@ export default function ProfileSettingsPage() {
     setConfirmationPassword('');
     setShowConfirmationPassword(false);
     setConfirmationError(null);
+    setDeleteAcknowledged(false);
     setConfirmationAction(action);
   }
 
@@ -533,6 +537,7 @@ export default function ProfileSettingsPage() {
     setConfirmationPassword('');
     setShowConfirmationPassword(false);
     setConfirmationError(null);
+    setDeleteAcknowledged(false);
   }
 
   async function confirmPasswordAction() {
@@ -546,6 +551,37 @@ export default function ProfileSettingsPage() {
       await saveEmail(confirmationPassword);
     } else if (confirmationAction === 'sessions') {
       await revokeOtherSessions(confirmationPassword);
+    } else if (confirmationAction === 'delete') {
+      if (!deleteAcknowledged) {
+        setConfirmationError(tr('Подтвердите, что понимаете последствия удаления'));
+        return;
+      }
+      await deleteAccount(confirmationPassword);
+    }
+  }
+
+  async function deleteAccount(password: string) {
+    const token = getAccessToken();
+    if (!token) {
+      removeAccessToken();
+      router.replace('/login');
+      return;
+    }
+    setIsDeletingAccount(true);
+    setConfirmationError(null);
+    try {
+      await apiRequest('/users/me', {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ currentPassword: password }),
+      });
+      removeAccessToken();
+      router.replace('/login');
+    } catch (error) {
+      setConfirmationError(error instanceof Error
+        ? error.message : tr('Не удалось удалить аккаунт'));
+    } finally {
+      setIsDeletingAccount(false);
     }
   }
 
@@ -2190,6 +2226,24 @@ export default function ProfileSettingsPage() {
                 </div>
               </div>
 
+              <div className="rounded-[26px] border border-[#a95057]/40 bg-[var(--surface)] p-5 md:p-6 lg:col-span-2">
+                <div className="flex items-start gap-3">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[#fff1f1] text-[#a95057]">
+                    <Trash2 size={19} />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-[var(--text-primary)]">{tr('Удалить аккаунт')}</h3>
+                    <p className="mt-1 text-sm leading-6 text-[var(--text-secondary)]">
+                      {tr('Аккаунт и доступ к нему будут удалены. Текущие отношения завершатся, а общие фотографии, события и желания останутся партнёру в архиве.')}
+                    </p>
+                  </div>
+                </div>
+                <button type="button" onClick={() => openPasswordConfirmation('delete')}
+                  className="mt-6 rounded-2xl border border-[#a95057]/50 px-5 py-3 text-sm font-medium text-[#a95057] transition hover:bg-[#fff1f1]">
+                  {tr('Удалить аккаунт')}
+                </button>
+              </div>
+
             </div>
 
           </div>
@@ -2205,7 +2259,7 @@ export default function ProfileSettingsPage() {
           aria-labelledby="password-confirmation-title"
           aria-describedby="password-confirmation-description"
           onKeyDown={(event) => {
-            if (event.key === 'Escape' && !isSavingEmail && !isRevokingSessions) {
+            if (event.key === 'Escape' && !isSavingEmail && !isRevokingSessions && !isDeletingAccount) {
               closePasswordConfirmation();
             }
           }}
@@ -2215,18 +2269,20 @@ export default function ProfileSettingsPage() {
             <div className="flex items-start justify-between gap-4">
               <div>
                 <h2 id="password-confirmation-title" className="text-xl font-semibold text-[var(--text-primary)]">
-                  {tr(confirmationAction === 'email' ? 'Подтвердить изменение email' : 'Завершить другие сеансы')}
+                  {tr(confirmationAction === 'email' ? 'Подтвердить изменение email' : confirmationAction === 'sessions' ? 'Завершить другие сеансы' : 'Удалить аккаунт?')}
                 </h2>
                 <p id="password-confirmation-description" className="mt-2 text-sm leading-6 text-[var(--text-muted)]">
                   {tr(confirmationAction === 'email'
                     ? 'Введите текущий пароль, чтобы сохранить новый email.'
-                    : 'Введите текущий пароль, чтобы завершить вход на других устройствах.')}
+                    : confirmationAction === 'sessions'
+                      ? 'Введите текущий пароль, чтобы завершить вход на других устройствах.'
+                      : 'Введите текущий пароль для удаления аккаунта. Восстановить аккаунт после этого нельзя.')}
                 </p>
               </div>
               <button
                 type="button"
                 onClick={closePasswordConfirmation}
-                disabled={isSavingEmail || isRevokingSessions}
+                disabled={isSavingEmail || isRevokingSessions || isDeletingAccount}
                 aria-label={tr('Закрыть')}
                 className="rounded-xl p-2 text-[var(--text-muted)] hover:bg-[var(--surface-soft)] disabled:opacity-50"
               >
@@ -2244,19 +2300,27 @@ export default function ProfileSettingsPage() {
                 onChange={setConfirmationPassword}
                 onToggle={() => setShowConfirmationPassword((value) => !value)}
               />
+              {confirmationAction === 'delete' && (
+                <label className="flex items-start gap-3 text-sm leading-6 text-[var(--text-secondary)]">
+                  <input type="checkbox" checked={deleteAcknowledged}
+                    onChange={(event) => setDeleteAcknowledged(event.target.checked)}
+                    className="mt-1 h-4 w-4 accent-[#a95057]" />
+                  {tr('Я понимаю, что аккаунт нельзя восстановить, а отношения завершатся.')}
+                </label>
+              )}
               {confirmationError && (
                 <p role="alert" className="rounded-xl bg-[var(--surface-muted)] px-4 py-3 text-sm text-[#c8757c]">
                   {confirmationError}
                 </p>
               )}
               <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-                <button type="button" onClick={closePasswordConfirmation} disabled={isSavingEmail || isRevokingSessions} className="rounded-xl border border-[var(--border)] px-5 py-3 text-sm font-medium text-[var(--text-primary)] hover:bg-[var(--surface-soft)] disabled:opacity-50">
+                <button type="button" onClick={closePasswordConfirmation} disabled={isSavingEmail || isRevokingSessions || isDeletingAccount} className="rounded-xl border border-[var(--border)] px-5 py-3 text-sm font-medium text-[var(--text-primary)] hover:bg-[var(--surface-soft)] disabled:opacity-50">
                   {tr('Отмена')}
                 </button>
-                <button type="submit" disabled={isSavingEmail || isRevokingSessions} className="rounded-xl bg-[#df8e94] px-5 py-3 text-sm font-medium text-white hover:bg-[#d37b83] disabled:opacity-50">
-                  {isSavingEmail || isRevokingSessions
+                <button type="submit" disabled={isSavingEmail || isRevokingSessions || isDeletingAccount || (confirmationAction === 'delete' && !deleteAcknowledged)} className="rounded-xl bg-[#df8e94] px-5 py-3 text-sm font-medium text-white hover:bg-[#d37b83] disabled:opacity-50">
+                  {isSavingEmail || isRevokingSessions || isDeletingAccount
                     ? tr('Сохраняем...')
-                    : tr(confirmationAction === 'email' ? 'Сохранить email' : 'Завершить другие сеансы')}
+                    : tr(confirmationAction === 'email' ? 'Сохранить email' : confirmationAction === 'sessions' ? 'Завершить другие сеансы' : 'Удалить аккаунт')}
                 </button>
               </div>
             </form>

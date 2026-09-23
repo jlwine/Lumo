@@ -141,12 +141,13 @@ export class JwtAuthGuard implements CanActivate {
 
         select: {
           id: true,
+          deletedAt: true,
           sessionVersion: true,
         },
       });
 
     if (
-      !user
+      !user || user.deletedAt
     ) {
       throw new UnauthorizedException(
         'Пользователь не найден',

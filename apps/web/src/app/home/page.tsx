@@ -24,6 +24,7 @@ import {
 
 import {
   CalendarDays,
+  CheckCircle2,
   ChevronRight,
   Gift,
   Heart,
@@ -85,6 +86,7 @@ import type {
 
 type WishlistPreviewEntry = {
   item: WishlistItem;
+  wishlistId: string;
   wishlistTitle: string;
   owner: WishlistOwner;
 };
@@ -141,6 +143,8 @@ export default function HomePage() {
     );
   const [selectedDayBoardPhoto, setSelectedDayBoardPhoto] =
     useState<DayBoardEntry | null>(null);
+  const [wishlistActionItemId, setWishlistActionItemId] =
+    useState<string | null>(null);
 
   const [
     isLoading,
@@ -457,6 +461,63 @@ export default function HomePage() {
     }
   }
 
+  async function handleWishlistAction(entry: WishlistPreviewEntry) {
+    if (!user) {
+      return;
+    }
+    const token = getAccessToken();
+    if (!token) {
+      removeAccessToken();
+      router.replace('/login');
+      return;
+    }
+
+    const isOwner = entry.owner.id === user.id;
+    const currentGiftStatus = entry.item.giftMark?.status ?? null;
+    if (isOwner && !window.confirm(tr('Переместить желание «{title}» в архив как полученное?', { title: entry.item.title }))) {
+      return;
+    }
+    if (!isOwner && currentGiftStatus === 'PURCHASED' &&
+      !window.confirm(tr('Подарок уже вручён? Желание переместится в архив.'))) {
+      return;
+    }
+
+    try {
+      setWishlistActionItemId(entry.item.id);
+      setError(null);
+      if (isOwner) {
+        await apiRequest(`/wishlists/${entry.wishlistId}/items/${entry.item.id}/archive`, {
+          method: 'PATCH',
+          headers: { Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ reason: 'RECEIVED' }),
+        });
+      } else {
+        const nextStatus = currentGiftStatus === 'PLANNING'
+          ? 'PURCHASED'
+          : currentGiftStatus === 'PURCHASED'
+            ? 'GIVEN'
+            : 'PLANNING';
+        await apiRequest(`/wishlists/items/${entry.item.id}/gift-mark`, {
+          method: 'PUT',
+          headers: { Authorization: `Bearer ${token}` },
+          body: JSON.stringify({
+            status: nextStatus,
+            hiddenFromOwner: nextStatus !== 'GIVEN',
+          }),
+        });
+      }
+
+      const updated = await apiRequest<WishlistsResponse>('/wishlists', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setWishlists(updated);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : tr('Не удалось обновить желание'));
+    } finally {
+      setWishlistActionItemId(null);
+    }
+  }
+
   function handleLogout() {
     removeAccessToken();
 
@@ -520,6 +581,9 @@ export default function HomePage() {
                   item,
                 ) => ({
                   item,
+
+                  wishlistId:
+                    wishlist.id,
 
                   wishlistTitle:
                     wishlist.title,
@@ -1040,6 +1104,9 @@ export default function HomePage() {
                     entries={
                       wishlistPreview
                     }
+                    currentUserId={user.id}
+                    actionItemId={wishlistActionItemId}
+                    onAction={(entry) => void handleWishlistAction(entry)}
                     onOpen={() =>
                       router.push(
                         '/wishlists',
@@ -1507,9 +1574,15 @@ function CalendarDashboardCard({
 
 function WishlistDashboardCard({
   entries,
+  currentUserId,
+  actionItemId,
+  onAction,
   onOpen,
 }: {
   entries: WishlistPreviewEntry[];
+  currentUserId: string;
+  actionItemId: string | null;
+  onAction: (entry: WishlistPreviewEntry) => void;
   onOpen: () => void;
 }) {
   return (
@@ -1547,16 +1620,15 @@ function WishlistDashboardCard({
                   .nickname;
 
               return (
-                <button
-                  key={
-                    entry.item.id
-                  }
-                  type="button"
-                  onClick={
-                    onOpen
-                  }
-                  className="flex w-full items-center gap-3 rounded-[16px] p-2 text-left transition hover:bg-[#fff8f6]"
+                <div
+                  key={entry.item.id}
+                  className="flex w-full items-center gap-2 rounded-[16px] p-2 transition hover:bg-[#fff8f6]"
                 >
+                  <button
+                    type="button"
+                    onClick={onOpen}
+                    className="flex min-w-0 flex-1 items-center gap-3 text-left"
+                  >
 
                   {entry.item.imageUrl ? (
                     <div
@@ -1655,12 +1727,22 @@ function WishlistDashboardCard({
 
                   </div>
 
-                  <ChevronRight
-                    size={14}
-                    className="shrink-0 text-[#c3aaa5]"
-                  />
+                    <ChevronRight
+                      size={14}
+                      className="shrink-0 text-[#c3aaa5]"
+                    />
+                  </button>
 
-                </button>
+                  <button
+                    type="button"
+                    disabled={actionItemId === entry.item.id}
+                    onClick={() => onAction(entry)}
+                    className="flex shrink-0 items-center gap-1 rounded-xl border border-[#ead9dc] bg-white px-2.5 py-2 text-[10px] font-medium text-[#bd6871] transition hover:border-[#dda9ae] hover:bg-[#fff1f2] disabled:opacity-50"
+                  >
+                    <CheckCircle2 size={13} />
+                    {getWishlistActionLabel(entry, currentUserId)}
+                  </button>
+                </div>
               );
             },
           )
@@ -2270,6 +2352,23 @@ function Avatar({
         .toUpperCase()}
     </div>
   );
+}
+
+function getWishlistActionLabel(
+  entry: WishlistPreviewEntry,
+  currentUserId: string,
+) {
+  if (entry.owner.id === currentUserId) {
+    return tr('Получено');
+  }
+  switch (entry.item.giftMark?.status) {
+    case 'PLANNING':
+      return tr('Куплено');
+    case 'PURCHASED':
+      return tr('Подарено');
+    default:
+      return tr('Планирую');
+  }
 }
 
 function getPriorityLabel(

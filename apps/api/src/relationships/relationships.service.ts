@@ -57,13 +57,14 @@ export class RelationshipsService {
 
         select: {
           id: true,
+          deletedAt: true,
           nickname: true,
           displayName: true,
           avatarUrl: true,
         },
       });
 
-    if (!receiver) {
+    if (!receiver || receiver.deletedAt) {
       throw new NotFoundException(
         'Пользователь не найден',
       );

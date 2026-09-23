@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   Patch,
@@ -41,6 +42,7 @@ import {
 import {
   UpdateEmailDto,
 } from './dto/update-email.dto.js';
+import { DeleteAccountDto } from './dto/delete-account.dto.js';
 
 import {
   UpdatePasswordDto,
@@ -85,6 +87,11 @@ export class UsersController {
     private readonly usersService:
       UsersService,
   ) {}
+
+  @Delete('me')
+  deleteAccount(@Body() data: DeleteAccountDto, @Req() request: any) {
+    return this.usersService.deleteAccount(request.user.sub, data.currentPassword);
+  }
 
   /*
    * Получение списка пользователей.

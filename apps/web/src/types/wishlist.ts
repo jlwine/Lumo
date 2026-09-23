@@ -27,8 +27,10 @@ export type WishlistItem = {
    */
   priority: number;
   status: 'WANT' | 'PLANNED' | 'BUY_LATER' | 'RECEIVED';
+  archivedAt?: string | null;
+  archiveReason?: 'RECEIVED' | 'NO_LONGER_NEEDED' | null;
   giftMark: {
-    status: 'PLANNING' | 'PURCHASED';
+    status: 'PLANNING' | 'PURCHASED' | 'GIVEN';
     hiddenFromOwner: boolean;
   } | null;
 

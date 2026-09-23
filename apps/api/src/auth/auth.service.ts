@@ -226,7 +226,7 @@ export class AuthService {
      * Не сообщаем отдельно,
      * существует пользователь или нет.
      */
-    if (!user) {
+    if (!user || user.deletedAt) {
       throw new UnauthorizedException(
         'Неверный логин или пароль',
       );
