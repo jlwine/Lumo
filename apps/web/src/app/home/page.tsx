@@ -680,19 +680,16 @@ export default function HomePage() {
     <main className="min-h-screen overflow-x-hidden bg-[#fffaf7]">
 
       {/*
-       * Интерфейс увеличен до 125%.
-       *
-       * 80vh × 1.25 = 100vh.
-       *
-       * Благодаря этому zoom больше
-       * не создаёт лишние 25% высоты
-       * страницы внизу.
+       * Увеличение 125% сохраняем только
+       * для больших настольных экранов.
+       * На телефонах используем реальную
+       * ширину viewport без обрезания.
        */}
-      <div className="min-h-[80vh] w-full [zoom:1.25]">
+      <div className="min-h-screen w-full xl:min-h-[80vh] xl:[zoom:1.25]">
 
-        <div className="flex min-h-[80vh]">
+        <div className="flex min-h-screen xl:min-h-[80vh]">
 
-          <aside className="hidden w-[260px] shrink-0 border-r border-[#efe2dc] bg-[#fffdf9] lg:flex lg:flex-col">
+          <aside className="hidden w-[260px] shrink-0 border-r border-[#efe2dc] bg-[#fffdf9] xl:flex xl:flex-col">
 
             <div className="px-7 py-7">
 
@@ -864,9 +861,9 @@ export default function HomePage() {
 
           <div className="min-w-0 flex-1">
 
-            <header className="sticky top-0 z-30 border-b border-[#f0e5e0] bg-[#fffaf7]/95 px-6 py-4 backdrop-blur-xl">
+            <header className="sticky top-0 z-30 border-b border-[#f0e5e0] bg-[#fffaf7]/95 px-3 py-3 backdrop-blur-xl sm:px-6 sm:py-4">
 
-              <div className="mx-auto flex w-full max-w-[1360px] items-center gap-5">
+              <div className="mx-auto flex w-full max-w-[1360px] items-center gap-1.5 sm:gap-5">
 
                 <div className="hidden min-w-[185px] items-center gap-2 text-sm text-[#846f69] xl:flex">
 
@@ -878,11 +875,11 @@ export default function HomePage() {
 
                 </div>
 
-                <div className="w-full max-w-[500px]">
+                <div className="min-w-0 flex-1 sm:max-w-[500px]">
                   <UserSearch />
                 </div>
 
-                <div className="ml-auto flex items-center gap-2">
+                <div className="ml-auto flex shrink-0 items-center gap-0.5 sm:gap-2">
 
                   <InvitationsButton />
 
@@ -927,7 +924,7 @@ export default function HomePage() {
                         '/settings/profile',
                       )
                     }
-                    className="flex h-10 w-10 items-center justify-center rounded-xl text-[#9c8882] hover:bg-[#fff0ed]"
+                    className="flex h-9 w-9 items-center justify-center rounded-xl text-[#9c8882] hover:bg-[#fff0ed] sm:h-10 sm:w-10"
                   >
                     <Settings
                       size={17}
@@ -939,7 +936,7 @@ export default function HomePage() {
                     onClick={
                       handleLogout
                     }
-                    className="flex h-10 w-10 items-center justify-center rounded-xl text-[#9c8882] hover:bg-[#fff0f0]"
+                    className="flex h-9 w-9 items-center justify-center rounded-xl text-[#9c8882] hover:bg-[#fff0f0] sm:h-10 sm:w-10"
                   >
                     <LogOut
                       size={17}
@@ -952,7 +949,7 @@ export default function HomePage() {
 
             </header>
 
-            <div className="px-6 py-7">
+            <div className="px-4 py-5 sm:px-6 sm:py-7">
 
               <div className="mx-auto w-full max-w-[1360px]">
 
@@ -1177,14 +1174,14 @@ function CoupleHero({
   onPartnerClick: () => void;
 }) {
   return (
-    <article className="relative min-h-[245px] overflow-hidden rounded-[28px] border border-[#eeded9] bg-gradient-to-r from-[#fff0ec] via-[#fff4ee] to-[#f2eaf8] px-10 py-7">
+    <article className="relative min-h-[320px] overflow-hidden rounded-[28px] border border-[#eeded9] bg-gradient-to-r from-[#fff0ec] via-[#fff4ee] to-[#f2eaf8] px-6 py-6 sm:min-h-[245px] sm:px-10 sm:py-7">
 
       <Sparkles
         size={18}
-        className="absolute right-12 top-8 text-[#e7bd7c]"
+        className="absolute right-6 top-6 text-[#e7bd7c] sm:right-12 sm:top-8"
       />
 
-      <div className="flex h-full items-center gap-8">
+      <div className="flex h-full flex-col items-start justify-center gap-6 sm:flex-row sm:items-center sm:gap-8">
 
         <div className="flex shrink-0 items-center">
 
@@ -1272,7 +1269,7 @@ function SingleHero({
 }) {
   return (
     <article
-      className="relative min-h-[245px] overflow-hidden rounded-[28px] border border-[var(--border)] px-10 py-8"
+      className="relative min-h-[245px] overflow-hidden rounded-[28px] border border-[var(--border)] px-6 py-7 sm:px-10 sm:py-8"
       style={{
         background:
           'linear-gradient(135deg, var(--accent-soft) 0%, var(--surface-soft) 55%, var(--lavender-soft) 100%)',
@@ -1281,7 +1278,7 @@ function SingleHero({
 
       <Sparkles
         size={18}
-        className="absolute right-10 top-8 text-[#d8a96a]"
+        className="absolute right-6 top-6 text-[#d8a96a] sm:right-10 sm:top-8"
       />
 
       <div className="flex h-full max-w-[720px] flex-col justify-center">
